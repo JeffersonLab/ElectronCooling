@@ -113,6 +113,22 @@ for(int i=0; i<n_step+1; ++i) {
     }
     save_ions(n_step, ion_sample);
 
+    uircd.emit_nx = emit.at(0);
+    uircd.emit_ny = emit.at(1);
+    uircd.dp_p = emit.at(2);
+    if(ion.bunched()) uircd.sigma_s = ion.sigma_s();
+    else uircd.sigma_s = 0;
+    uircd.rx_ecool = r_ecool.at(0);
+    uircd.ry_ecool = r_ecool.at(1);
+    uircd.rs_ecool = r_ecool.at(2);
+    uircd.rx_ibs = r_ibs.at(0);
+    uircd.ry_ibs = r_ibs.at(1);
+    uircd.rs_ibs = r_ibs.at(2);
+    uircd.rx_total = r.at(0);
+    uircd.ry_total = r.at(1);
+    uircd.rs_total = r.at(2);
+    uircd.t = t;
+
     //Need to add: save the results before quiting the simulation.
     outfile.close();
     std::cout<<"Finished dynamic simulation."<<std::endl;
