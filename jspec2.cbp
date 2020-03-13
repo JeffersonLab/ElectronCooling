@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="jspec2" />
+		<Option pch_mode="2" />
+		<Option compiler="gnu_gcc_51_x64_compiler" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/jspec2" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="run" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gnu_gcc_51_x64_compiler" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/jspec2" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="run" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gnu_gcc_51_x64_compiler" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-std=c++11" />
+			<Add directory="lib" />
+		</Compiler>
+		<Linker>
+			<Add option="-lmuparser" />
+			<Add directory="lib" />
+		</Linker>
+		<Unit filename="include/arbitrary_electron_beam.h" />
+		<Unit filename="include/beam.h" />
+		<Unit filename="include/constants.h" />
+		<Unit filename="include/cooler.h" />
+		<Unit filename="include/ecooling.h" />
+		<Unit filename="include/force.h" />
+		<Unit filename="include/functions.h" />
+		<Unit filename="include/ibs.h" />
+		<Unit filename="include/ions.h" />
+		<Unit filename="include/luminosity.h" />
+		<Unit filename="include/math_parser.h" />
+		<Unit filename="include/muParserDLL.h" />
+		<Unit filename="include/particle_model.h" />
+		<Unit filename="include/ring.h" />
+		<Unit filename="include/rms_dynamic.h" />
+		<Unit filename="include/simulator.h" />
+		<Unit filename="include/turn_by_turn.h" />
+		<Unit filename="include/ui.h" />
+		<Unit filename="src/arbitrary_electron_beam.cc" />
+		<Unit filename="src/beam.cc" />
+		<Unit filename="src/ecooling.cc" />
+		<Unit filename="src/force.cc" />
+		<Unit filename="src/functions.cc" />
+		<Unit filename="src/ibs.cc" />
+		<Unit filename="src/ions.cc" />
+		<Unit filename="src/luminosity.cc" />
+		<Unit filename="src/main.cc" />
+		<Unit filename="src/math_parser.cc" />
+		<Unit filename="src/particle_model.cc" />
+		<Unit filename="src/ring.cc" />
+		<Unit filename="src/rms_dynamic.cc" />
+		<Unit filename="src/simulator.cc" />
+		<Unit filename="src/turn_by_turn.cc" />
+		<Unit filename="src/ui.cc" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
