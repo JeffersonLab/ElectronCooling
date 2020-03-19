@@ -10,34 +10,6 @@
 
 using std::string;
 
-//extern DynamicParas *dynamic_paras;
-//extern IBSSolver *ibs_solver;
-//extern EcoolRateParas *ecool_paras;
-//extern ForceParas *force_paras;
-//extern Luminosity *luminosity_paras;
-
-//double vl_emit_nx = 0;
-//double vl_emit_ny = 0;
-//double vl_dp_p = 0;
-//double vl_sigma_s = 0;
-//double vl_rx_ibs = 0;
-//double vl_ry_ibs = 0;
-//double vl_rs_ibs = 0;
-//double vl_rx_ecool = 0;
-//double vl_ry_ecool = 0;
-//double vl_rs_ecool = 0;
-//double vl_rx_total = 0;
-//double vl_ry_total = 0;
-//double vl_rs_total = 0;
-//double vl_t = 0;
-
-//Simulator* simulator = nullptr;
-//IBSSolver* ibs_solver = nullptr;
-//ECoolRate* ecool_solver = nullptr;
-//FrictionForceSolver* force_solver = nullptr;
-//LuminositySolver* lum_solver = nullptr;
-//Ions* ion_sample = nullptr;
-
 std::unique_ptr<Simulator> simulator = nullptr;
 std::unique_ptr<IBSSolver> ibs_solver = nullptr;
 std::unique_ptr<ECoolRate> ecool_solver = nullptr;
@@ -562,6 +534,9 @@ void calculate_ibs(Set_ptrs &ptrs, bool calc = true) {
         uircd.rx_ibs = rx;
         uircd.ry_ibs = ry;
         uircd.rs_ibs = rz;
+        uircd.rx_total = uircd.rx_ecool + uircd.rx_ibs;
+        uircd.ry_total = uircd.ry_ecool + uircd.ry_ibs;
+        uircd.rs_total = uircd.rs_ecool + uircd.rs_ibs;
         std::cout<<std::scientific;
         std::cout << std::setprecision(3);
         std::cout<<"IBS rate (1/s): "<<rx<<"  "<<ry<<"  "<<rz<<std::endl;
@@ -604,35 +579,14 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
         uircd.rx_ecool = rx;
         uircd.ry_ecool = ry;
         uircd.rs_ecool = rz;
+        uircd.rx_total = uircd.rx_ecool + uircd.rx_ibs;
+        uircd.ry_total = uircd.ry_ecool + uircd.ry_ibs;
+        uircd.rs_total = uircd.rs_ecool + uircd.rs_ibs;
         std::cout<<std::scientific;
         std::cout << std::setprecision(3);
         std::cout<<"Electron cooling rate (1/s): "<<rx<<"  "<<ry<<"  "<<rz<<std::endl;
     }
 }
-//
-//void calculate_ecool(Set_ptrs &ptrs) {
-//    assert(ptrs.cooler.get()!=nullptr && "MUST CREATE THE COOLER BEFORE CALCULATE ELECTRON COOLING RATE!");
-//    assert(ptrs.e_beam.get()!=nullptr && "MUST CREATE THE ELECTRON BEAM BEFORE CALCULATE ELECTRON COOLING RATE!");
-//    assert(ptrs.ecool_ptr.get()!=nullptr && "PLEASE SET UP THE PARAMETERS FOR ELECTRON COOLING RATE CALCULATION!");
-//    int n_sample = ptrs.ecool_ptr->n_sample;
-//    assert(n_sample > 0 && "WRONG PARAMETER VALUE FOR ELECTRON COOLING RATE CALCULATION!");
-//    EcoolRateParas ecool_paras(n_sample);
-//
-//    ForceParas force_paras(ptrs.ecool_ptr->force);
-//    assert(ptrs.ion_beam.get()!=nullptr && "MUST CREATE THE ION BEAM BEFORE CALCULATE ELECTRON COOLING RATE!");
-//    assert(ptrs.ring.get()!=nullptr && "MUST CREATE THE RING BEFORE CALCULATE ELECTRON COOLING RATE!");
-//    double rx, ry, rz;
-//    ecooling_rate(ecool_paras, force_paras, *ptrs.ion_beam, *ptrs.cooler, *ptrs.e_beam, *ptrs.ring, rx, ry, rz);
-//    ptrs.ecool_rate.at(0) = rx;
-//    ptrs.ecool_rate.at(1) = ry;
-//    ptrs.ecool_rate.at(2) = rz;
-//    vl_rx_ecool = rx;
-//    vl_ry_ecool = ry;
-//    vl_rs_ecool = rz;
-//    std::cout<<std::scientific;
-//    std::cout << std::setprecision(3);
-//    std::cout<<"Electron cooling rate (1/s): "<<rx<<"  "<<ry<<"  "<<rz<<std::endl;
-//}
 
 void total_expansion_rate(Set_ptrs &ptrs) {
     if (std::all_of(ptrs.ibs_rate.begin(), ptrs.ibs_rate.end(), [](double i) { return i==0; })) calculate_ibs(ptrs);
@@ -713,68 +667,6 @@ void calculate_luminosity(Set_ptrs &ptrs, bool calc=true) {
         std::cout<<"Luminosity(1/s*1/cm^2) :"<<lum_solver->luminosity()*10000<<std::endl;
     }
 }
-//
-//void calculate_luminosity(Set_ptrs &ptrs) {
-//    assert(ptrs.luminosity_ptr.get()!=nullptr && "MUST SET UP THE PARAMETERS FOR LUMINOSITY CALCULATION.");
-//    Luminosity lum;
-//    lum.set_use_ion_emit(ptrs.luminosity_ptr->use_ion_emittance);
-//    if(ptrs.luminosity_ptr->use_ion_emittance) {
-//        assert(ptrs.ion_beam.get()!=nullptr && "CREATE THE ION BEAM IF IT IS USED IN THE LUMINOSITY CALCULATION.");
-//        double geo_emit_x = ptrs.ion_beam->emit_x();
-//        double geo_emit_y = ptrs.ion_beam->emit_y();
-//        double bet_x = ptrs.luminosity_ptr->bet_x1;
-//        double bet_y = ptrs.luminosity_ptr->bet_y1;
-//        assert(bet_x>0 && bet_y>0 &&  "WRONG VALUE FOR LUMINOSITY: BETA FUNCTIONS OF BEAM 1 SHOULD BE POSITIVE.");
-//        lum.set_bet(bet_x, bet_y, 1);
-//        lum.set_geo_emit(geo_emit_x, geo_emit_y, 1);
-//    }
-//    else {
-//        double sigma_x = ptrs.luminosity_ptr->sigma_x1;
-//        double sigma_y = ptrs.luminosity_ptr->sigma_y1;
-//        double bet_x = ptrs.luminosity_ptr->bet_x1;
-//        double bet_y = ptrs.luminosity_ptr->bet_y1;
-//        double geo_emit_x = ptrs.luminosity_ptr->geo_emit_x1;
-//        double geo_emit_y = ptrs.luminosity_ptr->geo_emit_y1;
-//        assert((sigma_x>0 && sigma_y>0) || (geo_emit_x>0 && geo_emit_y>0 && bet_x>0 && bet_y>0)  &&
-//               "WRONG VALUE FOR LUMINOSITY: SIZE OR EMITTANCE (w. BETA FUNCTIONS) OF BEAM 1 SHOULD BE POSITIVE.");
-//        if(sigma_x>0 && sigma_y>0) {
-//            lum.set_beam_size(sigma_x, sigma_y, 1);
-//        }
-//        else {
-//            lum.set_bet(bet_x, bet_y, 1);
-//            lum.set_geo_emit(geo_emit_x, geo_emit_y, 1);
-//        }
-//
-//    }
-//    double bet_x = ptrs.luminosity_ptr->bet_x2;
-//    double bet_y = ptrs.luminosity_ptr->bet_y2;
-//    double sigma_x = ptrs.luminosity_ptr->sigma_x2;
-//    double sigma_y = ptrs.luminosity_ptr->sigma_y2;
-//    double geo_emit_x = ptrs.luminosity_ptr->geo_emit_x2;
-//    double geo_emit_y = ptrs.luminosity_ptr->geo_emit_y2;
-//    assert((sigma_x>0 && sigma_y>0) || (geo_emit_x>0 && geo_emit_y>0 && bet_x>0 && bet_y>0) &&
-//           "WRONG VALUE FOR LUMINOSITY: SIZE OR EMITTANCE (w. BETA FUNCTIONS) OF BEAM 2 SHOULD BE POSITIVE.");
-//    if(sigma_x>0 && sigma_y>0) {
-//        lum.set_beam_size(sigma_x, sigma_y, 2);
-//    }
-//    else {
-//        lum.set_bet(bet_x, bet_y, 2);
-//        lum.set_geo_emit(geo_emit_x, geo_emit_y, 2);
-//    }
-//    lum.set_distance(ptrs.luminosity_ptr->dx, ptrs.luminosity_ptr->dy);
-//    double np_1 = ptrs.luminosity_ptr->np_1;
-//    double np_2 = ptrs.luminosity_ptr->np_2;
-//    assert(np_1>0 && np_2>0 && "WRONG VALUE FOR LUMINOSITY: PARTICLE NUMBERS SHOULD BE POSTIVE.");
-//    lum.set_particle_number(np_1, 1);
-//    lum.set_particle_number(np_2, 2);
-//    double f = ptrs.luminosity_ptr->freq;
-//    assert(f>0 && "WRONG VALUE FOR LUMINOSITY: COLLISION FREQUENCY SHOULD BE POSITIVE.");
-//    lum.set_freq(f);
-//
-//    std::cout<<std::scientific;
-//    std::cout << std::setprecision(3);
-//    std::cout<<"Luminosity(1/s*1/cm^2) :"<<lum.luminosity()*10000<<std::endl;
-//}
 
 void run_simulation(Set_ptrs &ptrs) {
     assert(ptrs.dynamic_ptr.get()!=nullptr && "PLEASE SET UP THE PARAMETERS FOR SIMULATION!");
@@ -1481,6 +1373,12 @@ void parse(std::string &str, muParserHandle_t &math_parser){
     }
     else if(str == "LIST_CONST") {
         ListConst(math_parser);
+    }
+    else if(str.substr(0,8) == "PRINTSTR") {
+        string var = str.substr(9);
+        var = trim_blank(var);
+        var = trim_tab(var);
+        std::cout<<var<<std::endl;
     }
     else if (str.substr(0,5) == "PRINT") {
         string var = str.substr(6);

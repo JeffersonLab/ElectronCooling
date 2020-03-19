@@ -1,0 +1,63 @@
+section_ion #define the ion beam
+	charge_number = 1
+	mass = 938.272
+   	kinetic_energy = 800
+	norm_emit_x = 1.03976e-6
+	norm_emit_y = 1.03976e-6
+	momentum_spread = 0.002041000531
+	particle_number = 3.6e11
+section_ring #define the ring
+	lattice = test.tfs
+section_ibs #define the arguments for IBS calculation
+	nu = 200
+	nv = 200
+	nz = 40
+	log_c = 22.4
+	coupling = 0
+section_cooler
+	length = 10
+	section_number = 1
+	magnetic_field = 0.1
+	bet_x = 10
+	bet_y = 10
+	disp_x = 0
+	disp_y = 0
+	alpha_x = 0
+	alpha_y = 0
+	disp_dx = 0
+	disp_dy = 0
+section_scratch
+	m = 938.272
+	ke = 800
+	gamma = ke/m + 1
+section_e_beam
+	gamma = gamma
+	tmp_tr = 0.1
+	tmp_l = 0.1 
+	shape = dc_uniform
+	current = 2
+	radius = 0.008
+section_ecool
+	sample_number = 40000
+	force_formula = PARKHOMCHUK
+	
+#section_run #start calculation
+# 	create_ion_beam
+#	create_ring
+#	create_e_beam
+#	create_cooler
+#	total_expansion_rate
+	
+section_simulation
+	ibs = on
+	e_cool = on
+	time = 200
+	step_number = 200
+	output_file = simulation_particle_dc_both.txt
+	model = particle                         
+section_run
+	create_ion_beam
+	create_ring
+	create_e_beam
+	create_cooler
+	run_simulation	

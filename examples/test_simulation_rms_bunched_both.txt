@@ -1,0 +1,60 @@
+section_ion #define the ion beam
+	charge_number = 1
+	mass = 938.272
+   	kinetic_energy = 3e4
+	norm_emit_x = 0.4515633419e-6
+	norm_emit_y = 0.4515633419e-6
+	momentum_spread = 8e-4
+	rms_bunch_length = 2.5e-2
+	particle_number = 6.56E9
+section_ring #define the ring
+	lattice = test.tfs
+section_ibs #define the arguments for IBS calculation
+	model = martini
+	nu = 200
+	nv = 200
+	nz = 40
+	log_c = 39.9/2
+	k = 0
+section_cooler
+	length = 30
+	section_number = 2
+	magnetic_field = 1
+	bet_x = 100
+	bet_y = 100
+	disp_x = 0.5
+	disp_y = 0
+	alpha_x = 0
+	alpha_y = 0
+	disp_dx = 0
+	disp_dy = 0
+section_scratch
+	m = 938.272
+	ke = 3e4
+	gamma = ke/m + 1
+section_e_beam
+	gamma = gamma
+	tmp_tr = 0.5
+	tmp_l = 0.1 
+	shape = bunched_gaussian
+	sigma_x = 0.0012
+	sigma_y = 0.0012
+	sigma_z = 0.025
+	e_number = 1.25E10
+section_ecool
+	sample_number = 10000
+	force_formula = PARKHOMCHUK
+	
+section_simulation
+	ibs = on
+	e_cool = on
+	time = 30
+	step_number = 200
+	output_file = simulation_rms_bunched_both.txt
+	model = rms
+section_run
+	create_ion_beam
+	create_ring
+	create_e_beam
+	create_cooler
+	run_simulation	

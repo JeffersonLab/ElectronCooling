@@ -1,0 +1,62 @@
+section_ion #define the ion beam
+	charge_number = 1
+	mass = 938.272
+   	kinetic_energy = 1e5
+	norm_emit_x = 1.25e-6
+	norm_emit_y = 0.38e-6
+	momentum_spread = 8e-4
+	rms_bunch_length = 2.5e-2
+	particle_number = 0.998E10
+section_ring #define the ring
+	lattice = test.tfs
+	Qx = 0.2213
+	Qy = 0.1613
+	Qs = 0.05413
+section_cooler
+	length = 30
+	section_number = 2
+	magnetic_field = 1
+	bet_x = 60
+	bet_y = 200
+	disp_x = 0
+	disp_y = 0
+	alpha_x = 0
+	alpha_y = 0
+	disp_dx = 0
+	disp_dy = 0
+section_scratch
+	m = 938.272
+	ke = 3e4
+	gamma = ke/m + 1
+	qe = 2e11
+	k_c = 299792458.0
+	beta = (1-gamma^(-2))^(1/2)
+	le = 0.02
+	re = 0.000835
+	Ie = qe*beta*k_c/le
+section_e_beam
+	gamma = gamma
+	tmp_tr = 0.246
+	tmp_l = 0.184
+	shape = bunched_uniform
+	current = Ie
+	radius = re
+	length = le
+section_ecool
+	sample_number = 40000
+	force_formula = PARKHOMCHUK
+
+section_simulation
+	ibs = false
+	e_cool = true
+	time = 2
+	output_file = simulation_turn_by_turn_bunched_ecool.txt
+	output_interval = 1000
+	model = turn_by_turn
+	save_particle_interval = 5000
+section_run
+	create_ion_beam
+	create_ring
+	create_e_beam
+	create_cooler
+	run_simulation	

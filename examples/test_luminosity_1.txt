@@ -1,0 +1,25 @@
+section_luminosity 
+	distance_x = 1e-3
+	distance_y = 1e-6
+	use_ion_emittance = false	
+	frequency = 1000
+
+	particle_number_1 = 1e7
+	bet_x_1 = 0.01
+	bet_y_1 = 0.01
+	geo_emit_x_1 = 1e-6
+	geo_emit_y_1 = 1e-6
+	particle_number_2 = 1e10
+	bet_x_2 = 0.01
+	bet_y_2 = 0.01
+	geo_emit_x_2 = 4e-7
+	geo_emit_y_2 = 4e-7
+	
+
+section_run
+	calculate_luminosity
+
+
+############################################
+#       Luminosity(1/s*1/cm^2) :3.509e+015
+############################################

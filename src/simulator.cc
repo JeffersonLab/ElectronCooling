@@ -71,6 +71,7 @@ void Simulator::output(bool bunched, double v_rf, double lum) {
 void Simulator::run(Beam& ion, Ions& ion_sample, Cooler& cooler, EBeam& ebeam,
                     Ring& ring, IBSSolver* ibs_solver, ECoolRate* ecool_solver,
                     FrictionForceSolver* force_solver, LuminositySolver* lum_solver) {
+    precondition(ion_sample);
     //Set time for new simulation or continued simulation.
     if(reset_time) t = t0;
     else t = uircd.t;

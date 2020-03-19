@@ -47,6 +47,7 @@ class Simulator{
     virtual void update_ibeam(Beam& ion, Ions& ion_sample, Ring& ring, EBeam& ebeam, Cooler& cooler, ECoolRate* ecool_solver)=0;
     virtual void adjust_rf_voltage(Ring& ring) = 0;
     virtual void save_ions(int i, Ions& ion_sample) = 0;
+    virtual void precondition(Ions& ion_sample){};
 
  public:
     Simulator(double time, int n):t(time),n_step(n){dt = time/n;}
@@ -60,6 +61,7 @@ class Simulator{
     void set_reset_time(bool b){reset_time = b;}
     void set_overwrite(bool b) {overwrite = b; }
     void set_calc_lum(bool b) {calc_luminosity = b; }
+
     virtual void run(Beam& ion, Ions& ion_sample, Cooler& cooler, EBeam& ebeam,
                      Ring& ring, IBSSolver* ibs_solver, ECoolRate* ecool_solver,
                      FrictionForceSolver* force_solver, LuminositySolver* lum_solver);

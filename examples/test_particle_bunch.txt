@@ -1,0 +1,61 @@
+########################################################################################
+# To run this script, one needs the following file that saves the electron beam as particles:
+# https://drive.google.com/file/d/1_73ojnEMviV16NkmNZa_mH6-j3xP2tYV/view?usp=sharing
+########################################################################################
+
+section_scratch  #define the scratch section
+	mp = 938.272
+	kp = 1e5
+	gamma = kp/mp + 1
+
+section_ion #define the ion beam
+	charge_number = 1
+	mass = mp
+   	kinetic_energy = kp
+	norm_emit_x = 1.2e-6
+	norm_emit_y = 0.6e-6
+	momentum_spread = 0.0005
+	particle_number = 6.56e9
+	rms_bunch_length = 0.84e-2
+
+section_ring #define the ring
+	lattice = test.tfs
+
+section_cooler
+	length = 60
+	section_number = 1
+	magnetic_field = 1
+	bet_x = 100
+	bet_y = 100
+	disp_x = 0
+	disp_y = 0
+	alpha_x = 0
+	alpha_y = 0
+	disp_dx = 0
+	disp_dy = 0
+
+section_e_beam
+	gamma = gamma
+	shape = bunched_user_defined
+	particle_file = electrons_0.dat
+	e_number = 2.62E9
+	total_particle_number = 1e6
+	box_particle_number = 200
+	line_skip = 0
+	vel_pos_corr = false
+	binary_file = true
+
+section_ecool
+	sample_number = 10000
+	force_formula = PARKHOMCHUK
+section_run #start calculation
+ 	create_ion_beam
+	create_ring
+	create_e_beam
+	create_cooler
+	calculate_ecool
+
+######################################################
+# 	RESULT
+# Electron cooling rate (1/s): -1.229e-003  -1.643e-003  -4.428e-003
+######################################################

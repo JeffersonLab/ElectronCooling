@@ -18,6 +18,7 @@ class ParticleModel: public Simulator {
     void adjust_rf_voltage(Ring& ring){};
     void save_ions(int i, Ions& ion_sample){if (ion_save_itvl>0 && i%ion_save_itvl==0) ion_sample.save_ions_sdds("ions"+std::to_string(i)+".txt");}
     vector<double> rdn;
+    void precondition(Ions& ion_sample){resize_rdn(ion_sample.n_sample());};
  public:
     using Simulator::Simulator;
     void resize_rdn(int n_sample){rdn.resize(n_sample);}
