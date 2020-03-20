@@ -28,7 +28,7 @@ section_scratch
 	m = 938.272
 	ke = 3e4
 	gamma = ke/m + 1
-	qe = 2e11
+	qe = 2e-7
 	k_c = 299792458.0
 	beta = (1-gamma^(-2))^(1/2)
 	le = 0.02

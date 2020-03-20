@@ -136,6 +136,28 @@ class UniformCylinder: public EBeam{
                     {bunched_ = false;};
 };
 
+class MultiBunches: public EBeam{
+    int n_; //Number of bunches
+    vector<double> cx_;     //List of cxs.
+    vector<double> cy_;     //List of cys.
+    vector<double> cz_;     //List of czs.
+    EBeam* bunches_;
+ public:
+    EBeam& bunch(){return *bunches_;}
+    vector<double>& cx(){return &cx_;}
+    vector<double>& cy(){return &cy_;}
+    vector<double>& cz(){return &cz_;}
+    MultiBunches(int n):n_(n){cx_.resize(n); cy_.resize(n); cz_.resize();}
+    ~MultiBunches(){delete bunches_;}
+    MultiBunches(const MultiBunches& obj) = delete;
+    MultiBunches& operator=(const MultiBunches& obj) = delete;
+    Shape shape() const {bunches_->shape();}
+    double length() const {bunches_->length();}
+    void density (vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
+    void density (vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
+                double cx, double cy, double cz);
+};
+
 class UniformHollow: public EBeam {
     double current_;    //Peak current, the current as if the beam is coasting.
     double in_radius_;

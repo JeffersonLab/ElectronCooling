@@ -24,7 +24,7 @@ using std::string;
 extern std::map<std::string, Section> sections;
 extern muParserHandle_t math_parser;
 
-enum class Test {IBS, ECOOL, BOTH,DYNAMICBOTHBUNCHED};
+enum class Test {IBS, ECOOL, BOTH,DYNAMICBOTHBUNCHED, MATH_PARSER};
 
 int main(int argc, char** argv) {
     srand(time(NULL));
@@ -159,8 +159,11 @@ int main(int argc, char** argv) {
 
     }
     else {
-        Test test = Test::DYNAMICBOTHBUNCHED;
+        Test test = Test::MATH_PARSER;
         switch (test) {
+            case Test::MATH_PARSER: {
+                break;
+            }
             case Test::IBS: {
                 //********************************
                 // Test IBS rate

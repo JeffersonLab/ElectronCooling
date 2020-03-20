@@ -371,3 +371,20 @@ void ParticleBunch::density(vector<double>& x, vector<double>& y, vector<double>
     }
     for(int i=0; i<n; ++i) ne[i] *= rate;
 }
+
+void MultiBunches::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n) {
+    vector<double> d(n);
+    for(int i=0; i<n_; ++i) {
+        bunches_->density(x, y, z, d, n, -cxs.at(i), -cys.at(i), -czs.at(i));
+        for(int j=0; j<n; ++j) ne.at(j) += d.at(j);
+    }
+}
+
+void MultiBunches::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n, double cx, double cy,
+                       double cz) {
+    vector<double> d(n);
+    for(int i=0; i<n_; ++i) {
+        bunches_->density(x, y, z, d, n, cx-cxs.at(i), cy-cys.at(i), cz-czs.at(i));
+        for(int j=0; j<n; ++j) ne.at(j) += d.at(j);
+    }
+}
