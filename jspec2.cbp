@@ -23,7 +23,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_51_x64_compiler" />
-				<Option parameters="..\examples\test_simulation_turn_by_turn_bunched_ecool.txt" />
+				<Option parameters="..\examples\test_particle_bunch.txt" />
 				<Compiler>
 					<Add option="-O2" />
 				</Compiler>

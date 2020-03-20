@@ -113,7 +113,7 @@ void ECoolRate::bunched_to_coasting(Beam &ion, Ions& ion_sample, EBeam &ebeam, C
 
 void ECoolRate::lab_frame(int n_sample, double gamma_e) {
     double gamma_e_inv = 1/gamma_e;
-    for(unsigned int i=0; i<n_sample; ++i){
+    for(int i=0; i<n_sample; ++i){
             force_x[i] *= gamma_e_inv;
             v_tr[i] *= gamma_e_inv;
     }

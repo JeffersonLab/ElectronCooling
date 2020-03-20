@@ -43,7 +43,7 @@ int uniform_random(int n, T& random_num, double r_min, double r_max){
     std::default_random_engine generator;
     generator.seed(rand());
     std::uniform_real_distribution<double> uniform_dis(r_min,r_max);
-    for(unsigned int i=0; i<n; ++i) random_num[i] = uniform_dis(generator);
+    for(int i=0; i<n; ++i) random_num[i] = uniform_dis(generator);
     return 0;
 }
 
@@ -60,7 +60,6 @@ int uniform_random_adjust(int n, T& random_num, double avg) {
 template <typename T>
 double rms(int n, T& v) {
     double sum = 0;
-    double mean = 0;
     for(int i=0; i<n; ++i) {
         sum += v[i];
     }

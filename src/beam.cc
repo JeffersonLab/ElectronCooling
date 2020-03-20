@@ -205,7 +205,7 @@ void UniformHollowBunch::density(vector<double>& x, vector<double>& y, vector<do
 
     double left_end = -0.5*length_;
     double right_end = 0.5*length_;
-    for(unsigned int i=0; i<n_particle; ++i){
+    for(int i=0; i<n_particle; ++i){
         double r2 = (x[i]+cx)*(x[i]+cx)+(y[i]+cy)*(y[i]+cy);
         double z_shifted = z[i]+cz;
         if(z_shifted<=right_end && z_shifted>=left_end &&r2<=out_r2 && r2>=in_r2) ne[i] = density;

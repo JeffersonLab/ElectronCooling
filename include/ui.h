@@ -130,14 +130,6 @@ struct Set_dynamic{
     std::string filename = "output_dynamic.txt";
     DynamicModel model = DynamicModel::RMS;
     Twiss twiss_ref;
-//    double ref_bet_x = 0;
-//    double ref_bet_y = 0;
-//    double ref_alf_x = 0;
-//    double ref_alf_y = 0;
-//    double ref_disp_x = 0;
-//    double ref_disp_y = 0;
-//    double ref_disp_dx = 0;
-//    double ref_disp_dy = 0;
 };
 
 struct Set_luminosity{
@@ -174,20 +166,15 @@ class Set_ptrs{
      std::unique_ptr<Ring> ring = nullptr;
      std::unique_ptr<Set_cooler> cooler_ptr = nullptr;
      std::unique_ptr<Cooler> cooler = nullptr;
-//     std::unique_ptr<EBeamShape> e_beam_shape = nullptr;
      std::unique_ptr<Set_e_beam> e_beam_ptr = nullptr;
      std::unique_ptr<EBeam> e_beam = nullptr;
      std::unique_ptr<Set_ecool> ecool_ptr = nullptr;
-//     std::unique_ptr<EcoolRateParas> ecool_paras = nullptr;
-//     std::unique_ptr<ForceParas> force_paras = nullptr;
      std::unique_ptr<Set_dynamic> dynamic_ptr = nullptr;
      std::unique_ptr<Set_luminosity> luminosity_ptr = nullptr;
-//     std::unique_ptr<Tunes> tunes = nullptr;
-//     std::unique_ptr<RF> rf = nullptr;
 };
 
 enum class Section{NONE, SECTION_ION, SECTION_RING, SECTION_COOLER, SECTION_RUN, SECTION_IBS, SECTION_SCRATCH,
-    SECTION_E_BEAM_SHAPE, SECTION_E_BEAM, SECTION_ECOOL, SECTION_SIMULATION, SECTION_LUMINOSITY};
+    SECTION_E_BEAM, SECTION_ECOOL, SECTION_SIMULATION, SECTION_LUMINOSITY};
 
 std::string remove_comments(std::string input_line);
 std::string trim_blank(std::string input_line);

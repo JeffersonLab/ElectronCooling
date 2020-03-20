@@ -72,7 +72,7 @@ void ListVar(muParserHandle_t a_hParser)
         muFloat_t* pVar = 0;
 
         mupGetVar(a_hParser, i, &szName, &pVar);
-        myprintf(_T("Name: %s    Address: [0x%x]\n"), szName, (long long)pVar);
+        myprintf(_T("Name: %s    Address: [0x%llx]\n"), szName, (unsigned long long int)pVar);
     }
 }
 
@@ -99,7 +99,7 @@ void ListExprVar(muParserHandle_t a_hParser)
         muFloat_t* pVar = 0;
 
         mupGetExprVar(a_hParser, i, &szName, &pVar);
-        myprintf(_T("Name: %s   Address: [0x%x]\n"), szName, (long long)pVar);
+        myprintf(_T("Name: %s   Address: [0x%llx]\n"), szName, (unsigned long long int)pVar);
     }
 }
 
@@ -159,22 +159,6 @@ void initialize_parser(muParserHandle_t &math_parser) {
     mupSetErrorHandler(math_parser, OnError);
     mupSetVarFactory(math_parser, AddVariable, NULL);       // Set a variable factory
     AddConst(math_parser);                                  // Add constants
-
-//    //Set variables to save the calculation/simulation results.
-//    mupDefineVar(math_parser, "VL_EMIT_NX", &vl_emit_nx);
-//    mupDefineVar(math_parser, "VL_EMIT_NY", &vl_emit_ny);
-//    mupDefineVar(math_parser, "VL_MOMENTUM_SPREAD", &vl_dp_p);
-//    mupDefineVar(math_parser, "VL_BUNCH_LENGTH", &vl_sigma_s);
-//    mupDefineVar(math_parser, "VL_RATE_IBS_X", &vl_rx_ibs);
-//    mupDefineVar(math_parser, "VL_RATE_IBS_Y", &vl_ry_ibs);
-//    mupDefineVar(math_parser, "VL_RATE_IBS_S", &vl_rs_ibs);
-//    mupDefineVar(math_parser, "VL_RATE_ECOOL_X", &vl_rx_ecool);
-//    mupDefineVar(math_parser, "VL_RATE_ECOOL_Y", &vl_ry_ecool);
-//    mupDefineVar(math_parser, "VL_RATE_ECOOL_S", &vl_rs_ecool);
-//    mupDefineVar(math_parser, "VL_RATE_TOTAL_X", &vl_rx_total);
-//    mupDefineVar(math_parser, "VL_RATE_TOTAL_Y", &vl_ry_total);
-//    mupDefineVar(math_parser, "VL_RATE_TOTAL_S", &vl_rs_total);
-//    mupDefineVar(math_parser, "VL_T", &vl_t);
 
     //Set variables to save the calculation/simulation results.
     mupDefineVar(math_parser, "VL_EMIT_NX", &uircd.emit_nx);

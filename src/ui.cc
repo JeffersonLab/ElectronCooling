@@ -20,7 +20,6 @@ std::unique_ptr<Ions> ion_sample = nullptr;
 Record uircd;
 
 muParserHandle_t math_parser = NULL;
-//std::vector<std::string> sections = {"SECTION_ION", "SECTION_RING", "SECTION_COOLER"};
 std::vector<string> ION_ARGS = {"CHARGE_NUMBER", "MASS", "KINETIC_ENERGY", "NORM_EMIT_X", "NORM_EMIT_Y",
     "MOMENTUM_SPREAD", "PARTICLE_NUMBER", "RMS_BUNCH_LENGTH"};
 std::vector<string> RUN_COMMANDS = {"CREATE_ION_BEAM", "CREATE_RING", "CREATE_E_BEAM", "CREATE_COOLER",
@@ -29,8 +28,6 @@ std::vector<string> RING_ARGS = {"LATTICE", "QX", "QY", "QS", "GAMMA_TR", "RF_V"
 std::vector<string> IBS_ARGS = {"NU","NV","NZ","LOG_C","COUPLING","MODEL","IBS_BY_ELEMENT"};
 std::vector<string> COOLER_ARGS = {"LENGTH", "SECTION_NUMBER", "MAGNETIC_FIELD", "BET_X", "BET_Y", "DISP_X", "DISP_Y",
     "ALPHA_X", "ALPHA_Y", "DISP_DX", "DISP_DY"};
-//std::vector<string> SCRATCH_COMMANDS = {"PRINT", "LIST_VAR", "LIST_CONST"};
-//std::vector<string> E_BEAM_SHAPE_ARGS = {"SHAPE", "RADIUS", "CURRENT", "SIMGA_X", "SIGMA_Y", "SIGMA_Z", "LENGTH", "E_NUMBER"};
 std::vector<string> E_BEAM_SHAPE_TYPES = {"DC_UNIFORM", "BUNCHED_GAUSSIAN", "BUNCHED_UNIFORM", "BUNCHED_UNIFORM_ELLIPTIC",
     "DC_UNIFORM_HOLLOW", "BUNCHED_UNIFORM_HOLLOW", "BUNCHED_USER_DEFINED"};
 //std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L"};
@@ -747,7 +744,7 @@ void run_simulation(Set_ptrs &ptrs) {
     }
 
     if (ibs && !ecool && ptrs.dynamic_ptr->model!=DynamicModel::RMS) {
-        assert(ptrs.dynamic_ptr->ref_bet_x>0 && ptrs.dynamic_ptr->ref_bet_y>0 && "WRONG VALUE FOR REFERENCE TWISS PARAMETERS");
+        assert(ptrs.dynamic_ptr->twiss_ref.bet_x>0 && ptrs.dynamic_ptr->twiss_ref.bet_y>0 && "WRONG VALUE FOR REFERENCE TWISS PARAMETERS");
         assert(n_sample>0 && "SET N_SAMPLE FOR SIMULATION!");
         ion_sample.reset(new Ions_MonteCarlo(n_sample));
         ion_sample->set_twiss(ptrs.dynamic_ptr->twiss_ref);
