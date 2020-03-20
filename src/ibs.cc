@@ -24,9 +24,6 @@ void IBSSolver::ibs_coupling(double &rx, double &ry, double k, double emit_x, do
 IBSSolver_Martini::IBSSolver_Martini(int nu, int nv, int nz, double log_c, double k)
     : IBSSolver(log_c, k), nu_(nu), nv_(nv), nz_(nz)
 {
-#ifndef NDEBUG
-	std::cerr << "DEBUG: IBSSolver_Martini constructor" << std::endl;
-#endif
 }
 
 //Calculate sigma_xbet, sigma_xbetp, sigma_y, sigma_yp
@@ -97,9 +94,6 @@ void IBSSolver_Martini::abcdk(const Lattice &lattice, const Beam &beam)
 
 void IBSSolver_Martini::coef_f()
 {
-#ifndef NDEBUG
-	std::cerr << "IBSSolver_Martini::coef_f()" << std::endl;
-#endif
     storage_u.resize(nu_);
     storage_v.resize(nv_);
 
@@ -141,9 +135,6 @@ void IBSSolver_Martini::f()
 
     if (log_c_ > 0) {
         const double duvTimes2Logc = 2*k_pi*k_pi/(nu_*nv_) * 2 * log_c_;
-#ifndef NDEBUG
-        std::cerr << "IBSSolver_Martini::f(): using log_c method; nu=" << nu_ << "; nv=" << nv_ << "; log_c=" << log_c_ << std::endl;
-#endif
 #ifdef _OPENMP
         // Maybe make this runtime-adjustable. SMT gives no benefit here, so choose n = physical cores
         #pragma omp parallel for num_threads(6)
@@ -175,9 +166,6 @@ void IBSSolver_Martini::f()
         }
     } else {
         const double duv = 2*k_pi*k_pi/(nv_*nu_);
-#ifndef NDEBUG
-        std::cerr << "IBSSolver_Martini::f(): using nz method; nu=" << nu_ << "; nv=" << nv_ << "; nz=" << nz_ << std::endl;
-#endif
 #ifdef _OPENMP
         // Maybe make this runtime-adjustable. SMT gives no benefit here, so choose n = physical cores
         #pragma omp parallel for num_threads(6)
@@ -215,9 +203,6 @@ void IBSSolver_Martini::f()
             f3[ie] = tempf3 * os.k3 * duv;
         }
     }
-#ifndef NDEBUG
-    std::cerr << "IBSSolver_Martini::f() done" << std::endl;
-#endif
 }
 
 double IBSSolver_Martini::coef_a(const Lattice &lattice, const Beam &beam) const
@@ -300,9 +285,6 @@ void IBSSolver_Martini::rate(const Lattice &lattice, const Beam &beam, double &r
 IBSSolver_BM::IBSSolver_BM(double log_c, double k)
     : IBSSolver(log_c, k)
 {
-#ifndef NDEBUG
-	std::cerr << "DEBUG: IBSSolver_BM constructor" << std::endl;
-#endif
 }
 
 void IBSSolver_BM::init_fixed_var(const Lattice& lattice, const Beam& beam) {

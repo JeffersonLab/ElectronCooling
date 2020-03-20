@@ -205,7 +205,7 @@ void Ions_SingleParticle::emit(vector<double>& x_bet, vector<double>& xp_bet, ve
     emit_y = 0;
     emit_s = 0;
     int n_sample = n_;
-    for(unsigned int i=0; i<n_sample; ++i) {
+    for(int i=0; i<n_sample; ++i) {
         emit_x += beta_x*xp_bet[i]*xp_bet[i]+2*alf_x*x_bet[i]*xp_bet[i]+gamma_x*x_bet[i]*x_bet[i];
         emit_y += beta_y*yp_bet[i]*yp_bet[i]+2*alf_y*y_bet[i]*yp_bet[i]+gamma_y*y_bet[i]*y_bet[i];
         emit_s += dp_p[i]*dp_p[i];
@@ -357,7 +357,7 @@ void Ions_SingleParticle::single_particle_grid(Beam &ion){
     double alf_y = twiss.alf_y;
     double dphi = 2.0*k_pi/n_tr_;
     double phi = 0;
-    for(unsigned int i=0; i<n_tr_; ++i){
+    for(int i=0; i<n_tr_; ++i){
         x_spl[i] = sin(phi);
         y_spl[i] = sin(phi);
         xp_spl[i] = cos(phi)-alf_x*sin(phi);
@@ -368,7 +368,7 @@ void Ions_SingleParticle::single_particle_grid(Beam &ion){
     if(ion.bunched()){
         phi = 0;
         dphi = 2.0*k_pi/n_l_;
-        for(unsigned int i=0; i<n_l_; ++i){
+        for(int i=0; i<n_l_; ++i){
             ds_spl[i] = sin(phi);
             dp_p_spl[i] = cos(phi);
             phi += dphi;

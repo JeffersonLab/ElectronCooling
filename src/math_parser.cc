@@ -72,7 +72,7 @@ void ListVar(muParserHandle_t a_hParser)
         muFloat_t* pVar = 0;
 
         mupGetVar(a_hParser, i, &szName, &pVar);
-        myprintf(_T("Name: %s    Address: [0x%x]\n"), szName, (long long)pVar);
+        myprintf(_T("Name: %s    Address: [0x%llx]\n"), szName, (unsigned long long int)pVar);
     }
 }
 
@@ -99,7 +99,7 @@ void ListExprVar(muParserHandle_t a_hParser)
         muFloat_t* pVar = 0;
 
         mupGetExprVar(a_hParser, i, &szName, &pVar);
-        myprintf(_T("Name: %s   Address: [0x%x]\n"), szName, (long long)pVar);
+        myprintf(_T("Name: %s   Address: [0x%llx]\n"), szName, (unsigned long long int)pVar);
     }
 }
 

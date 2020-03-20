@@ -2,7 +2,6 @@
 # To run this script, one needs the following file that saves the electron beam as particles:
 # https://drive.google.com/file/d/1_73ojnEMviV16NkmNZa_mH6-j3xP2tYV/view?usp=sharing
 ########################################################################################
-
 section_scratch  #define the scratch section
 	mp = 938.272
 	kp = 1e5

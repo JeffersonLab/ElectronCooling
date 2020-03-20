@@ -100,7 +100,7 @@ void Force_Park::friction_force(int charge_number, int ion_number, vector<double
     force_tr.resize(ion_number);
     force_long.resize(ion_number);
 
-    for(unsigned long int i=0; i<ion_number; ++i){
+    for(int i=0; i<ion_number; ++i){
         double v2 = v_tr[i]*v_tr[i]+v_long[i]*v_long[i];
         if(v2>0){
             double dlt = ::dlt(tpr, v2, dlt2_eff_e, i);

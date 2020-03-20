@@ -1,10 +1,6 @@
 #ifndef IBS_HPP
 #define IBS_HPP
 
-#ifndef NDEBUG
-	#define NDEBUG
-#endif
-
 #include <assert.h>
 #include <memory>
 #include <vector>

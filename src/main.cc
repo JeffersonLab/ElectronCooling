@@ -1,8 +1,10 @@
 #include <algorithm>
+#include <cassert>
 #include <chrono>
+#include <cmath>
 #include <fstream>
 #include <map>
-#include <cmath>
+
 
 #include "../include/beam.h"
 #include "../include/constants.h"
@@ -28,15 +30,12 @@ enum class Test {IBS, ECOOL, BOTH,DYNAMICBOTHBUNCHED, MATH_PARSER};
 
 int main(int argc, char** argv) {
     srand(time(NULL));
-//    srand(0);
 
     if(argc>1) {
         std::ifstream input_file(argv[1]);
         string line;
         Section sec_flag = Section::NONE;
         Set_ptrs ptrs;
-//        muParserHandle_t hParser = NULL;
-//        Set_ion *ion_ptr = nullptr;
         if (math_parser == NULL) {
             initialize_parser(math_parser);
         }
@@ -48,7 +47,6 @@ int main(int argc, char** argv) {
                 line = trim_tab(line);
                 string line_orgn = line;
                 str_toupper(line);
-//                    std::cout<<line<<std::endl;
                 if (!line.empty()) {
                     if (sections.find(line)!=sections.end()) {
                         sec_flag = sections[line];
@@ -90,24 +88,16 @@ int main(int argc, char** argv) {
                                 break;
                             }
                             case Section::SECTION_SCRATCH: {
-//                                if (math_parser == NULL) {
-//                                    initialize_parser(math_parser);
-//                                }
                                 break;
                             }
                             default : {
                                 assert(false && "WRONG SECTION NAME!");
+                                break;
                             }
                         }
                     }
                     else {
                         assert(sec_flag>Section::NONE && "Script file must start with a section!");
-//                        string::size_type idx = line.find("=");
-//                        assert((idx!=string::npos) && "Wrong command!");
-//                        string var = line.substr(0, idx);
-//                        string val = line.substr(idx+1);
-//                        std::cout<<var<<" "<<val<<std::endl;
-
                         switch (sec_flag) {
                             case Section::SECTION_ION: {
                                 define_ion_beam(line, ptrs.ion_ptr.get());
