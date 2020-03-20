@@ -205,7 +205,7 @@ void UniformHollowBunch::density(vector<double>& x, vector<double>& y, vector<do
 
     double left_end = -0.5*length_;
     double right_end = 0.5*length_;
-    for(unsigned int i=0; i<n_particle; ++i){
+    for(int i=0; i<n_particle; ++i){
         double r2 = (x[i]+cx)*(x[i]+cx)+(y[i]+cy)*(y[i]+cy);
         double z_shifted = z[i]+cz;
         if(z_shifted<=right_end && z_shifted>=left_end &&r2<=out_r2 && r2>=in_r2) ne[i] = density;
@@ -375,7 +375,7 @@ void ParticleBunch::density(vector<double>& x, vector<double>& y, vector<double>
 void MultiBunches::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n) {
     vector<double> d(n);
     for(int i=0; i<n_; ++i) {
-        bunches_->density(x, y, z, d, n, -cxs.at(i), -cys.at(i), -czs.at(i));
+        bunches_->density(x, y, z, d, n, -cx_.at(i), -cy_.at(i), -cz_.at(i));
         for(int j=0; j<n; ++j) ne.at(j) += d.at(j);
     }
 }
@@ -384,7 +384,7 @@ void MultiBunches::density(vector<double>& x, vector<double>& y, vector<double>&
                        double cz) {
     vector<double> d(n);
     for(int i=0; i<n_; ++i) {
-        bunches_->density(x, y, z, d, n, cx-cxs.at(i), cy-cys.at(i), cz-czs.at(i));
+        bunches_->density(x, y, z, d, n, cx-cx_.at(i), cy-cy_.at(i), cz-cz_.at(i));
         for(int j=0; j<n; ++j) ne.at(j) += d.at(j);
     }
 }

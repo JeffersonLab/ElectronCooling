@@ -90,6 +90,7 @@ protected:
     vector<double> v_avg_y;
     vector<double> v_avg_l;
 public:
+    virtual ~EBeam(){};
     Velocity velocity() const {return velocity_;}
     Temperature temperature() const {return temperature_;}
     int charge_number() const {return -1;}
@@ -144,15 +145,15 @@ class MultiBunches: public EBeam{
     EBeam* bunches_;
  public:
     EBeam& bunch(){return *bunches_;}
-    vector<double>& cx(){return &cx_;}
-    vector<double>& cy(){return &cy_;}
-    vector<double>& cz(){return &cz_;}
-    MultiBunches(int n):n_(n){cx_.resize(n); cy_.resize(n); cz_.resize();}
+    vector<double>& cx(){return cx_;}
+    vector<double>& cy(){return cy_;}
+    vector<double>& cz(){return cz_;}
+    MultiBunches(int n):n_(n){cx_.resize(n); cy_.resize(n); cz_.resize(n);}
     ~MultiBunches(){delete bunches_;}
     MultiBunches(const MultiBunches& obj) = delete;
     MultiBunches& operator=(const MultiBunches& obj) = delete;
-    Shape shape() const {bunches_->shape();}
-    double length() const {bunches_->length();}
+    Shape shape() const {return bunches_->shape();}
+    double length() const {return bunches_->length();}
     void density (vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
     void density (vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
                 double cx, double cy, double cz);
