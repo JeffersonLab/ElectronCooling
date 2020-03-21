@@ -1,9 +1,10 @@
 #include "../include/ui.h"
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <cmath>
+#include <sstream>
 
 #include "../include/constants.h"
 
@@ -33,7 +34,8 @@ std::vector<string> E_BEAM_SHAPE_TYPES = {"DC_UNIFORM", "BUNCHED_GAUSSIAN", "BUN
 //std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L"};
 std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS", "CURRENT", "SIGMA_X", "SIGMA_Y",
     "SIGMA_Z", "LENGTH", "E_NUMBER", "RH", "RV", "R_INNER", "R_OUTTER", "PARTICLE_FILE", "TOTAL_PARTICLE_NUMBER",
-    "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE"};
+    "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
+    "LIST_CY", "LIST_CZ"};
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK"};
 std::vector<string> SIMULATION_ARGS = {"TIME", "STEP_NUMBER", "SAMPLE_NUMBER", "IBS", "E_COOL", "OUTPUT_INTERVAL",
@@ -90,6 +92,31 @@ void str_toupper(std::string &str) {
     for (auto & c: str) c = toupper(c);
 }
 
+double str_to_number(string val) {
+    val = trim_blank(val);
+    val = trim_tab(val);
+    if (math_parser == NULL) {
+        return std::stod(val);
+    }
+    else {
+        mupSetExpr(math_parser, val.c_str());
+        return mupEval(math_parser);
+    }
+}
+
+int list_c(string str, vector<double> v) {
+    istringstream ss(str);
+    string val;
+    int n = 0;
+    getline(ss, val, ',');
+    n = std::static_cast<int>(str_to_number(val));
+    while(getline(ss, val, ',')){
+        v.push_back(str_to_number(val));
+    }
+    assert(n==v.size()&&"Inconsistency in the list of centers for the electron beam multi_bunches model.");
+    return n;
+}
+
 void define_e_beam(string &str, Set_e_beam *e_beam_args) {
     assert(e_beam_args!=nullptr && "SECTION_E_BEAM MUST BE CLAIMED!");
     string::size_type idx = str.find("=");
@@ -137,6 +164,26 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
         else {
             assert(false&& "WRONG VALUE FOR VEL_POS_CORR FOR E_BEAM!");
         }
+    }
+    else if (var == "MULTI_BUNCHES") {
+        if (val == "TRUE") {
+            e_beam_args->multi_bunches = true;
+        }
+        else if (val == "FALSE") {
+            e_beam_args->multi_bunches = false;
+        }
+        else {
+            assert(false&& "WRONG VALUE FOR VEL_POS_CORR FOR E_BEAM!");
+        }
+    }
+    else if (var == "LIST_CX") {
+         e_beam_args->n_cx = list_c(val,  e_beam_args->cx);
+    }
+    else if (var == "LIST_CY") {
+         e_beam_args->n_cy = list_c(val,  e_beam_args->cy);
+    }
+    else if (var == "LIST_CZ") {
+         e_beam_args->n_cz = list_c(val,  e_beam_args->cz);
     }
     else {
         if (math_parser == NULL) {
@@ -261,7 +308,7 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
     }
 }
 
-void create_e_beam(Set_ptrs &ptrs) {
+void create_e_beam(Set_ptrs &ptrs, EBeam* ptr = nullptr) {
     assert(ptrs.e_beam_ptr.get()!=nullptr && "MUST DEFINE THE ELECTRON BEAM BEFORE CREATE THE ELECTRON BEAM!");
     std::string shape = ptrs.e_beam_ptr->shape;
     assert(std::find(E_BEAM_SHAPE_TYPES.begin(),E_BEAM_SHAPE_TYPES.end(),shape)!=E_BEAM_SHAPE_TYPES.end()
@@ -350,6 +397,96 @@ void create_e_beam(Set_ptrs &ptrs) {
     }
     std::cout<<"Electron beam created!"<<std::endl;
 }
+
+//void create_e_beam(Set_ptrs &ptrs) {
+//    assert(ptrs.e_beam_ptr.get()!=nullptr && "MUST DEFINE THE ELECTRON BEAM BEFORE CREATE THE ELECTRON BEAM!");
+//    std::string shape = ptrs.e_beam_ptr->shape;
+//    assert(std::find(E_BEAM_SHAPE_TYPES.begin(),E_BEAM_SHAPE_TYPES.end(),shape)!=E_BEAM_SHAPE_TYPES.end()
+//           && "WRONG ELECTRON BEAM SHAPE!");
+//    double gamma = ptrs.e_beam_ptr->gamma;
+//    double tmp_tr = ptrs.e_beam_ptr->tmp_tr;
+//    double tmp_l = ptrs.e_beam_ptr->tmp_l;
+//    assert(gamma>0 && tmp_tr >= 0 && tmp_l >= 0 && "WRONG PARAMETER VALUE FOR ELECTRON BEAM!");
+//
+//    if (shape == "DC_UNIFORM") {
+//        double current = ptrs.e_beam_ptr->current;
+//        double radius = ptrs.e_beam_ptr->radius;
+//        assert(current >= 0 && radius > 0 && "WRONG PARAMETER VALUE FOR DC_UNIFORM SHAPE");
+//        ptrs.e_beam.reset(new UniformCylinder(current, radius));
+//    }
+//    else if(shape == "BUNCHED_GAUSSIAN") {
+//        double n = ptrs.e_beam_ptr->n;
+//        double sigma_x = ptrs.e_beam_ptr->sigma_x;
+//        double sigma_y = ptrs.e_beam_ptr->sigma_y;
+//        double sigma_z = ptrs.e_beam_ptr->sigma_z;
+//        assert(sigma_x > 0 && sigma_y > 0 && sigma_z > 0 && n > 0 && "WRONG PARAMETER VALUE FOR BUNCHED_GAUSSIAN SHAPE");
+//        ptrs.e_beam.reset(new GaussianBunch(n, sigma_x, sigma_y, sigma_z));
+//    }
+//    else if(shape == "BUNCHED_UNIFORM") {
+//        double current = ptrs.e_beam_ptr->current;
+//        double radius = ptrs.e_beam_ptr->radius;
+//        double length = ptrs.e_beam_ptr->length;
+//        assert(current >= 0 && radius > 0 && length > 0 && "WRONG PARAMETER VALUE FOR BUNCHED_UNIFORM SHAPE");
+//        ptrs.e_beam.reset(new UniformBunch(current, radius, length));
+//    }
+//    else if(shape == "BUNCHED_UNIFORM_ELLIPTIC") {
+//        double current = ptrs.e_beam_ptr->current;
+//        double rh = ptrs.e_beam_ptr->rh;
+//        double rv = ptrs.e_beam_ptr->rv;
+//        double length = ptrs.e_beam_ptr->length;
+//        assert(current >= 0 && rh > 0 && rv > 0 && length > 0 && "WRONG PARAMETER VALUE FOR BUNCHED_UNIFORM_ELLIPTIC SHAPE");
+//        ptrs.e_beam.reset(new EllipticUniformBunch(current, rh, rv, length));
+//    }
+//    else if(shape == "DC_UNIFORM_HOLLOW") {
+//        double current = ptrs.e_beam_ptr->current;
+//        double r_inner = ptrs.e_beam_ptr->r_inner;
+//        double r_outter = ptrs.e_beam_ptr->r_outter;
+//        assert(r_inner>0 && r_outter>0 && current>=0 && r_outter>r_inner && "WRONG PARAMETER VALUE FOR DC_UNIFORM_HOLLOW SHAPE");
+//        ptrs.e_beam.reset(new UniformHollow(current, r_inner, r_outter));
+//    }
+//    else if(shape == "BUNCHED_UNIFORM_HOLLOW") {
+//        double current = ptrs.e_beam_ptr->current;
+//        double r_inner = ptrs.e_beam_ptr->r_inner;
+//        double r_outter = ptrs.e_beam_ptr->r_outter;
+//        double length = ptrs.e_beam_ptr->length;
+//        assert(r_inner>0 && r_outter>0 && current>=0 && r_outter>r_inner && length>0 && "WRONG PARAMETER VALUE FOR DC_UNIFORM_HOLLOW SHAPE");
+//        ptrs.e_beam.reset(new UniformHollowBunch(current, r_inner, r_outter, length));
+//    }
+//    else if(shape == "BUNCHED_USER_DEFINED") {
+//        double n_electron = ptrs.e_beam_ptr->n;
+//        std::string filename = ptrs.e_beam_ptr->particle_file;
+//        int line_skip = ptrs.e_beam_ptr->line_skip;
+//        int n_particle = ptrs.e_beam_ptr->n_particle;
+//        int s = ptrs.e_beam_ptr->particle_perbox;
+//        int buffer = ptrs.e_beam_ptr->buffer;
+//        double length = ptrs.e_beam_ptr->length;
+//        assert(n_electron>0 && line_skip>=0 && n_particle>=0 && s>0 && length>=0 && buffer>0 && "WRONG PARAMETER VALUE FOR BUNCHED_USER_DEFINED SHAPE");
+//        if(length>0)
+//            ptrs.e_beam.reset(new ParticleBunch(n_electron, filename, length));
+//        else
+//            ptrs.e_beam.reset(new ParticleBunch(n_electron, filename));
+//        ParticleBunch* prtl_bunch = nullptr;
+//        prtl_bunch = dynamic_cast<ParticleBunch*>(ptrs.e_beam.get());
+//        if(ptrs.e_beam_ptr->binary)
+//            prtl_bunch->set_binary(ptrs.e_beam_ptr->binary);
+//        prtl_bunch->set_s(s);
+//        prtl_bunch->set_skip(line_skip);
+//        prtl_bunch->set_buffer(buffer);
+//        if(n_particle>0)
+//            prtl_bunch->load_particle(n_particle);
+//        else
+//            prtl_bunch->load_particle();
+//        if(ptrs.e_beam_ptr->corr) {
+//            prtl_bunch->set_corr(true);
+//        }
+//    }
+//
+//    ptrs.e_beam->set_gamma(gamma);
+//    if(shape != "BUNCHED_USER_DEFINED") {
+//        ptrs.e_beam->set_tpr(tmp_tr, tmp_l);
+//    }
+//    std::cout<<"Electron beam created!"<<std::endl;
+//}
 
 void define_ion_beam(std::string &str, Set_ion *ion_args){
     assert(ion_args!=nullptr && "SECTION_ION MUST BE CLAIMED!");

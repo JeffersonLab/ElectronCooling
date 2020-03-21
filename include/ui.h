@@ -44,7 +44,6 @@ struct Set_ion{
     double dp_p = -1;
     double n_ptcl = 0;
     double ds = 0;
-//    bool define_ion_beam = false;
 };
 
 struct Set_ring{
@@ -70,7 +69,6 @@ struct Set_ibs{
 
 struct Set_ecool{
      int n_sample = 0;
-//     std::string force = "PARKHOMCHUK";
      ForceFormula force = ForceFormula::PARKHOMCHUK;
 };
 
@@ -109,6 +107,13 @@ struct Set_e_beam{
      int particle_perbox = 200;
      std::string shape = "";
      std::string particle_file = "";
+     bool multi_bunches = false;
+     vector<double> cx;
+     vector<double> cy;
+     vector<double> cz;
+     int n_cx = 0;
+     int n_cy = 0;
+     int n_cz = 0;
      bool corr = false;
      bool binary = false;
      int buffer = 1000;
