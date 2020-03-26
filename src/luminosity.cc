@@ -1,6 +1,6 @@
-#include "../include/luminosity.h"
+#include "luminosity.h"
 #include "math.h"
-#include "../include/constants.h"
+#include "constants.h"
 
 double LuminositySolver::luminosity() {
     double sig_x2 = beam.at(0).sigma_x*beam.at(0).sigma_x + beam.at(1).sigma_x*beam.at(1).sigma_x;

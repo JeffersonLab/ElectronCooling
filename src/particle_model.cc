@@ -1,9 +1,9 @@
-#include "../include/particle_model.h"
+#include "particle_model.h"
 #include <chrono>
 #include <cmath>
-#include "../include/constants.h"
-#include "../include/ecooling.h"
-#include "../include/functions.h"
+#include "constants.h"
+#include "ecooling.h"
+#include "functions.h"
 
 void ParticleModel::update_ibeam(Beam& ion, Ions& ion_sample, Ring& ring, EBeam& ebeam, Cooler& cooler, ECoolRate* ecool_solver) {
     if(ecool) {

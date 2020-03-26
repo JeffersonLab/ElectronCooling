@@ -1,12 +1,12 @@
-#include "../include/turn_by_turn.h"
+#include "turn_by_turn.h"
 #include <chrono>
 #include <cmath>
-#include "../include/beam.h"
-#include "../include/constants.h"
-#include "../include/ecooling.h"
-#include "../include/functions.h"
-#include "../include/particle_model.h"
-#include "../include/ring.h"
+#include "beam.h"
+#include "constants.h"
+#include "ecooling.h"
+#include "functions.h"
+#include "particle_model.h"
+#include "ring.h"
 
 void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
     //Transverse

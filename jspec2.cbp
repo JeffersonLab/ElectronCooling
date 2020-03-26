@@ -7,18 +7,26 @@
 		<Option compiler="gnu_gcc_51_x64_compiler" />
 		<Build>
 			<Target title="Debug">
-				<Option output="bin/Debug/jspec2" prefix_auto="1" extension_auto="1" />
+				<Option output="bin/Debug/jspec" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="run" />
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_51_x64_compiler" />
-				<Option parameters="..\examples\test_simulation_turn_by_turn_bunched_ecool.txt" />
+				<Option parameters="..\examples\test_multi_lines.txt" />
 				<Compiler>
+					<Add option="-std=c++11" />
 					<Add option="-g" />
+					<Add directory="src" />
+					<Add directory="include" />
 				</Compiler>
+				<Linker>
+					<Add option="-lmuparser" />
+					<Add directory="lib" />
+					<Add directory="include" />
+				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="bin/Release/jspec2" prefix_auto="1" extension_auto="1" />
+				<Option output="bin/Release/jspec" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="run" />
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
@@ -26,21 +34,21 @@
 				<Option parameters="..\examples\test_particle_bunch.txt" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add option="-std=c++11" />
+					<Add directory="src" />
+					<Add directory="include" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add option="-lmuparser" />
+					<Add directory="lib" />
+					<Add directory="include" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-Wall" />
-			<Add option="-std=c++11" />
-			<Add directory="lib" />
+			<Add option="-g" />
 		</Compiler>
-		<Linker>
-			<Add option="-lmuparser" />
-			<Add directory="lib" />
-		</Linker>
 		<Unit filename="include/arbitrary_electron_beam.h" />
 		<Unit filename="include/beam.h" />
 		<Unit filename="include/constants.h" />

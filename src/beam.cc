@@ -1,10 +1,10 @@
 
-#include "../include/beam.h"
+#include "beam.h"
+#include <algorithm>
 #include <cmath>
 #include <cstring>
-#include "../include/arbitrary_electron_beam.h"
-
 #include <fstream>
+#include "arbitrary_electron_beam.h"
 
 Beam::Beam(int charge_number, double mass_number, double kinetic_energy, double emit_nx, double emit_ny, double dp_p,
            double sigma_s, double n_particle): charge_number_(charge_number), mass_number_(mass_number),
@@ -372,19 +372,20 @@ void ParticleBunch::density(vector<double>& x, vector<double>& y, vector<double>
     for(int i=0; i<n; ++i) ne[i] *= rate;
 }
 
-void MultiBunches::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n) {
+void EBeam::multi_density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n) {
     vector<double> d(n);
     for(int i=0; i<n_; ++i) {
-        bunches_->density(x, y, z, d, n, -cx_.at(i), -cy_.at(i), -cz_.at(i));
+        density(x, y, z, d, n, -cx_.at(i), -cy_.at(i), -cz_.at(i));
         for(int j=0; j<n; ++j) ne.at(j) += d.at(j);
     }
 }
 
-void MultiBunches::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n, double cx, double cy,
+void EBeam::multi_density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n, double cx, double cy,
                        double cz) {
     vector<double> d(n);
     for(int i=0; i<n_; ++i) {
-        bunches_->density(x, y, z, d, n, cx-cx_.at(i), cy-cy_.at(i), cz-cz_.at(i));
+        density(x, y, z, d, n, cx-cx_.at(i), cy-cy_.at(i), cz-cz_.at(i));
         for(int j=0; j<n; ++j) ne.at(j) += d.at(j);
     }
 }
+

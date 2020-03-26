@@ -10,17 +10,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ## How to compile
 #### Compile using code blocks IDE
 
-JSPEC is developed using the code blocks IDE. If you are using the same IDE, just open the project file "jspec.cbp" in the cbp folder and build it. Make sure you have a c++ compiler that supports C++11 standard. 
+JSPEC is developed using the code blocks IDE. If you are using the same IDE, just open the project file "jspec.cbp" in the cbp folder, select a C++ compiler and build it. Make sure your compiler supports C++11 standard and the option std=c++11 is on. 
 
-#### Compile using cmake
+#### Compile using the makefile
 
-Users can also use cmake to compile the files (tested in Ubuntu 16.06). In the project folder, run the following commands:
+A makefile is provided (tested in Ubuntu 18.04). In the project folder, run the following commands:
 
-> ` cd build` 
->
-> `cmake ..`
->
 > `make`
+
+The executable file called "jspec" will be generated.
 
 ## How to run
 

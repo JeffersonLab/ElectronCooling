@@ -5,13 +5,13 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "../include/cooler.h"
-#include "../include/beam.h"
-#include "../include/ecooling.h"
-#include "../include/ions.h"
-#include "../include/ibs.h"
-#include "../include/luminosity.h"
-#include "../include/ring.h"
+#include "cooler.h"
+#include "beam.h"
+#include "ecooling.h"
+#include "ions.h"
+#include "ibs.h"
+#include "luminosity.h"
+#include "ring.h"
 
 using std::string;
 using std::ofstream;

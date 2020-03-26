@@ -1,0 +1,83 @@
+section_scratch
+	#Ion beam parameters:
+	ex = 0.65e-6	# normalized horizontal emittance
+	ey = 0.13e-6	# normalized vertical emittance
+	dp = 0.0006	# momentum spread	
+	np = 1.06e10	# proton number
+	ds = 0.025	# proton bunch length
+	ke = 100000	# proton kinetic energy
+	me = 938.272	# proton mass
+	gamma = ke/me+1
+	beta = (1-gamma^(-2))^(1/2)
+	dx = 1.8	# horizontal dispersion at the cooler
+	dy = 0.7	# vertical dispersion at the cooler
+#	cpl = 0.38	# transverse coupling
+	twiss_beta = 100 # beta function at the cooler
+	sigma_x = (twiss_beta*ex/beta/gamma)^(1/2) # rms horizontal bunch size
+	sigma_y = (twiss_beta*ey/beta/gamma)^(1/2) # rms vertical bunch size
+	radius_x = sigma_x*1.0
+	radius_y = sigma_y*1.0
+	print radius_x
+	print radius_y
+
+	#Electron beam parameters:
+	q_e = 3.2E-9*0.37	# electron number
+	l_e = 0.05	# electron bunch length	
+	k_c = 299792458.0	# speed of light
+	I_e = q_e*beta*k_c/l_e	# peak current of the electron beam
+	print I_e
+
+
+section_ion #define the ion beam
+	charge_number = 1
+	mass = 938.272
+   	kinetic_energy = ke
+	norm_emit_x = ex
+	norm_emit_y = ey
+	momentum_spread = dp
+	particle_number = np
+	rms_bunch_length = ds
+
+section_ring
+	lattice = test.tfs
+
+section_cooler
+	length = 60
+	section_number = 1
+	magnetic_field = 1
+	bet_x = twiss_beta
+	bet_y = twiss_beta
+	disp_x = dx
+	disp_y = dy
+
+section_e_beam
+	multi_bunches = true
+	list_cz = 3,-0.1*l_e,0,0.1*l_e
+	gamma = gamma
+	shape = bunched_uniform_hollow
+	r_inner = radius_y
+	r_outter = radius_x
+	current = I_e
+	length = l_e
+	tmp_tr = 0.246
+	tmp_l = 0.184
+
+section_ecool
+	sample_number = 40000
+	force_formula = PARKHOMCHUK
+
+section_run
+#	srand 0
+ 	create_ion_beam
+	create_ring
+	create_e_beam
+	create_cooler
+	calculate_ecool
+
+####################################################################
+#       RESULTS          
+# RADIUS_X = 0.000777325
+# RADIUS_Y = 0.00034763
+# I_E = 7.09878
+# Electron cooling rate (1/s):   -7.730e-003  -7.871e-003  -5.424e-003
+####################################################################

@@ -1,13 +1,13 @@
-#include "../include/ecooling.h"
+#include "ecooling.h"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstring>
-#include "../include/constants.h"
-#include "../include/cooler.h"
-#include "../include/force.h"
-#include "../include/functions.h"
-#include "../include/ring.h"
+#include "constants.h"
+#include "cooler.h"
+#include "force.h"
+#include "functions.h"
+#include "ring.h"
 
 #include <fstream>
 
@@ -19,11 +19,13 @@ void ECoolRate::electron_density(Ions& ion_sample, EBeam &ebeam) {
     if(p_shift_) {
         double cx, cy, cz;
         ion_sample.center(cx, cy, cz);
-        ebeam.density(x, y, ds, ne, n_sample, cx, cy, cz);
+        if(ebeam.multi_bunches()) ebeam.multi_density(x, y, ds, ne, n_sample, cx, cy, cz);
+        else ebeam.density(x, y, ds, ne, n_sample, cx, cy, cz);
 
     }
     else {
-        ebeam.density(x, y, ds, ne, n_sample);
+        if(ebeam.multi_bunches()) ebeam.multi_density(x, y, ds, ne, n_sample);
+        else ebeam.density(x, y, ds, ne, n_sample);
     }
 }
 

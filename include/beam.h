@@ -89,6 +89,11 @@ protected:
     vector<double> v_avg_x;
     vector<double> v_avg_y;
     vector<double> v_avg_l;
+    bool multi_bunches_ = false;
+    int n_; //Number of bunches
+    vector<double> cx_;     //List of cxs.
+    vector<double> cy_;     //List of cys.
+    vector<double> cz_;     //List of czs.
 public:
     virtual ~EBeam(){};
     Velocity velocity() const {return velocity_;}
@@ -116,10 +121,19 @@ public:
     void set_v_rms(double v_rms_tr, double v_rms_long);
     void set_v_avg(double v_avg_tx, double v_avg_ty, double v_avg_long);
     void set_neutral(double x){neutralisation_ = x;}
+    void set_multi_bunches(bool b){multi_bunches_ = b;}
+    bool multi_bunches(){return multi_bunches_;}
     vector<double>& get_v(EBeamV v);
+    vector<double>& cx(){return cx_;}
+    vector<double>& cy(){return cy_;}
+    vector<double>& cz(){return cz_;}
+    void set_n_bunches(int n){n_ = n; cx_.resize(n); cy_.resize(n), cz_.resize(n);}
     virtual void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n) = 0;
     virtual void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
                          double cx, double cy, double cz) = 0;
+    void multi_density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
+    void multi_density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
+                         double cx, double cy, double cz);
 };
 
 class UniformCylinder: public EBeam{
@@ -263,26 +277,27 @@ public:
 
 };
 
-class MultiBunches: public EBeam{
-    int n_; //Number of bunches
-    vector<double> cx_;     //List of cxs.
-    vector<double> cy_;     //List of cys.
-    vector<double> cz_;     //List of czs.
-    EBeam* bunches_;
- public:
-    EBeam* bunch(){return bunches_;}
-    vector<double>& cx(){return cx_;}
-    vector<double>& cy(){return cy_;}
-    vector<double>& cz(){return cz_;}
-    MultiBunches(int n):n_(n){cx_.resize(n); cy_.resize(n); cz_.resize(n);}
-    ~MultiBunches(){delete bunches_;}
-    MultiBunches(const MultiBunches& obj) = delete;
-    MultiBunches& operator=(const MultiBunches& obj) = delete;
-    Shape shape() const {return bunches_->shape();}
-    double length() const {return bunches_->length();}
-    void density (vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
-    void density (vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
-                double cx, double cy, double cz);
-};
+//class MultiBunches: public EBeam{
+//    int n_; //Number of bunches
+//    vector<double> cx_;     //List of cxs.
+//    vector<double> cy_;     //List of cys.
+//    vector<double> cz_;     //List of czs.
+//
+// public:
+//    EBeam* bunches_;
+////    EBeam* bunch(){return bunches_;}
+//    vector<double>& cx(){return cx_;}
+//    vector<double>& cy(){return cy_;}
+//    vector<double>& cz(){return cz_;}
+//    MultiBunches(int n):n_(n){cx_.resize(n); cy_.resize(n); cz_.resize(n);}
+//    ~MultiBunches(){delete bunches_;}
+//    MultiBunches(const MultiBunches& obj) = delete;
+//    MultiBunches& operator=(const MultiBunches& obj) = delete;
+//    Shape shape() const {return bunches_->shape();}
+//    double length() const {return bunches_->length();}
+//    void density (vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
+//    void density (vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
+//                double cx, double cy, double cz);
+//};
 
 #endif // BEAM_H

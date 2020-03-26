@@ -2,10 +2,10 @@
 #include <memory>
 #include <cmath>
 #include <cstring>
-#include "../include/functions.h"
-#include "../include/ibs.h"
-#include "../include/ring.h"
-#include "../include/beam.h"
+#include "functions.h"
+#include "ibs.h"
+#include "ring.h"
+#include "beam.h"
 
 IBSSolver::IBSSolver(double log_c, double k)
     : log_c_(log_c), k_(k)

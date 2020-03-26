@@ -1,0 +1,5 @@
+03/25/2010
+
+1. Use multiple electron bunches (same bunch but at different positions) simultaneously to cool an ion bunch
+2. Now allow to break a long line into multiple lines. 
+3. Replace trim_blank, trim_tab with trim_whitespace.  

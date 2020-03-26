@@ -1,5 +1,5 @@
 
-#include "../include/arbitrary_electron_beam.h"
+#include "arbitrary_electron_beam.h"
 #include <assert.h>
 #include <cmath>
 #include <cstdio>

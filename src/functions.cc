@@ -1,4 +1,4 @@
-#include "../include/functions.h"
+#include "functions.h"
 #include <algorithm>
 #include <assert.h>
 #include <chrono>
