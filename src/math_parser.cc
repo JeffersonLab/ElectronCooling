@@ -1,12 +1,12 @@
-#include "../include/math_parser.h"
+#include "math_parser.h"
 
 #include <cassert>
 #include <iostream>
 #include <string>
 
-#include "../include/constants.h"
-#include "../include/muParserDLL.h"
-#include "../include/ui.h"
+#include "constants.h"
+#include "muParserDLL.h"
+#include "ui.h"
 
 #define PARSER_MAXVARS		500
 

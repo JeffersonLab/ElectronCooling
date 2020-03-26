@@ -1,4 +1,4 @@
-#include "../include/ring.h"
+#include "ring.h"
 
 #include <assert.h>
 #include <cmath>

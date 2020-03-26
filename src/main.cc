@@ -6,27 +6,27 @@
 #include <map>
 
 
-#include "../include/beam.h"
-#include "../include/constants.h"
-#include "../include/cooler.h"
-#include "../include/ecooling.h"
-#include "../include/force.h"
-#include "../include/ibs.h"
-#include "../include/ions.h"
-#include "../include/luminosity.h"
-#include "../include/particle_model.h"
-#include "../include/ring.h"
-#include "../include/rms_dynamic.h"
-#include "../include/simulator.h"
-#include "../include/turn_by_turn.h"
-#include "../include/ui.h"
+#include "beam.h"
+#include "constants.h"
+#include "cooler.h"
+#include "ecooling.h"
+#include "force.h"
+#include "ibs.h"
+#include "ions.h"
+#include "luminosity.h"
+#include "particle_model.h"
+#include "ring.h"
+#include "rms_dynamic.h"
+#include "simulator.h"
+#include "turn_by_turn.h"
+#include "ui.h"
 
 using std::string;
 
 extern std::map<std::string, Section> sections;
 extern muParserHandle_t math_parser;
 
-enum class Test {IBS, ECOOL, BOTH,DYNAMICBOTHBUNCHED};
+enum class Test {IBS, ECOOL, BOTH,DYNAMICBOTHBUNCHED, MATH_PARSER};
 
 int main(int argc, char** argv) {
     srand(time(NULL));
@@ -43,8 +43,14 @@ int main(int argc, char** argv) {
             if(!line.empty() && line[line.size()-1] == '\r') line.erase(line.size()-1);
             if (!line.empty()) {
                 line = remove_comments(line);
-                line = trim_blank(line);
-                line = trim_tab(line);
+                line = trim_whitespace(line);
+                while(line.size()>2 && line.substr(line.size()-2)=="&&"){
+                    string line_cont;
+                    std::getline(input_file,line_cont);
+                    line_cont = remove_comments(line_cont);
+                    line_cont = trim_whitespace(line_cont);
+                    line = line.substr(0,line.size()-2) + line_cont;
+                }
                 string line_orgn = line;
                 str_toupper(line);
                 if (!line.empty()) {
@@ -149,8 +155,11 @@ int main(int argc, char** argv) {
 
     }
     else {
-        Test test = Test::DYNAMICBOTHBUNCHED;
+        Test test = Test::MATH_PARSER;
         switch (test) {
+            case Test::MATH_PARSER: {
+                break;
+            }
             case Test::IBS: {
                 //********************************
                 // Test IBS rate

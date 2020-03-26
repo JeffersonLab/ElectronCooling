@@ -1,7 +1,7 @@
-#include "../include/simulator.h"
-#include "../include/functions.h"
-#include "../include/luminosity.h"
-#include "../include/ui.h"
+#include "simulator.h"
+#include "functions.h"
+#include "luminosity.h"
+#include "ui.h"
 
 extern Record uircd;
 

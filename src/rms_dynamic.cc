@@ -1,8 +1,8 @@
-#include "../include/rms_dynamic.h"
+#include "rms_dynamic.h"
 #include <chrono>
 #include <cmath>
-#include "../include/constants.h"
-#include "../include/functions.h"
+#include "constants.h"
+#include "functions.h"
 
 void RMSModel::update_ibeam(Beam& ion, Ions& ion_sample, Ring& ring, EBeam& ebeam, Cooler& cooler, ECoolRate* ecool_solver) {
     double emit_nx = ion.emit_nx();

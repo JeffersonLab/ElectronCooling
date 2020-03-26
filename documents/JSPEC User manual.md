@@ -24,10 +24,10 @@ Put the input file in the same directory with the JSPEC program and run JSPEC as
 
 #### Format of the input file
 
+
 The input file is a plain text file and it will be parsed by the program line by line. Each command or expression should occupy a separate line.  Comments start with "#". Everything behind the "#" in the line will be ignored by the program. Blank lines, white spaces and tabs are also ignored. The input file is NOT case-sensitive. From version 2.0, it is allowed to break a long line into several lines. Any line ending with "&&" is considered unfinished and will be combined with the following line before processing. All white spaces at the both ends of the two lines and the "&&" will be trimed before combining them. 
 
 [^footnote]: If a line ends with &quot;&amp;&amp;&amp;&quot;, it will be combined with the following line after two &quot;&amp;&quot;s are trimed. If a line ends with &quot; &amp;&amp;&quot;, the &quot;&amp;&amp;&quot; will be trimed, but the space &quot; &quot; will not. Only the white spaces at the left end or after &quot;&amp;&amp;&quot; at the  right end will be trimed.
-
 The input file is organized by various sections. All the sections fall into three different categories: (1) scratch section, (2) definition sections and (3) operation section.  All the sections with the respective categories and usages are listed in the following table. 
 
 | Section name       | Category   | Usage                                    |

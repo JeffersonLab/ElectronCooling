@@ -1,11 +1,12 @@
-#include "../include/ui.h"
+#include "ui.h"
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <cmath>
+#include <sstream>
 
-#include "../include/constants.h"
+#include "constants.h"
 
 
 using std::string;
@@ -30,10 +31,10 @@ std::vector<string> COOLER_ARGS = {"LENGTH", "SECTION_NUMBER", "MAGNETIC_FIELD",
     "ALPHA_X", "ALPHA_Y", "DISP_DX", "DISP_DY"};
 std::vector<string> E_BEAM_SHAPE_TYPES = {"DC_UNIFORM", "BUNCHED_GAUSSIAN", "BUNCHED_UNIFORM", "BUNCHED_UNIFORM_ELLIPTIC",
     "DC_UNIFORM_HOLLOW", "BUNCHED_UNIFORM_HOLLOW", "BUNCHED_USER_DEFINED"};
-//std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L"};
 std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS", "CURRENT", "SIGMA_X", "SIGMA_Y",
     "SIGMA_Z", "LENGTH", "E_NUMBER", "RH", "RV", "R_INNER", "R_OUTTER", "PARTICLE_FILE", "TOTAL_PARTICLE_NUMBER",
-    "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE"};
+    "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
+    "LIST_CY", "LIST_CZ"};
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK"};
 std::vector<string> SIMULATION_ARGS = {"TIME", "STEP_NUMBER", "SAMPLE_NUMBER", "IBS", "E_COOL", "OUTPUT_INTERVAL",
@@ -72,8 +73,9 @@ std::string trim_blank(std::string input_line) {
     if (input_line.empty()) return input_line;
     string::size_type st = input_line.find_first_not_of(" ");
     if (st == string::npos) return "";
-    string::size_type fi = input_line.find_last_not_of(" ")+1;
-    return input_line.substr(st, fi);
+    input_line = input_line.substr(st);
+    string::size_type fi = input_line.find_last_not_of(" ");
+    return input_line.substr(0, fi+1);
 }
 
 
@@ -82,12 +84,51 @@ std::string trim_tab(std::string input_line) {
     if (input_line.empty()) return input_line;
     string::size_type st = input_line.find_first_not_of("\t");
     if (st == string::npos) return "";
-    string::size_type fi = input_line.find_last_not_of("\t")+1;
-    return input_line.substr(st, fi);
+    input_line = input_line.substr(st);
+    string::size_type fi = input_line.find_last_not_of("\t");
+    return input_line.substr(0, fi+1);
+}
+
+string ltrim_whitespace(string input_line) {
+    string::size_type st = input_line.find_first_not_of(k_whitespace);
+    return (st == string::npos)? "" : input_line.substr(st);
+}
+
+string rtrim_whitespace(string input_line) {
+    string::size_type fi = input_line.find_last_not_of(k_whitespace);
+    return (fi == string::npos)? "" : input_line.substr(0, fi+1);
+}
+
+std::string trim_whitespace(std::string input_line) {
+    return rtrim_whitespace(ltrim_whitespace(input_line));
 }
 
 void str_toupper(std::string &str) {
     for (auto & c: str) c = toupper(c);
+}
+
+double str_to_number(string val) {
+    val = trim_whitespace(val);
+    if (math_parser == NULL) {
+        return std::stod(val);
+    }
+    else {
+        mupSetExpr(math_parser, val.c_str());
+        return mupEval(math_parser);
+    }
+}
+
+int list_c(string str, vector<double>& v) {
+    std::istringstream ss(str);
+    string val;
+    int n = 0;
+    getline(ss, val, ',');
+    n = static_cast<int>(str_to_number(val));
+    while(getline(ss, val, ',')){
+        v.push_back(str_to_number(val));
+    }
+    assert(n==v.size()&&"Inconsistency in the list of centers for the electron beam multi_bunches model.");
+    return n;
 }
 
 void define_e_beam(string &str, Set_e_beam *e_beam_args) {
@@ -96,10 +137,8 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
     assert(idx!=string::npos && "WRONG COMMAND IN SECTION_E_BEAM!");
     string var = str.substr(0, idx);
     string val = str.substr(idx+1);
-    var = trim_blank(var);
-    var = trim_tab(var);
-    val = trim_blank(val);
-    val = trim_tab(val);
+    var = trim_whitespace(var);
+    val = trim_whitespace(val);
     str_toupper(var);
     assert(std::find(E_BEAM_ARGS.begin(),E_BEAM_ARGS.end(),var)!=E_BEAM_ARGS.end()
            && "WRONG COMMANDS IN SECTION_E_BEAM!");
@@ -137,6 +176,26 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
         else {
             assert(false&& "WRONG VALUE FOR VEL_POS_CORR FOR E_BEAM!");
         }
+    }
+    else if (var == "MULTI_BUNCHES") {
+        if (val == "TRUE") {
+            e_beam_args->multi_bunches = true;
+        }
+        else if (val == "FALSE") {
+            e_beam_args->multi_bunches = false;
+        }
+        else {
+            assert(false&& "WRONG VALUE FOR VEL_POS_CORR FOR E_BEAM!");
+        }
+    }
+    else if (var == "LIST_CX") {
+         e_beam_args->n_cx = list_c(val,  e_beam_args->cx);
+    }
+    else if (var == "LIST_CY") {
+         e_beam_args->n_cy = list_c(val,  e_beam_args->cy);
+    }
+    else if (var == "LIST_CZ") {
+         e_beam_args->n_cz = list_c(val,  e_beam_args->cz);
     }
     else {
         if (math_parser == NULL) {
@@ -348,6 +407,23 @@ void create_e_beam(Set_ptrs &ptrs) {
     if(shape != "BUNCHED_USER_DEFINED") {
         ptrs.e_beam->set_tpr(tmp_tr, tmp_l);
     }
+    if(ptrs.e_beam_ptr->multi_bunches) {
+        ptrs.e_beam->set_multi_bunches(true);
+        int n = ptrs.e_beam_ptr->n_cx;
+        if(ptrs.e_beam_ptr->n_cy>n) n = ptrs.e_beam_ptr->n_cy;
+        if(ptrs.e_beam_ptr->n_cz>n) n = ptrs.e_beam_ptr->n_cz;
+        ptrs.e_beam->set_n_bunches(n);
+        if(ptrs.e_beam_ptr->n_cx>0) {
+            std::copy(ptrs.e_beam_ptr->cx.begin(), ptrs.e_beam_ptr->cx.end(), ptrs.e_beam->cx().begin());
+        }
+        if(ptrs.e_beam_ptr->n_cy>0) {
+            std::copy(ptrs.e_beam_ptr->cy.begin(), ptrs.e_beam_ptr->cy.end(), ptrs.e_beam->cy().begin());
+        }
+        if(ptrs.e_beam_ptr->n_cz>0) {
+            std::copy(ptrs.e_beam_ptr->cz.begin(), ptrs.e_beam_ptr->cz.end(), ptrs.e_beam->cz().begin());
+        }
+
+    }
     std::cout<<"Electron beam created!"<<std::endl;
 }
 
@@ -357,12 +433,9 @@ void define_ion_beam(std::string &str, Set_ion *ion_args){
     assert(idx!=string::npos && "WRONG COMMAND IN SECTION_ION!");
     string var = str.substr(0, idx);
     string val = str.substr(idx+1);
-    var = trim_blank(var);
-    var = trim_tab(var);
-    val = trim_blank(val);
-    val = trim_tab(val);
+    var = trim_whitespace(var);
+    val = trim_whitespace(val);
     assert(std::find(ION_ARGS.begin(),ION_ARGS.end(),var)!=ION_ARGS.end() && "WRONG COMMANDS IN SECTION_ION!");
-//    std::cout<<var<<" "<<val<<std::endl;
     if(math_parser==NULL) {
         if (var=="CHARGE_NUMBER") {
             ion_args->n_charge = std::stoi(val);
@@ -511,19 +584,14 @@ void calculate_ibs(Set_ptrs &ptrs, bool calc = true) {
     if(model == IBSModel::MARTINI) {
         assert(nu>0 && nv>0 && (k <= 1) && (k >= 0) && ((log_c > 0) || (nz > 0)) && "WRONG PARAMETER VALUE FOR IBS RATE CALCULATION!");
         ibs_solver.reset(new IBSSolver_Martini(nu, nv, nz, log_c, k));
-//        delete ibs_solver;
-//        ibs_solver = new IBSSolver_Martini(nu, nv, nz, log_c, k);
         ibs_solver->set_ibs_by_element(ibs_by_element);
     } else if (model == IBSModel::BM) {
         assert(log_c>0 && "WRONG VALUE FOR COULOMB LOGARITHM IN IBS CALCULATION WITH BM MODEL!");
         ibs_solver.reset(new IBSSolver_BM(log_c, k));
-//        delete ibs_solver;
-//        ibs_solver = new IBSSolver_BM(log_c, k);
         ibs_solver->set_ibs_by_element(ibs_by_element);
     }
     if(calc) {
         ibs_solver->rate(ptrs.ring->lattice(), *ptrs.ion_beam, rx, ry, rz);
-//        ibs_solver->rate(*ptrs.ring->lattice_, *ptrs.ion_beam, rx, ry, rz);
 
         ptrs.ibs_rate.at(0) = rx;
         ptrs.ibs_rate.at(1) = ry;
@@ -554,7 +622,6 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
 
     switch(ptrs.ecool_ptr->force) {
         case ForceFormula::PARKHOMCHUK: {
-//            force_solver = new Force_Park();
             force_solver.reset(new Force_Park());
             break;
         }
@@ -563,7 +630,6 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
         }
     }
 
-//    ion_sample = new Ions_MonteCarlo(n_sample);
     ion_sample.reset(new Ions_MonteCarlo(n_sample));
     ion_sample->set_twiss(*ptrs.cooler);
     ion_sample->create_samples(*ptrs.ion_beam);
@@ -600,11 +666,8 @@ void total_expansion_rate(Set_ptrs &ptrs) {
 
 void calculate_luminosity(Set_ptrs &ptrs, bool calc=true) {
     assert(ptrs.luminosity_ptr.get()!=nullptr && "MUST SET UP THE PARAMETERS FOR LUMINOSITY CALCULATION.");
-//    lum_solver = new LuminositySolver();
     lum_solver.reset(new LuminositySolver());
     lum_solver->set_use_ion_emit(ptrs.luminosity_ptr->use_ion_emittance);
-//    Luminosity lum;
-//    lum.set_use_ion_emit(ptrs.luminosity_ptr->use_ion_emittance);
     if(ptrs.luminosity_ptr->use_ion_emittance) {
         assert(ptrs.ion_beam.get()!=nullptr && "CREATE THE ION BEAM IF IT IS USED IN THE LUMINOSITY CALCULATION.");
         double geo_emit_x = ptrs.ion_beam->emit_x();
@@ -756,8 +819,7 @@ void run_simulation(Set_ptrs &ptrs) {
 }
 
 void run(std::string &str, Set_ptrs &ptrs) {
-    str = trim_blank(str);
-    str = trim_tab(str);
+    str = trim_whitespace(str);
     assert(std::find(RUN_COMMANDS.begin(),RUN_COMMANDS.end(),str)!=RUN_COMMANDS.end() && "WRONG COMMANDS IN SECTION_RUN!");
     if (str == "CREATE_ION_BEAM") {
         create_ion_beam(ptrs);
@@ -810,10 +872,8 @@ void define_ring(string &str, Set_ring *ring_args) {
     assert(idx!=string::npos && "WRONG COMMAND IN SECTION_RING!");
     string var = str.substr(0, idx);
     string val = str.substr(idx+1);
-    var = trim_blank(var);
-    var = trim_tab(var);
-    val = trim_blank(val);
-    val = trim_tab(val);
+    var = trim_whitespace(var);
+    val = trim_whitespace(val);
     str_toupper(var);
     assert(std::find(RING_ARGS.begin(),RING_ARGS.end(),var)!=RING_ARGS.end() && "WRONG COMMANDS IN SECTION_RING!");
     if (var=="LATTICE") {
@@ -884,10 +944,8 @@ void define_cooler(std::string &str, Set_cooler *cooler_args) {
     assert(idx!=string::npos && "WRONG COMMAND IN SECTION_RING!");
     string var = str.substr(0, idx);
     string val = str.substr(idx+1);
-    var = trim_blank(var);
-    var = trim_tab(var);
-    val = trim_blank(val);
-    val = trim_tab(val);
+    var = trim_whitespace(var);
+    val = trim_whitespace(val);
     assert(std::find(COOLER_ARGS.begin(),COOLER_ARGS.end(),var)!=COOLER_ARGS.end() && "WRONG COMMANDS IN SECTION_RING!");
     if(math_parser==NULL) {
         if (var=="LENGTH") {
@@ -974,10 +1032,8 @@ void set_ibs(string &str, Set_ibs *ibs_args) {
     assert(idx!=string::npos && "WRONG COMMAND IN SECTION_IBS!");
     string var = str.substr(0, idx);
     string val = str.substr(idx+1);
-    var = trim_blank(var);
-    var = trim_tab(var);
-    val = trim_blank(val);
-    val = trim_tab(val);
+    var = trim_whitespace(var);
+    val = trim_whitespace(val);
 
     assert(std::find(IBS_ARGS.begin(),IBS_ARGS.end(),var)!=IBS_ARGS.end() && "WRONG COMMANDS IN SECTION_IBS!");
     if (var== "MODEL") {
@@ -1046,10 +1102,8 @@ void set_simulation(string &str, Set_dynamic *dynamic_args) {
     assert(idx!=string::npos && "WRONG COMMAND IN SECTION_SIMULATION!");
     string var = str.substr(0, idx);
     string val = str.substr(idx+1);
-    var = trim_blank(var);
-    var = trim_tab(var);
-    val = trim_blank(val);
-    val = trim_tab(val);
+    var = trim_whitespace(var);
+    val = trim_whitespace(val);
     assert(std::find(SIMULATION_ARGS.begin(),SIMULATION_ARGS.end(),var)!=SIMULATION_ARGS.end() && "WRONG COMMANDS IN SECTION_SIMULATION!");
 
     if (var == "MODEL") {
@@ -1197,10 +1251,8 @@ void set_luminosity(string &str, Set_luminosity *lum_args) {
     assert(idx!=string::npos && "WRONG COMMAND IN SECTION_LUMINOSITY!");
     string var = str.substr(0, idx);
     string val = str.substr(idx+1);
-    var = trim_blank(var);
-    var = trim_tab(var);
-    val = trim_blank(val);
-    val = trim_tab(val);
+    var = trim_whitespace(var);
+    val = trim_whitespace(val);
     assert(std::find(LUMINOSITY_ARGS.begin(),LUMINOSITY_ARGS.end(),var)!=LUMINOSITY_ARGS.end() &&
            "WRONG COMMANDS IN SECTION_LUMINOSITY!");
     if (var == "USE_ION_EMITTANCE" ) {
@@ -1331,14 +1383,11 @@ void set_ecool(string &str, Set_ecool *ecool_args){
     assert(idx!=string::npos && "WRONG COMMAND IN SECTION_ECOOL!");
     string var = str.substr(0, idx);
     string val = str.substr(idx+1);
-    var = trim_blank(var);
-    var = trim_tab(var);
-    val = trim_blank(val);
-    val = trim_tab(val);
+    var = trim_whitespace(var);
+    val = trim_whitespace(val);
     assert(std::find(ECOOL_ARGS.begin(),ECOOL_ARGS.end(),var)!=ECOOL_ARGS.end() && "WRONG COMMANDS IN SECTION_ECOOL!");
 
     if (var == "FORCE_FORMULA") {
-//        ecool_args->force = val;
         if (val=="PARKHOMCHUK") ecool_args->force = ForceFormula::PARKHOMCHUK;
         else assert(false&&"Friction force formula NOT exists!");
     }
@@ -1373,14 +1422,12 @@ void parse(std::string &str, muParserHandle_t &math_parser){
     }
     else if(str.substr(0,8) == "PRINTSTR") {
         string var = str.substr(9);
-        var = trim_blank(var);
-        var = trim_tab(var);
+        var = trim_whitespace(var);
         std::cout<<var<<std::endl;
     }
     else if (str.substr(0,5) == "PRINT") {
         string var = str.substr(6);
-        var = trim_blank(var);
-        var = trim_tab(var);
+        var = trim_whitespace(var);
         mupSetExpr(math_parser, var.c_str());
         std::cout<<var<<" = "<<mupEval(math_parser)<<std::endl;
     }

@@ -1,10 +1,10 @@
-#include "../include/ions.h"
+#include "ions.h"
 #include <assert.h>
 #include <cmath>
 #include <fstream>
 
-#include "../include/arbitrary_electron_beam.h"
-#include "../include/functions.h"
+#include "arbitrary_electron_beam.h"
+#include "functions.h"
 
 
 

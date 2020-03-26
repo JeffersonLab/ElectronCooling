@@ -6,17 +6,17 @@
 #include <string>
 #include <vector>
 
-#include "../include/beam.h"
-#include "../include/cooler.h"
-#include "../include/ecooling.h"
-#include "../include/force.h"
-#include "../include/ibs.h"
-#include "../include/math_parser.h"
-#include "../include/particle_model.h"
-#include "../include/ring.h"
-#include "../include/rms_dynamic.h"
-#include "../include/simulator.h"
-#include "../include/turn_by_turn.h"
+#include "beam.h"
+#include "cooler.h"
+#include "ecooling.h"
+#include "force.h"
+#include "ibs.h"
+#include "math_parser.h"
+#include "particle_model.h"
+#include "ring.h"
+#include "rms_dynamic.h"
+#include "simulator.h"
+#include "turn_by_turn.h"
 
 struct Record{
     double emit_nx = 0;
@@ -44,7 +44,6 @@ struct Set_ion{
     double dp_p = -1;
     double n_ptcl = 0;
     double ds = 0;
-//    bool define_ion_beam = false;
 };
 
 struct Set_ring{
@@ -70,7 +69,6 @@ struct Set_ibs{
 
 struct Set_ecool{
      int n_sample = 0;
-//     std::string force = "PARKHOMCHUK";
      ForceFormula force = ForceFormula::PARKHOMCHUK;
 };
 
@@ -109,6 +107,13 @@ struct Set_e_beam{
      int particle_perbox = 200;
      std::string shape = "";
      std::string particle_file = "";
+     bool multi_bunches = false;
+     vector<double> cx;
+     vector<double> cy;
+     vector<double> cz;
+     int n_cx = 0;
+     int n_cy = 0;
+     int n_cz = 0;
      bool corr = false;
      bool binary = false;
      int buffer = 1000;
@@ -177,8 +182,7 @@ enum class Section{NONE, SECTION_ION, SECTION_RING, SECTION_COOLER, SECTION_RUN,
     SECTION_E_BEAM, SECTION_ECOOL, SECTION_SIMULATION, SECTION_LUMINOSITY};
 
 std::string remove_comments(std::string input_line);
-std::string trim_blank(std::string input_line);
-std::string trim_tab(std::string input_line);
+std::string trim_whitespace(std::string input_line);
 void str_toupper(std::string &str);
 void define_ion_beam(std::string &str, Set_ion *ion_args);
 void run(std::string &str, Set_ptrs &ptrs);

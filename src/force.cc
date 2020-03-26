@@ -1,4 +1,4 @@
-#include "../include/force.h"
+#include "force.h"
 #include <cmath>
 #include <cstdio>
 
