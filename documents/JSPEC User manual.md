@@ -24,7 +24,7 @@ Put the input file in the same directory with the JSPEC program and run JSPEC as
 
 #### Format of the input file
 
-The input file is a plain text file and it will be parsed by the program line by line. Each command or expression should occupy a separate line.  Comments start with "#". Everything behind the "#" in the line will be ignored by the program. Blank lines, white spaces and tabs are also ignored. The input file is NOT case-sensitive. 
+The input file is a plain text file and it will be parsed by the program line by line. Each command or expression should occupy a separate line.  Comments start with "#". Everything behind the "#" in the line will be ignored by the program. Blank lines, white spaces and tabs are also ignored. The input file is NOT case-sensitive. From version 2.0, it is allowed to break a long line into several lines. Any line ending with "&&" is considered unfinished and will be combined with the following line before processing. All white spaces at the both ends of the two lines and the "&&" will be trimed before combining them. Please note: if a line ends with "&&&", it will be combined with the following line after two "&"s are trimed. If a line ends with " &&", the "&&" will be trimed, but the space " " will not. Only the white spaces at the left end or after "&&" at the  right end will be trimed. 
 
 The input file is organized by various sections. All the sections fall into three different categories: (1) scratch section, (2) definition sections and (3) operation section.  All the sections with the respective categories and usages are listed in the following table. 
 
@@ -275,22 +275,22 @@ The following keywords records the results from the previous computation. They c
 
 **section_e_beam**
 
-| Keywords              | Meaning                                  |
-| --------------------- | ---------------------------------------- |
-| gamma                 | Lorentz factor gamma for the cooling electron beam |
-| tmp_tr                | Transverse temperature in [eV]           |
+| Keywords              | Meaning                                                      |
+| --------------------- | ------------------------------------------------------------ |
+| gamma                 | Lorentz factor gamma for the cooling electron beam           |
+| tmp_tr                | Transverse temperature in [eV]                               |
 | tmp_l                 | Longitudinal temperature in [eV] for the cooling electron beam |
 | shape                 | Electron beam shape. Choose from dc_uniform, bunched_gaussian, bunched_uniform, bunched_uniform_elliptic, dc_uniform_hollow, bunched_uniform_hollow, bunched_user_defined. |
 | radius                | Radius of dc_uniform or bunched_uniform electron beam in [m]. |
 | current               | Current of dc_uniform or bunched_uniform electron beam. For bunched_uniform beam, set the current as if it is a dc_uniform beam in [A]. |
-| length                | Length of the bunched_uniform electron beam in [m]. |
+| length                | Length of the bunched_uniform electron beam in [m].          |
 | sigma_x               | RMS size in horizontal direction of bunched_gaussian electron beam in [m]. |
 | sigma_y               | RMS size in vertical direction of bunched_gaussian electron beam in [m]. |
-| sigma_z               | RMS bunch length of bunched_gaussian electron beam in [m]. |
-| rh                    | Length of the semi-axis in horizontal direction in [m]. |
-| rv                    | Length of the semi-axis in vertical direction in [m]. |
-| r_inner               | Inner radius of a hollow beam in [m]     |
-| r_outter              | Outter radius of a hollow beam in [m]    |
+| sigma_z               | RMS bunch length of bunched_gaussian electron beam in [m].   |
+| rh                    | Length of the semi-axis in horizontal direction in [m].      |
+| rv                    | Length of the semi-axis in vertical direction in [m].        |
+| r_inner               | Inner radius of a hollow beam in [m]                         |
+| r_outter              | Outter radius of a hollow beam in [m]                        |
 | particle_file         | Name of the file that saves the particles if the beam shape is defined as "bunched_user_defined" |
 | total_particle_number | Total number of particles to load from the user-provided file |
 | box_particle_number   | Maximum number of particles in each childless box when constructing the tree structure. Default is 200. |
@@ -298,6 +298,10 @@ The following keywords records the results from the previous computation. They c
 | vel_pos_corr          | Whether to consider the correlation between the velocity and the position. Default is false. |
 | binary_file           | Whether the user-provided file is in binary format. Default is false, which means a text file. |
 | buffer_size           | Buffer size when loading particles from the user-provided binary file. |
+| multi_bunches         | If true, use multple electron bunches to cool one ion beam. The electron bunches are assumed to be the same except that their positions are different. One should set at leat one of list_cx, list_cy, and list_cz for the centers of the electron bunches. |
+| list_cx               | When multi_bunches to be true, use list_cx to set the horizontal coordinates of the electron bunches. The format should be integer,double,double, ... The first number should be an integer, which tells how many horizontal coordinates (the double flouting numbers) follows it. All the numbers are seperated by coma. |
+| list_cy               | When multi_bunches to be true, use list_cy to set the vertical coordinates of the electron bunches. The format is the same as that of list_cx. |
+| list_cz               | When multi_bunches to be true, use list_cz to set the longitudinal coordinates of the electron bunches. The format is the same as that of list_cx. |
 
 **section_ibs**
 
