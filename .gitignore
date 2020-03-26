@@ -1,7 +1,9 @@
 bin
 obj
 run
+runjspec
 *.depend
 *.layout
 *.exe
 *.py
+
