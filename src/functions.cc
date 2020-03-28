@@ -15,7 +15,6 @@ bool file_exists(std::string fileName)
 bool iszero(double &x) {
     double err = 1.0e-60;
     if (x<err&&x>-err) {
-//        x = 0;
         return true;
     }
     return false;

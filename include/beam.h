@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include "arbitrary_electron_beam.h"
+#include "cooler.h"
 
 class Beam{
     int charge_number_;   //Number of charges
@@ -71,6 +72,7 @@ enum class Shape {UNIFORM_CYLINDER, GAUSSIAN_BUNCH, UNIFORM_BUNCH, GAUSSIAN_CYLI
 enum class Velocity {CONST, USER_DEFINE, SPACE_CHARGE, VARY, VARY_X, VARY_Y, VARY_Z}  ;
 enum class Temperature {CONST, USER_DEFINE, SPACE_CHARGE, VARY, VARY_X, VARY_Y, VARY_Z}  ;
 enum class EBeamV {TPR_TR, TPR_L, V_RMS_TR, V_RMS_L, V_AVG_X, V_AVG_Y, V_AVG_L};
+enum class EdgeEffect {Rising, Falling};
 
 class EBeam {
 protected:
@@ -127,6 +129,10 @@ public:
     vector<double>& cx(){return cx_;}
     vector<double>& cy(){return cy_;}
     vector<double>& cz(){return cz_;}
+    virtual void edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                             vector<double>& field, int n){};
+    virtual void edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                             vector<double>& field, int n, double cx, double cy, double cz){};
     void set_n_bunches(int n){n_ = n; cx_.resize(n); cy_.resize(n), cz_.resize(n);}
     virtual void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n) = 0;
     virtual void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
@@ -134,6 +140,10 @@ public:
     void multi_density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
     void multi_density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
                          double cx, double cy, double cz);
+    void multi_edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                             vector<double>& field, int n);
+    void multi_edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                             vector<double>& field, int n, double cx, double cy, double cz);
 };
 
 class UniformCylinder: public EBeam{
@@ -192,6 +202,8 @@ class UniformBunch: public EBeam{
     double current_;                   //Current of the beam in A, assuming the beam is DC.
     double radius_;              //Radius of the beam in meter
     double length_;
+    double t_rising_ = 0;
+    double t_falling_ = 0;
 public:
     //Calculate the charge density for a given position (x,y,z) in Lab frame.
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
@@ -201,6 +213,12 @@ public:
     double length() const {return length_;}
     double current() const {return current_;}
     double radius() const {return radius_;}
+    void set_rising_time(double x){t_rising_ = x;}
+    void set_falling_time(double x){t_falling_ = x;}
+    void edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                    vector<double>& field, int n);
+    void edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                    vector<double>& field, int n, double cx, double cy, double cz);
     UniformBunch(double current, double radius, double length):current_(current),radius_(radius),
             length_(length){};
 

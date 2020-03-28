@@ -84,6 +84,7 @@ struct Set_cooler{
      double disp_dy = 0;
      double alpha_x = 0;
      double alpha_y = 0;
+     double pipe_radius = 0;
 };
 
 
@@ -117,6 +118,8 @@ struct Set_e_beam{
      bool corr = false;
      bool binary = false;
      int buffer = 1000;
+     double t_rising = 0;
+     double t_falling = 0;
 };
 
 struct Set_dynamic{
@@ -125,6 +128,7 @@ struct Set_dynamic{
     int n_sample = 0;
     bool ibs = true;
     bool ecool = true;
+    bool edge_effect = false;
     bool fixed_bunch_length = false;
     bool reset_time = true;
     bool overwrite = true;

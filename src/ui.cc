@@ -28,19 +28,19 @@ std::vector<string> RUN_COMMANDS = {"CREATE_ION_BEAM", "CREATE_RING", "CREATE_E_
 std::vector<string> RING_ARGS = {"LATTICE", "QX", "QY", "QS", "GAMMA_TR", "RF_V", "RF_H", "RF_PHI"};
 std::vector<string> IBS_ARGS = {"NU","NV","NZ","LOG_C","COUPLING","MODEL","IBS_BY_ELEMENT"};
 std::vector<string> COOLER_ARGS = {"LENGTH", "SECTION_NUMBER", "MAGNETIC_FIELD", "BET_X", "BET_Y", "DISP_X", "DISP_Y",
-    "ALPHA_X", "ALPHA_Y", "DISP_DX", "DISP_DY"};
+    "ALPHA_X", "ALPHA_Y", "DISP_DX", "DISP_DY","PIPE_RADIUS"};
 std::vector<string> E_BEAM_SHAPE_TYPES = {"DC_UNIFORM", "BUNCHED_GAUSSIAN", "BUNCHED_UNIFORM", "BUNCHED_UNIFORM_ELLIPTIC",
     "DC_UNIFORM_HOLLOW", "BUNCHED_UNIFORM_HOLLOW", "BUNCHED_USER_DEFINED"};
 std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS", "CURRENT", "SIGMA_X", "SIGMA_Y",
     "SIGMA_Z", "LENGTH", "E_NUMBER", "RH", "RV", "R_INNER", "R_OUTTER", "PARTICLE_FILE", "TOTAL_PARTICLE_NUMBER",
     "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
-    "LIST_CY", "LIST_CZ"};
+    "LIST_CY", "LIST_CZ", "RISE_TIME", "FALL_TIME"};
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK"};
 std::vector<string> SIMULATION_ARGS = {"TIME", "STEP_NUMBER", "SAMPLE_NUMBER", "IBS", "E_COOL", "OUTPUT_INTERVAL",
     "SAVE_PARTICLE_INTERVAL", "OUTPUT_FILE", "MODEL", "REF_BET_X", "REF_BET_Y", "REF_ALF_X", "REF_ALF_Y",
     "REF_DISP_X", "REF_DISP_Y", "REF_DISP_DX", "REF_DISP_DY", "FIXED_BUNCH_LENGTH", "RESET_TIME", "OVERWRITE",
-    "CALC_LUMINOSITY","INI_TIME"};
+    "CALC_LUMINOSITY","INI_TIME","EDGE_EFFECT"};
 std::vector<string> DYNAMIC_VALUE = {"RMS", "PARTICLE", "MODEL_BEAM", "TURN_BY_TURN"};
 std::vector<string> SCRATCH_ARGS = {"VL_EMIT_NX", "VL_EMIT_NY", "VL_MOMENTUM_SPREAD", "VL_BUNCH_LENGTH", "VL_RATE_IBS_X",
     "VL_RATE_IBS_Y", "VL_RATE_IBS_S", "VL_RATE_ECOOL_X", "VL_RATE_ECOOL_Y", "VL_RATE_ECOOL_S", "VL_RATE_TOTAL_X",
@@ -253,6 +253,12 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             else if (var == "BUFFER_SIZE") {
                 e_beam_args->buffer = std::stoi(val);
             }
+            else if (var == "RISE_TIME") {
+                e_beam_args->t_rising = std::stoi(val);
+            }
+            else if (var == "FALL_TIME") {
+                e_beam_args->t_falling = std::stoi(val);
+            }
             else {
                 assert(false&&"Wrong arguments in section_e_beam!");
             }
@@ -313,6 +319,12 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             else if (var == "BUFFER_SIZE") {
                 e_beam_args->buffer = mupEval(math_parser);
             }
+            else if (var == "RISE_TIME") {
+                e_beam_args->t_rising = mupEval(math_parser);
+            }
+            else if (var == "FALL_TIME") {
+                e_beam_args->t_falling = mupEval(math_parser);
+            }
             else {
                 assert(false&&"Wrong arguments in section_e_beam!");
             }
@@ -350,6 +362,10 @@ void create_e_beam(Set_ptrs &ptrs) {
         double length = ptrs.e_beam_ptr->length;
         assert(current >= 0 && radius > 0 && length > 0 && "WRONG PARAMETER VALUE FOR BUNCHED_UNIFORM SHAPE");
         ptrs.e_beam.reset(new UniformBunch(current, radius, length));
+        UniformBunch* uniform_bunch = nullptr;
+        uniform_bunch = dynamic_cast<UniformBunch*>(ptrs.e_beam.get());
+        uniform_bunch->set_rising_time(ptrs.e_beam_ptr->t_rising);
+        uniform_bunch->set_falling_time(ptrs.e_beam_ptr->t_falling);
     }
     else if(shape == "BUNCHED_UNIFORM_ELLIPTIC") {
         double current = ptrs.e_beam_ptr->current;
@@ -785,6 +801,7 @@ void run_simulation(Set_ptrs &ptrs) {
     simulator->set_ibs(ibs);
     simulator->set_ecool(ecool);
     simulator->set_ini_time(t0);
+    simulator->set_edge_effect(ptrs.dynamic_ptr->edge_effect);
 
     if (ptrs.dynamic_ptr->calc_luminosity) {
             assert(ptrs.luminosity_ptr.get()!=nullptr && "PLEASE SET UP THE PARAMETERS FOR LUMINOSITY CALCULATION!");
@@ -981,6 +998,9 @@ void define_cooler(std::string &str, Set_cooler *cooler_args) {
         else if (var == "DISP_DY") {
             cooler_args->disp_dy = std::stod(val);
         }
+        else if (var == "PIPE_RADIUS") {
+            cooler_args->pipe_radius = std::stod(val);
+        }
         else {
             assert(false&&"Wrong arguments in section_cooler!");
         }
@@ -1019,6 +1039,9 @@ void define_cooler(std::string &str, Set_cooler *cooler_args) {
         }
         else if (var == "DISP_DY") {
             cooler_args->disp_dy = mupEval(math_parser);
+        }
+        else if (var == "PIPE_RADIUS") {
+            cooler_args->pipe_radius = mupEval(math_parser);
         }
         else {
             assert(false&&"Wrong arguments in section_cooler!");
@@ -1125,6 +1148,11 @@ void set_simulation(string &str, Set_dynamic *dynamic_args) {
         if (val == "ON" || val == "TRUE") dynamic_args->ecool = true;
         else if (val == "OFF" || val == "FALSE") dynamic_args->ecool = false;
         else assert(false&&"WRONG VALUE FOR THE PARAMETER E_COOL IN SECTION_SIMULATION!");
+    }
+    else if (var == "EDGE_EFFECT") {
+        if (val == "ON" || val == "TRUE") dynamic_args->edge_effect = true;
+        else if (val == "OFF" || val == "FALSE") dynamic_args->edge_effect = false;
+        else assert(false&&"WRONG VALUE FOR THE PARAMETER EDGE_EFFECT IN SECTION_SIMULATION!");
     }
     else if (var == "FIXED_BUNCH_LENGTH") {
         if (val == "ON" || val == "TRUE") dynamic_args->fixed_bunch_length = true;

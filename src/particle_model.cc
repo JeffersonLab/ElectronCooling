@@ -16,6 +16,10 @@ void ParticleModel::update_ibeam(Beam& ion, Ions& ion_sample, Ring& ring, EBeam&
         apply_ibs_kick(ion, ion_sample);
     }
 
+    if(edge_effect) {
+        apply_edge_kick(cooler, ebeam, ion, ion_sample, dt);
+    }
+
     move_particles(ion, ion_sample, ring);
     update_beam_parameters(ion, ion_sample);
 }

@@ -389,3 +389,73 @@ void EBeam::multi_density(vector<double>& x, vector<double>& y, vector<double>& 
     }
 }
 
+void UniformBunch::edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                             vector<double>& field, int n, double cx, double cy, double cz){
+    double g = 1 + 2*log(cooler.pipe_radius()/radius_);
+    double v = beta_*k_c;
+    double dz_rising = t_rising_*v;
+    double dz_falling = -t_falling_*v;
+    double fld_rising = 0;
+    double fld_falling = 0;
+    double coef = -g*k_ke*current_/(v*gamma_*gamma_);
+    if(t_rising_>0) fld_rising =coef/dz_rising;
+    if(t_falling_>0) fld_falling = coef/dz_falling;
+    double left_end = -0.5*length_;
+    double falling_end = left_end + dz_falling;
+    double right_end = 0.5*length_;
+    double rising_end = right_end + dz_rising;
+    std::fill(field.begin(), field.end(), 0);
+    double r2 = radius_*radius_;
+    //ion_center - electron_center
+    cx -= this->center(0);
+    cy -= this->center(1);
+    cz -= this->center(2);
+    for(int i=0; i<n; ++i) {
+        if((x[i]+cx)*(x[i]+cx)+(y[i]+cy)*(y[i]+cy)<=r2) {
+            if((z[i]+cz)>falling_end && (z[i]+cz)<left_end) field.at(i) = fld_falling;
+            else if((z[i]+cz)>right_end && (z[i]+cz)<rising_end) field.at(i) = fld_rising;
+        }
+    }
+}
+
+void UniformBunch::edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                             vector<double>& field, int n){
+    double g = 1 + 2*log(cooler.pipe_radius()/radius_);
+    double v = beta_*k_c;
+    double dz_rising = t_rising_*v;
+    double dz_falling = -t_falling_*v;
+    double fld_rising = 0;
+    double fld_falling = 0;
+    double coef = -g*k_ke*current_/(v*gamma_*gamma_);
+    if(t_rising_>0) fld_rising =coef/dz_rising;
+    if(t_falling_>0) fld_falling = coef/dz_falling;
+    double left_end = -0.5*length_;
+    double falling_end = left_end + dz_falling;
+    double right_end = 0.5*length_;
+    double rising_end = right_end + dz_rising;
+    std::fill(field.begin(), field.end(), 0);
+    double r2 = radius_*radius_;
+    for(int i=0; i<n; ++i) {
+        if(x[i]*x[i]+y[i]*y[i]<=r2) {
+            if(z[i]>falling_end && z[i]<left_end) field.at(i) = fld_falling;
+            else if(z[i]>right_end && z[i]<rising_end) field.at(i) = fld_rising;
+        }
+    }
+}
+
+void EBeam::multi_edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                             vector<double>& field, int n) {
+    vector<double> d(n);
+    for(int i=0; i<n_; ++i) {
+        edge_field(cooler, x, y, z, d, n, -cx_.at(i), -cy_.at(i), -cz_.at(i));
+        for(int j=0; j<n; ++j) field.at(j) += d.at(j);
+    }
+}
+void EBeam::multi_edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                             vector<double>& field, int n, double cx, double cy, double cz) {
+    vector<double> d(n);
+    for(int i=0; i<n_; ++i) {
+        edge_field(cooler, x, y, z, d, n, cx-cx_.at(i), cy-cy_.at(i), cz-cz_.at(i));
+        for(int j=0; j<n; ++j) field.at(j) += d.at(j);
+    }
+}

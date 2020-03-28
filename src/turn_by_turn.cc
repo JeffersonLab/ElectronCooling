@@ -5,17 +5,18 @@
 #include "constants.h"
 #include "ecooling.h"
 #include "functions.h"
+#include "other_effects.h"
 #include "particle_model.h"
 #include "ring.h"
+
+void TurnByTurnModel::apply_edge_kick(Cooler& cooler, EBeam& ebeam, Beam& ion, Ions& ion_sample, double dt) {
+    ::edge_effect(ebeam, ion, ion_sample, cooler, dt);
+}
 
 void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
     //Transverse
     //New betatron oscillation coordinates
     auto twiss = ion_sample.get_twiss();
-//    double dx = twiss.disp_x;
-//    double dpx = twiss.disp_dx;
-//    double dy = twiss.disp_y;
-//    double dpy = twiss.disp_dy;
 
     int n_sample = ion_sample.n_sample();
     ion_sample.adjust_disp_inv();
