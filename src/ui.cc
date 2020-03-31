@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -19,6 +20,7 @@ std::unique_ptr<LuminositySolver> lum_solver = nullptr;
 std::unique_ptr<Ions> ion_sample = nullptr;
 
 Record uircd;
+std::ofstream save_to_file;
 
 muParserHandle_t math_parser = NULL;
 std::vector<string> ION_ARGS = {"CHARGE_NUMBER", "MASS", "KINETIC_ENERGY", "NORM_EMIT_X", "NORM_EMIT_Y",
@@ -105,6 +107,11 @@ std::string trim_whitespace(std::string input_line) {
 
 void str_toupper(std::string &str) {
     for (auto & c: str) c = toupper(c);
+}
+
+std::string upper_str(std::string str) {
+    str_toupper(str);
+    return str;
 }
 
 double str_to_number(string val) {
@@ -820,6 +827,14 @@ void run_simulation(Set_ptrs &ptrs) {
 
 void run(std::string &str, Set_ptrs &ptrs) {
     str = trim_whitespace(str);
+    if (str.substr(0,5) == "SRAND") {
+        string var = str.substr(6);
+        var = trim_blank(var);
+        var = trim_tab(var);
+        mupSetExpr(math_parser, var.c_str());
+        srand(mupEval(math_parser));
+        return;
+    }
     assert(std::find(RUN_COMMANDS.begin(),RUN_COMMANDS.end(),str)!=RUN_COMMANDS.end() && "WRONG COMMANDS IN SECTION_RUN!");
     if (str == "CREATE_ION_BEAM") {
         create_ion_beam(ptrs);
@@ -847,13 +862,6 @@ void run(std::string &str, Set_ptrs &ptrs) {
     }
     else if(str == "RUN_SIMULATION") {
         run_simulation(ptrs);
-    }
-    else if (str.substr(0,5) == "SRAND") {
-        string var = str.substr(6);
-        var = trim_blank(var);
-        var = trim_tab(var);
-        mupSetExpr(math_parser, var.c_str());
-        srand(mupEval(math_parser));
     }
     else {
         assert(false&&"Wrong arguments in section_run!");
@@ -1431,8 +1439,33 @@ void parse(std::string &str, muParserHandle_t &math_parser){
         mupSetExpr(math_parser, var.c_str());
         std::cout<<var<<" = "<<mupEval(math_parser)<<std::endl;
     }
+    else if (str.substr(0,4) == "SAVE") {
+        string var = str.substr(5);
+        var = trim_whitespace(var);
+        mupSetExpr(math_parser, var.c_str());
+        if(!save_to_file.is_open()) {
+            char filename[255];
+            struct tm *timenow;
+            time_t now = time(NULL);
+            timenow = gmtime(&now);
+            strftime(filename, sizeof(filename), "JSPEC_SAVE_%Y-%m-%d-%H-%M-%S.txt", timenow);
+            save_to_file.open (filename,std::ofstream::out | std::ofstream::app);
+            if(save_to_file.is_open()){
+                std::cout<<"File opened: "<<filename<<" !"<<std::endl;
+            }
+            else {
+                std::cout<<"Failed to open file: "<<filename<<" !"<<std::endl;
+            }
+
+        }
+        save_to_file<<var<<" = "<<mupEval(math_parser)<<std::endl;
+    }
     else {
         mupSetExpr(math_parser, str.c_str());
         mupEval(math_parser);
     }
+}
+
+void ui_quit(){
+    if(save_to_file.is_open()) save_to_file.close();
 }

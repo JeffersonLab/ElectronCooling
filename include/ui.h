@@ -196,4 +196,6 @@ void set_luminosity(string &str, Set_luminosity *lum_args);
 void set_ecool(std::string &str, Set_ecool *ecool_args);
 void set_section_run(Set_ptrs &ptrs);
 void set_simulation(std::string &str, Set_dynamic *dynamic_args);
+std::string upper_str(std::string str);
+void ui_quit();
 #endif // UI_H_INCLUDED
