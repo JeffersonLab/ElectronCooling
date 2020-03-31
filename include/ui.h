@@ -188,6 +188,7 @@ enum class Section{NONE, SECTION_ION, SECTION_RING, SECTION_COOLER, SECTION_RUN,
 std::string remove_comments(std::string input_line);
 std::string trim_whitespace(std::string input_line);
 void str_toupper(std::string &str);
+std::string upper_str(std::string str);
 void define_ion_beam(std::string &str, Set_ion *ion_args);
 void run(std::string &str, Set_ptrs &ptrs);
 void define_ring(std::string &str, Set_ring *ring_args);

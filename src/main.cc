@@ -44,6 +44,7 @@ int main(int argc, char** argv) {
             if (!line.empty()) {
                 line = remove_comments(line);
                 line = trim_whitespace(line);
+                if(upper_str(line) == "===END===") break;
                 while(line.size()>2 && line.substr(line.size()-2)=="&&"){
                     string line_cont;
                     std::getline(input_file,line_cont);

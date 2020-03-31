@@ -107,6 +107,11 @@ void str_toupper(std::string &str) {
     for (auto & c: str) c = toupper(c);
 }
 
+std::string upper_str(std::string str) {
+    for (auto & c: str) c = toupper(c);
+    return str;
+}
+
 double str_to_number(string val) {
     val = trim_whitespace(val);
     if (math_parser == NULL) {
@@ -837,6 +842,14 @@ void run_simulation(Set_ptrs &ptrs) {
 
 void run(std::string &str, Set_ptrs &ptrs) {
     str = trim_whitespace(str);
+    if (str.substr(0,5) == "SRAND") {
+        string var = str.substr(6);
+        var = trim_blank(var);
+        var = trim_tab(var);
+        mupSetExpr(math_parser, var.c_str());
+        srand(mupEval(math_parser));
+        return;
+    }
     assert(std::find(RUN_COMMANDS.begin(),RUN_COMMANDS.end(),str)!=RUN_COMMANDS.end() && "WRONG COMMANDS IN SECTION_RUN!");
     if (str == "CREATE_ION_BEAM") {
         create_ion_beam(ptrs);
@@ -864,13 +877,6 @@ void run(std::string &str, Set_ptrs &ptrs) {
     }
     else if(str == "RUN_SIMULATION") {
         run_simulation(ptrs);
-    }
-    else if (str.substr(0,5) == "SRAND") {
-        string var = str.substr(6);
-        var = trim_blank(var);
-        var = trim_tab(var);
-        mupSetExpr(math_parser, var.c_str());
-        srand(mupEval(math_parser));
     }
     else {
         assert(false&&"Wrong arguments in section_run!");
