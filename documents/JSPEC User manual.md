@@ -25,24 +25,27 @@ Put the input file in the same directory with the JSPEC program and run JSPEC as
 #### Format of the input file
 
 
-The input file is a plain text file and it will be parsed by the program line by line. Each command or expression should occupy a separate line.  Comments start with "#". Everything behind the "#" in the line will be ignored by the program. Blank lines, white spaces and tabs are also ignored. The input file is NOT case-sensitive. From version 2.0, it is allowed to break a long line into several lines. Any line ending with "&&" is considered unfinished and will be combined with the following line before processing. All white spaces at the both ends of the two lines and the "&&" will be trimed before combining them. [^footnote_trim]
+The input file is a plain text file and it will be parsed by the program line by line. Each command or expression should occupy a separate line.  Comments start with "#". Everything behind the "#" in the line will be ignored by the program. Blank lines, white spaces and tabs are also ignored. The input file is NOT case-sensitive. From version 2.0, it is allowed to break a long line into several lines. Any line ending with "&&" is considered unfinished and will be combined with the following line before processing. All white spaces at the both ends of the two lines and the "&&" will be trimed before combining them. [^footnote_trim]Since the program check for comments before check for "&&", the "&&" after "#" will be ignored as a part of the comment and will not connect the following line. However, if after chopping off the comments and the whitespace, the line ends with "&&", then it will be connected to the following line. 
 
-[^footnote_trim]: If a line ends with &quot;&amp;&amp;&amp;&quot;, it will be combined with the following line after two &quot;&amp;&quot;s are trimed. If a line ends with &quot; &amp;&amp;&quot;, the &quot;&amp;&amp;&quot; will be trimed, but the space &quot; &quot; will not. Only the white spaces at the left end or after &quot;&amp;&amp;&quot; at the  right end will be trimed.
+[^footnote_trim]: If a line ends with &quot;&amp;&amp;&amp;&quot;, it will be combined with the following line after two &quot;&amp;&quot;s are trimed. If a line ends with &quot; &amp;&amp;&quot;, the &quot;&amp;&amp;&quot; will be trimed, but the space &quot; &quot; will not. Only the white spaces at the left end of the line or after &quot;&amp;&amp;&quot; at the  right end of the line will be trimed.
 The input file is organized by various sections. All the sections fall into three different categories: (1) scratch section, (2) definition sections and (3) operation section.  All the sections with the respective categories and usages are listed in the following table. 
 
-| Section name       | Category   | Usage                                    |
-| ------------------ | ---------- | ---------------------------------------- |
-| section_scratch    | scratch    | Define variables and do calculations with the variables. The variables defined in this section can be used in definition sections. |
-| section_ion        | definition | Set parameters for the ion beam          |
-| section_ring       | definition | Set parameters for the ion ring          |
-| section_e_beam     | definition | Set parameters for the cooling electron beam |
-| section_cooler     | definition | Set parameters for the cooler            |
-| section_ibs        | definition | Set parameters for IBS rate calculation  |
-| section_ecool      | definition | Set parameters for electron cooling rate calculation |
-| section_luminosity | definition | Set parameters for luminosity calculation |
-| section_run        | operation  | Create the objectives (ion beam, ion ring, electron beam, cooler) and perform the calculation and/or the simulation. |
+| Section name       | Category        | Usage                                                        |
+| ------------------ | --------------- | ------------------------------------------------------------ |
+| section_scratch    | scratch         | Define variables and do calculations with the variables. The variables defined in this section can be used in definition sections. |
+| section_ion        | definition      | Set parameters for the ion beam                              |
+| section_ring       | definition      | Set parameters for the ion ring                              |
+| section_e_beam     | definition      | Set parameters for the cooling electron beam                 |
+| section_cooler     | definition      | Set parameters for the cooler                                |
+| section_ibs        | definition      | Set parameters for IBS rate calculation                      |
+| section_ecool      | definition      | Set parameters for electron cooling rate calculation         |
+| section_luminosity | definition      | Set parameters for luminosity calculation                    |
+| section_run        | operation       | Create the objectives (ion beam, ion ring, electron beam, cooler) and perform the calculation and/or the simulation. |
+| ===end===          | special keyword | Anything below this line will be ignored.                    |
 
 The input file starts with a section by calling the section name. Once a section name is called, the respective section is created, and this section ends when another section name is called or when the input file ends. Sections can be repeated called and the latter one overwrite the previous ones. But if a parameters is not set again in the latter one, its value remains. 
+
+A special keyword is "===end===". If a line only contains this keyword, which could be followed by comments, anything below this line will be ignored. This keyword is not required to end the program. Without this keyword, the program will process the input script file till the last line. This keyword is provided to bring some convenience to users who want to record the results or add long comments at the end of the input file. 
 
 The following example includes three different sections in three different categories. 
 
