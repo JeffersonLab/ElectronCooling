@@ -215,7 +215,8 @@ section_run
 | list_const | list all the constants.                                      |
 | list_exp   | list all the expression.                                     |
 | print      | Use this command in format "print x" and it will print the value of the variable x in the screen. |
-| printstr   | Use this command in format "printstr string" and it will pring the "string" in the screen. |
+| printstr   | Use this command in format "printstr string" and it will print the "string" in the screen. |
+| save       | Use this command in format "save var" and it will save the value of "var" in a file named as JSPEC_SAVE_YYYY_MM_DD_HH_MM_SS.txt as "var = the value of var". For each run, only one file will be created bye the first save command even if multiple save commands are used. All the following save commands write to the file. If the file already exists, results will be appended to it. |
 
 The following keywords records the results from the previous computation. They can be used to set up the value for the following computation or to display the results onto the screen. 
 
