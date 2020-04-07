@@ -61,6 +61,7 @@ std::map<std::string, Section> sections{
     {"SECTION_E_BEAM", Section::SECTION_E_BEAM},
     {"SECTION_ECOOL", Section::SECTION_ECOOL},
     {"SECTION_SIMULATION",Section::SECTION_SIMULATION},
+    {"SECTION_COMMENT",Section::SECTION_COMMENT},
     {"SECTION_LUMINOSITY",Section::SECTION_LUMINOSITY}
 };
 

@@ -97,6 +97,9 @@ int main(int argc, char** argv) {
                             case Section::SECTION_SCRATCH: {
                                 break;
                             }
+                            case Section::SECTION_COMMENT: {
+                                break;
+                            }
                             default : {
                                 assert(false && "WRONG SECTION NAME!");
                                 break;
@@ -144,6 +147,9 @@ int main(int argc, char** argv) {
                             }
                             case Section::SECTION_SCRATCH: {
                                 parse(line, math_parser);
+                                break;
+                            }
+                            case Section::SECTION_COMMENT: {
                                 break;
                             }
                         }
