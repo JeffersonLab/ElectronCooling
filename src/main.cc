@@ -260,7 +260,7 @@ int main(int argc, char** argv) {
                 c_sample.set_twiss(cooler);
                 c_sample.create_samples(c_beam);
                 ECoolRate ecool;
-                Force_Park force_park;
+                ForcePark force_park;
 
                 ecool.ecool_rate(force_park, c_beam, c_sample, cooler, uni_hl, ring, rate_x, rate_y, rate_s);
                 std::cout<<"rate_x = "<<rate_x<<" rate_y = "<<rate_y<<" rate_s = "<<rate_s<<std::endl;
@@ -313,7 +313,7 @@ int main(int argc, char** argv) {
                     ECoolRate* ecool_solver = nullptr;
                     IBSSolver* ibs_solver = nullptr;
                     LuminositySolver* lum_solver = nullptr;
-                    force_solver = new Force_Park();
+                    force_solver = new ForcePark();
                     ecool_solver = new ECoolRate();
 
                     //Set IBS parameters.

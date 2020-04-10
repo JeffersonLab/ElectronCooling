@@ -37,7 +37,7 @@ std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS"
     "SIGMA_Z", "LENGTH", "E_NUMBER", "RH", "RV", "R_INNER", "R_OUTTER", "PARTICLE_FILE", "TOTAL_PARTICLE_NUMBER",
     "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
     "LIST_CY", "LIST_CZ"};
-std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA"};
+std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK"};
 std::vector<string> SIMULATION_ARGS = {"TIME", "STEP_NUMBER", "SAMPLE_NUMBER", "IBS", "E_COOL", "OUTPUT_INTERVAL",
     "SAVE_PARTICLE_INTERVAL", "OUTPUT_FILE", "MODEL", "REF_BET_X", "REF_BET_Y", "REF_ALF_X", "REF_ALF_Y",
@@ -630,7 +630,9 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
 
     switch(ptrs.ecool_ptr->force) {
         case ForceFormula::PARKHOMCHUK: {
-            force_solver.reset(new Force_Park());
+            force_solver.reset(new ForcePark());
+            ForcePark* force_ptr = dynamic_cast<ForcePark*>(force_solver.get());
+            force_ptr->set_t_eff(ptrs.ecool_ptr->tmpr_eff);
             break;
         }
         default: {
@@ -1405,6 +1407,9 @@ void set_ecool(string &str, Set_ecool *ecool_args){
             if (var == "SAMPLE_NUMBE") {
                 ecool_args->n_sample = std::stod(val);
             }
+            else if(var == "TMP_EFF") {
+                ecool_args->tmpr_eff = std::stod(val);
+            }
             else {
                 assert(false&&"Wrong arguments in section_ecool!");
             }
@@ -1413,6 +1418,9 @@ void set_ecool(string &str, Set_ecool *ecool_args){
             mupSetExpr(math_parser, val.c_str());
             if (var == "SAMPLE_NUMBER") {
                 ecool_args->n_sample = static_cast<double>(mupEval(math_parser));
+            }
+            else if(var == "TMP_EFF") {
+                ecool_args->tmpr_eff = static_cast<double>(mupEval(math_parser));
             }
             else {
                 assert(false&&"Wrong arguments in section_ecool!");

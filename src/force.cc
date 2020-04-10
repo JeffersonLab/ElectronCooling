@@ -83,7 +83,7 @@ double lc(Temperature tpr, double rho_max, double rho_min, vector<double>& rho_l
     return lc;
 }
 
-void Force_Park::friction_force(int charge_number, int ion_number, vector<double>& v_tr, vector<double>& v_long,vector<double>& density_e,
+void ForcePark::friction_force(int charge_number, int ion_number, vector<double>& v_tr, vector<double>& v_long,vector<double>& density_e,
                 EBeam& ebeam, vector<double>& force_tr, vector<double>& force_long) {
     double f_const = -4*charge_number*charge_number*k_c*k_c*k_ke*k_ke*k_e*k_e*k_e/(k_me*1e6);
     double v2_eff_e = t_eff*k_c*k_c/(k_me*1e6);

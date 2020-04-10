@@ -21,7 +21,7 @@ public:
             EBeam& ebeam, vector<double>& force_tr, vector<double>& force_long) = 0;
 };
 
-class Force_Park: public FrictionForceSolver {
+class ForcePark: public FrictionForceSolver {
 private:
     double t_eff = 0; //Effective temperature.
 public:

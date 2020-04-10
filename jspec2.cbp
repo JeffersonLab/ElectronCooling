@@ -31,7 +31,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_51_x64_compiler" />
-				<Option parameters="..\examples\test_end_and_save_command.txt" />
+				<Option parameters="..\examples\test_section_comment.txt" />
 				<Compiler>
 					<Add option="-O2" />
 					<Add option="-std=c++11" />

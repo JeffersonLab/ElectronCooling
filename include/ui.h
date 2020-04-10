@@ -70,6 +70,7 @@ struct Set_ibs{
 struct Set_ecool{
      int n_sample = 0;
      ForceFormula force = ForceFormula::PARKHOMCHUK;
+     double tmpr_eff = 0;   //Effective temperature for Parkhomchuk formula.
 };
 
 struct Set_cooler{
