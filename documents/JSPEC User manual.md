@@ -323,10 +323,12 @@ The following keywords records the results from the previous computation. They c
 
 **section_ecool**
 
-| Keywords      | Meaning                                  |
-| ------------- | ---------------------------------------- |
-| sample_number | Number of the sample ions.               |
+| Keywords      | Meaning                                                      |
+| ------------- | ------------------------------------------------------------ |
+| sample_number | Number of the sample ions.                                   |
 | force_formula | Choose the formula for friction force calculation. Now only support the Parkhomchuk formul, using  force_formula = PARKHOMCHUK. |
+| t_eff         | Set the effective temperature for parkhomchuk formula. The value should NOT be negative. Setting this parameter makes the "v_eff" be zero. |
+| v_eff         | Set the effective velocity for parkhomchuk formula. Setting this parameter make the "t_eff" be zero. |
 
 **section_luminosity**
 

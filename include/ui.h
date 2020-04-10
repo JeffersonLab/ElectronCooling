@@ -71,6 +71,7 @@ struct Set_ecool{
      int n_sample = 0;
      ForceFormula force = ForceFormula::PARKHOMCHUK;
      double tmpr_eff = 0;   //Effective temperature for Parkhomchuk formula.
+     double v_eff = 0; //Effective velocity for Parkhomchuk formula.
 };
 
 struct Set_cooler{
