@@ -70,6 +70,8 @@ struct Set_ibs{
 struct Set_ecool{
      int n_sample = 0;
      ForceFormula force = ForceFormula::PARKHOMCHUK;
+     double tmpr_eff = 0;   //Effective temperature for Parkhomchuk formula.
+     double v_eff = 0; //Effective velocity for Parkhomchuk formula.
 };
 
 struct Set_cooler{
@@ -183,7 +185,7 @@ class Set_ptrs{
 };
 
 enum class Section{NONE, SECTION_ION, SECTION_RING, SECTION_COOLER, SECTION_RUN, SECTION_IBS, SECTION_SCRATCH,
-    SECTION_E_BEAM, SECTION_ECOOL, SECTION_SIMULATION, SECTION_LUMINOSITY};
+    SECTION_E_BEAM, SECTION_ECOOL, SECTION_SIMULATION, SECTION_LUMINOSITY, SECTION_COMMENT};
 
 std::string remove_comments(std::string input_line);
 std::string trim_whitespace(std::string input_line);
@@ -201,4 +203,6 @@ void set_luminosity(string &str, Set_luminosity *lum_args);
 void set_ecool(std::string &str, Set_ecool *ecool_args);
 void set_section_run(Set_ptrs &ptrs);
 void set_simulation(std::string &str, Set_dynamic *dynamic_args);
+std::string upper_str(std::string str);
+void ui_quit();
 #endif // UI_H_INCLUDED

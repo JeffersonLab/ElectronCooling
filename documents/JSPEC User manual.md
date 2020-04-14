@@ -25,24 +25,28 @@ Put the input file in the same directory with the JSPEC program and run JSPEC as
 #### Format of the input file
 
 
-The input file is a plain text file and it will be parsed by the program line by line. Each command or expression should occupy a separate line.  Comments start with "#". Everything behind the "#" in the line will be ignored by the program. Blank lines, white spaces and tabs are also ignored. The input file is NOT case-sensitive. From version 2.0, it is allowed to break a long line into several lines. Any line ending with "&&" is considered unfinished and will be combined with the following line before processing. All white spaces at the both ends of the two lines and the "&&" will be trimed before combining them. [^footnote_trim]
+The input file is a plain text file and it will be parsed by the program line by line. Each command or expression should occupy a separate line.  Comments start with "#". Everything behind the "#" in the line will be ignored by the program. Blank lines, white spaces and tabs are also ignored. The input file is NOT case-sensitive. From version 2.0, it is allowed to break a long line into several lines. Any line ending with "&&" is considered unfinished and will be combined with the following line before processing. All white spaces at the both ends of the two lines and the "&&" will be trimed before combining them. [^footnote_trim]Since the program check for comments before check for "&&", the "&&" after "#" will be ignored as a part of the comment and will not connect the following line. However, if after chopping off the comments and the whitespace, the line ends with "&&", then it will be connected to the following line. 
 
-[^footnote_trim]: If a line ends with &quot;&amp;&amp;&amp;&quot;, it will be combined with the following line after two &quot;&amp;&quot;s are trimed. If a line ends with &quot; &amp;&amp;&quot;, the &quot;&amp;&amp;&quot; will be trimed, but the space &quot; &quot; will not. Only the white spaces at the left end or after &quot;&amp;&amp;&quot; at the  right end will be trimed.
-The input file is organized by various sections. All the sections fall into three different categories: (1) scratch section, (2) definition sections and (3) operation section.  All the sections with the respective categories and usages are listed in the following table. 
+[^footnote_trim]: If a line ends with &quot;&amp;&amp;&amp;&quot;, it will be combined with the following line after two &quot;&amp;&quot;s are trimed. If a line ends with &quot; &amp;&amp;&quot;, the &quot;&amp;&amp;&quot; will be trimed, but the space &quot; &quot; will not. Only the white spaces at the left end of the line or after &quot;&amp;&amp;&quot; at the  right end of the line will be trimed.
+The input file is organized by various sections. All the sections fall into four different categories: (1) scratch section, (2) comment section (3) definition sections and (4) operation section.  All the sections with the respective categories and usages are listed in the following table. 
 
-| Section name       | Category   | Usage                                    |
-| ------------------ | ---------- | ---------------------------------------- |
-| section_scratch    | scratch    | Define variables and do calculations with the variables. The variables defined in this section can be used in definition sections. |
-| section_ion        | definition | Set parameters for the ion beam          |
-| section_ring       | definition | Set parameters for the ion ring          |
-| section_e_beam     | definition | Set parameters for the cooling electron beam |
-| section_cooler     | definition | Set parameters for the cooler            |
-| section_ibs        | definition | Set parameters for IBS rate calculation  |
-| section_ecool      | definition | Set parameters for electron cooling rate calculation |
-| section_luminosity | definition | Set parameters for luminosity calculation |
-| section_run        | operation  | Create the objectives (ion beam, ion ring, electron beam, cooler) and perform the calculation and/or the simulation. |
+| Section name       | Category        | Usage                                                        |
+| ------------------ | --------------- | ------------------------------------------------------------ |
+| section_scratch    | scratch         | Define variables and do calculations with the variables. The variables defined in this section can be used in definition sections. |
+| section_comment    | comment         | Anything in this section will be treated as comments. This is provided in case one wants to write a long comment. |
+| section_ion        | definition      | Set parameters for the ion beam                              |
+| section_ring       | definition      | Set parameters for the ion ring                              |
+| section_e_beam     | definition      | Set parameters for the cooling electron beam                 |
+| section_cooler     | definition      | Set parameters for the cooler                                |
+| section_ibs        | definition      | Set parameters for IBS rate calculation                      |
+| section_ecool      | definition      | Set parameters for electron cooling rate calculation         |
+| section_luminosity | definition      | Set parameters for luminosity calculation                    |
+| section_run        | operation       | Create the objectives (ion beam, ion ring, electron beam, cooler) and perform the calculation and/or the simulation. |
+| ===end===          | special keyword | Anything below this line will be ignored.                    |
 
 The input file starts with a section by calling the section name. Once a section name is called, the respective section is created, and this section ends when another section name is called or when the input file ends. Sections can be repeated called and the latter one overwrite the previous ones. But if a parameters is not set again in the latter one, its value remains. 
+
+A special keyword is "===end===". If a line only contains this keyword, which could be followed by comments, anything below this line will be ignored. This keyword is not required to end the program. Without this keyword, the program will process the input script file till the last line. This keyword is provided to bring some convenience to users who want to record the results or add long comments at the end of the input file. 
 
 The following example includes three different sections in three different categories. 
 
@@ -212,7 +216,8 @@ section_run
 | list_const | list all the constants.                                      |
 | list_exp   | list all the expression.                                     |
 | print      | Use this command in format "print x" and it will print the value of the variable x in the screen. |
-| printstr   | Use this command in format "printstr string" and it will pring the "string" in the screen. |
+| printstr   | Use this command in format "printstr string" and it will print the "string" in the screen. |
+| save       | Use this command in format "save var" and it will save the value of "var" in a file named as JSPEC_SAVE_YYYY_MM_DD_HH_MM_SS.txt as "var = the value of var". For each run, only one file will be created bye the first save command even if multiple save commands are used. All the following save commands write to the file. If the file already exists, results will be appended to it. |
 
 The following keywords records the results from the previous computation. They can be used to set up the value for the following computation or to display the results onto the screen. 
 
@@ -318,10 +323,12 @@ The following keywords records the results from the previous computation. They c
 
 **section_ecool**
 
-| Keywords      | Meaning                                  |
-| ------------- | ---------------------------------------- |
-| sample_number | Number of the sample ions.               |
+| Keywords      | Meaning                                                      |
+| ------------- | ------------------------------------------------------------ |
+| sample_number | Number of the sample ions.                                   |
 | force_formula | Choose the formula for friction force calculation. Now only support the Parkhomchuk formul, using  force_formula = PARKHOMCHUK. |
+| t_eff         | Set the effective temperature for parkhomchuk formula. The value should NOT be negative. Setting this parameter makes the "v_eff" be zero. |
+| v_eff         | Set the effective velocity for parkhomchuk formula. Setting this parameter make the "t_eff" be zero. |
 
 **section_luminosity**
 

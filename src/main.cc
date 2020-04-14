@@ -97,6 +97,9 @@ int main(int argc, char** argv) {
                             case Section::SECTION_SCRATCH: {
                                 break;
                             }
+                            case Section::SECTION_COMMENT: {
+                                break;
+                            }
                             default : {
                                 assert(false && "WRONG SECTION NAME!");
                                 break;
@@ -146,14 +149,16 @@ int main(int argc, char** argv) {
                                 parse(line, math_parser);
                                 break;
                             }
+                            case Section::SECTION_COMMENT: {
+                                break;
+                            }
                         }
 
                     }
                 }
             }
         }
-
-
+        ui_quit();
     }
     else {
         Test test = Test::MATH_PARSER;
@@ -255,7 +260,7 @@ int main(int argc, char** argv) {
                 c_sample.set_twiss(cooler);
                 c_sample.create_samples(c_beam);
                 ECoolRate ecool;
-                Force_Park force_park;
+                ForcePark force_park;
 
                 ecool.ecool_rate(force_park, c_beam, c_sample, cooler, uni_hl, ring, rate_x, rate_y, rate_s);
                 std::cout<<"rate_x = "<<rate_x<<" rate_y = "<<rate_y<<" rate_s = "<<rate_s<<std::endl;
@@ -308,7 +313,7 @@ int main(int argc, char** argv) {
                     ECoolRate* ecool_solver = nullptr;
                     IBSSolver* ibs_solver = nullptr;
                     LuminositySolver* lum_solver = nullptr;
-                    force_solver = new Force_Park();
+                    force_solver = new ForcePark();
                     ecool_solver = new ECoolRate();
 
                     //Set IBS parameters.

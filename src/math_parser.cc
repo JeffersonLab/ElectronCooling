@@ -117,7 +117,7 @@ void ListConst(muParserHandle_t a_hParser)
 
     myprintf(_T("\nParser constants:\n"));
     myprintf(_T("---------------------\n"));
-    myprintf(_T("Number: %d"), iNumVar);
+    myprintf(_T("Number: %d\n"), iNumVar);
 
     for (i = 0; i < iNumVar; ++i)
     {
@@ -125,7 +125,7 @@ void ListConst(muParserHandle_t a_hParser)
         muFloat_t fVal = 0;
 
         mupGetConst(a_hParser, i, &szName, &fVal);
-        myprintf(_T("  %s = %f\n"), szName, fVal);
+        myprintf(_T("  %s = %e\n"), szName, fVal);
     }
 }
 
@@ -145,12 +145,12 @@ void OnError(muParserHandle_t hParser)
 }
 
 void AddConst(muParserHandle_t hParser) {
-    mupDefineConst(hParser, "k_c", k_c);
-    mupDefineConst(hParser, "k_e", k_e);
-    mupDefineConst(hParser, "k_pi", k_pi);
-    mupDefineConst(hParser, "k_u", k_u);
-    mupDefineConst(hParser, "k_me", k_me);
-    mupDefineConst(hParser, "k_ke", k_ke);
+    mupDefineConst(hParser, "K_C", k_c);
+    mupDefineConst(hParser, "K_E", k_e);
+    mupDefineConst(hParser, "K_PI", k_pi);
+    mupDefineConst(hParser, "K_U", k_u);
+    mupDefineConst(hParser, "K_ME", k_me);
+    mupDefineConst(hParser, "K_KE", k_ke);
 }
 
 //Initialize the math parser environment
