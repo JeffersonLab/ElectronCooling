@@ -36,7 +36,7 @@ std::vector<string> E_BEAM_SHAPE_TYPES = {"DC_UNIFORM", "BUNCHED_GAUSSIAN", "BUN
 std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS", "CURRENT", "SIGMA_X", "SIGMA_Y",
     "SIGMA_Z", "LENGTH", "E_NUMBER", "RH", "RV", "R_INNER", "R_OUTTER", "PARTICLE_FILE", "TOTAL_PARTICLE_NUMBER",
     "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
-    "LIST_CY", "LIST_CZ"};
+    "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT"};
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK"};
 std::vector<string> SIMULATION_ARGS = {"TIME", "STEP_NUMBER", "SAMPLE_NUMBER", "IBS", "E_COOL", "OUTPUT_INTERVAL",
@@ -171,7 +171,7 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             e_beam_args->binary = false;
         }
         else {
-            assert(false&& "WRONG VALUE FOR VEL_POS_CORR FOR E_BEAM!");
+            assert(false&& "WRONG VALUE FOR BINARY_FILE FOR E_BEAM!");
         }
     }
     else if (var == "MULTI_BUNCHES") {
@@ -182,7 +182,29 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             e_beam_args->multi_bunches = false;
         }
         else {
-            assert(false&& "WRONG VALUE FOR VEL_POS_CORR FOR E_BEAM!");
+            assert(false&& "WRONG VALUE FOR MULTI_BUNCHES FOR E_BEAM!");
+        }
+    }
+    else if (var == "P_SHIFT") {
+        if (val == "TRUE") {
+            e_beam_args->multi_bunches = true;
+        }
+        else if (val == "FALSE") {
+            e_beam_args->multi_bunches = false;
+        }
+        else {
+            assert(false&& "WRONG VALUE FOR P_SHIFT FOR E_BEAM!");
+        }
+    }
+    else if (var == "V_SHIFT") {
+        if (val == "TRUE") {
+            e_beam_args->multi_bunches = true;
+        }
+        else if (val == "FALSE") {
+            e_beam_args->multi_bunches = false;
+        }
+        else {
+            assert(false&& "WRONG VALUE FOR V_SHIFT FOR E_BEAM!");
         }
     }
     else if (var == "LIST_CX") {
@@ -421,6 +443,8 @@ void create_e_beam(Set_ptrs &ptrs) {
         }
 
     }
+    if(ptrs.e_beam_ptr->p_shift) ptrs.e_beam->set_p_shift(true);
+    if(ptrs.e_beam_ptr->v_shift) ptrs.e_beam->set_v_shift(true);
     std::cout<<"Electron beam created!"<<std::endl;
 }
 

@@ -16,7 +16,7 @@ void ECoolRate::electron_density(Ions& ion_sample, EBeam &ebeam) {
     vector<double>& x = ion_sample.cdnt(Phase::X);
     vector<double>& y = ion_sample.cdnt(Phase::Y);
     vector<double>& ds = ion_sample.cdnt(Phase::DS);
-    if(p_shift_) {
+    if(ebeam.p_shift()) {
         double cx, cy, cz;
         ion_sample.center(cx, cy, cz);
         if(ebeam.multi_bunches()) ebeam.multi_density(x, y, ds, ne, n_sample, cx, cy, cz);
@@ -87,7 +87,7 @@ void ECoolRate::bunched_to_coasting(Beam &ion, Ions& ion_sample, EBeam &ebeam, C
 
     double cz_rcd = ion.center(2);
 
-    p_shift_ = true;
+    ebeam.set_p_shift(true);
     int n_long = n_long_sample_;
     double length = ebeam.length();
     double step = length/n_long;
@@ -105,7 +105,7 @@ void ECoolRate::bunched_to_coasting(Beam &ion, Ions& ion_sample, EBeam &ebeam, C
     }
 
     ion.set_center(2, cz_rcd);
-    p_shift_ = false;
+    ebeam.set_p_shift(false);
     double count_inv = 1.0/static_cast<double>(count);
     for(int i=0; i<n_sample; ++i) {
         force_x[i] = force_tr_rcd[i]*count_inv;
