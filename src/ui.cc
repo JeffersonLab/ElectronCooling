@@ -71,27 +71,6 @@ std::string remove_comments(std::string input_line) {
 }
 
 // Trim the spaces at the head and the tail of the string
-std::string trim_blank(std::string input_line) {
-    using std::string;
-    if (input_line.empty()) return input_line;
-    string::size_type st = input_line.find_first_not_of(" ");
-    if (st == string::npos) return "";
-    input_line = input_line.substr(st);
-    string::size_type fi = input_line.find_last_not_of(" ");
-    return input_line.substr(0, fi+1);
-}
-
-
-std::string trim_tab(std::string input_line) {
-    using std::string;
-    if (input_line.empty()) return input_line;
-    string::size_type st = input_line.find_first_not_of("\t");
-    if (st == string::npos) return "";
-    input_line = input_line.substr(st);
-    string::size_type fi = input_line.find_last_not_of("\t");
-    return input_line.substr(0, fi+1);
-}
-
 string ltrim_whitespace(string input_line) {
     string::size_type st = input_line.find_first_not_of(k_whitespace);
     return (st == string::npos)? "" : input_line.substr(st);
@@ -124,6 +103,16 @@ double str_to_number(string val) {
         mupSetExpr(math_parser, val.c_str());
         return mupEval(math_parser);
     }
+}
+
+string time_to_string() {
+    char filename[25];
+    struct tm *timenow;
+    time_t now = time(NULL);
+    timenow = gmtime(&now);
+    strftime(filename, sizeof(filename), "%Y-%m-%d-%H-%M-%S", timenow);
+    string s(filename);
+    return s;
 }
 
 int list_c(string str, vector<double>& v) {
@@ -838,8 +827,7 @@ void run(std::string &str, Set_ptrs &ptrs) {
     str = trim_whitespace(str);
     if (str.substr(0,5) == "SRAND") {
         string var = str.substr(6);
-        var = trim_blank(var);
-        var = trim_tab(var);
+        var = trim_whitespace(var);
         mupSetExpr(math_parser, var.c_str());
         srand(mupEval(math_parser));
         return;
@@ -1469,11 +1457,8 @@ void parse(std::string &str, muParserHandle_t &math_parser){
         var = trim_whitespace(var);
         mupSetExpr(math_parser, var.c_str());
         if(!save_to_file.is_open()) {
-            char filename[255];
-            struct tm *timenow;
-            time_t now = time(NULL);
-            timenow = gmtime(&now);
-            strftime(filename, sizeof(filename), "JSPEC_SAVE_%Y-%m-%d-%H-%M-%S.txt", timenow);
+            string filename = time_to_string();
+            filename = "JSPEC_SAVE_" + filename + ".txt";
             save_to_file.open (filename,std::ofstream::out | std::ofstream::app);
             if(save_to_file.is_open()){
                 std::cout<<"File opened: "<<filename<<" !"<<std::endl;
