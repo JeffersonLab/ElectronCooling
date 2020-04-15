@@ -31,7 +31,7 @@ class Simulator{
     bool ecool = true;
     bool fixed_bunch_length = false;
     bool reset_time = true;
-    bool overwrite = true;
+    bool overwrite = false;
     bool calc_luminosity = false;
     int output_itvl = 1;
     int ion_save_itvl = -1;
