@@ -17,7 +17,7 @@ void ParticleModel::update_ibeam(Beam& ion, Ions& ion_sample, Ring& ring, EBeam&
     }
 
     if(edge_effect) {
-        apply_edge_kick(cooler, ebeam, ion, ion_sample, dt);
+        apply_edge_kick(cooler, ebeam, ion, ion_sample, ecool_solver);
     }
 
     move_particles(ion, ion_sample, ring);

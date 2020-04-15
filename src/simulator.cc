@@ -2,6 +2,7 @@
 #include "functions.h"
 #include "luminosity.h"
 #include "ui.h"
+#include <cmath>
 
 extern Record uircd;
 
@@ -10,8 +11,6 @@ extern Record uircd;
 //LuminositySolver* lum_solver = nullptr;
 //Simulator* simulator = nullptr;
 //extern IBSSolver* ibs_solver;
-
-
 
 void Simulator::output_sddshead() {
     using std::endl;

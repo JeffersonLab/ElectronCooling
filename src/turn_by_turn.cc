@@ -9,8 +9,34 @@
 #include "particle_model.h"
 #include "ring.h"
 
-void TurnByTurnModel::apply_edge_kick(Cooler& cooler, EBeam& ebeam, Beam& ion, Ions& ion_sample, double dt) {
+void TurnByTurnModel::apply_edge_kick(Cooler& cooler, EBeam& ebeam, Beam& ion, Ions& ion_sample, ECoolRate* ecool_solver) {
     ::edge_effect(ebeam, ion, ion_sample, cooler, dt);
+    vector<double>& x = ion_sample.cdnt(Phase::X);
+    vector<double>& y = ion_sample.cdnt(Phase::Y);
+    vector<double>& ds = ion_sample.cdnt(Phase::DS);
+    vector<double>& dp_p = ion_sample.cdnt(Phase::DP_P);
+    double p0 = ion.p0_SI();
+    int n = ion_sample.n_sample();
+    rdn.resize(n);
+
+//    if(ecool_solver.p_shift_) {
+//        double cx, cy, cz;
+//        ion_sample.center(cx, cy, cz);
+//        if(ebeam.multi_bunches()) ebeam.multi_edge_field(x, y, ds, rdn, n, cx, cy, cz);
+//        else ebeam.edge_field(x, y, ds, rdn, n, cx, cy, cz);
+//
+//    }
+//    else {
+//        if(ebeam.multi_bunches()) ebeam.multi_edge_field(x, y, ds, rdn, n);
+//        else ebeam.edge_field(cooler, x, y, z, rdn, n);
+//    }
+
+    ebeam.edge_field(cooler, x, y, ds, rdn, n);
+    double q = ion.charge_number()*k_e;
+    double coef = q*ecool_solver->t_cooler()*cooler.section_number()/p0;
+    for(int i=0; i<n; ++i) {
+        dp_p.at(i) = dp_p.at(i)*exp(rdn.at(i)*coef/dp_p.at(i));
+    }
 }
 
 void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {

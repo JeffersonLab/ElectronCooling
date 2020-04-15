@@ -13,7 +13,7 @@ void turn_by_turn_move_particles(Beam &ion, Ring &ring, Cooler &cooler);
 class TurnByTurnModel: public ParticleModel {
 protected:
     void move_particles(Beam& ion, Ions& ion_sample, Ring& ring);
-    void apply_edge_kick(Cooler& cooler, EBeam& ebeam, Beam& ion, Ions& ion_sample, double dt);
+    void apply_edge_kick(Cooler& cooler, EBeam& ebeam, Beam& ion, Ions& ion_sample, ECoolRate* ecool_solver);
 public:
     using ParticleModel::ParticleModel;
 };
