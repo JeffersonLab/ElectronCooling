@@ -108,6 +108,8 @@ struct Set_e_beam{
      int line_skip = 0;
      int n_particle = 0;
      int particle_perbox = 200;
+     bool p_shift = false;
+     bool v_shift = false;
      std::string shape = "";
      std::string particle_file = "";
      bool multi_bunches = false;

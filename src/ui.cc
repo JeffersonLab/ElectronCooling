@@ -36,7 +36,7 @@ std::vector<string> E_BEAM_SHAPE_TYPES = {"DC_UNIFORM", "BUNCHED_GAUSSIAN", "BUN
 std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS", "CURRENT", "SIGMA_X", "SIGMA_Y",
     "SIGMA_Z", "LENGTH", "E_NUMBER", "RH", "RV", "R_INNER", "R_OUTTER", "PARTICLE_FILE", "TOTAL_PARTICLE_NUMBER",
     "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
-    "LIST_CY", "LIST_CZ", "RISE_TIME", "FALL_TIME"};
+    "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT", "RISE_TIME", "FALL_TIME"};
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK"};
 std::vector<string> SIMULATION_ARGS = {"TIME", "STEP_NUMBER", "SAMPLE_NUMBER", "IBS", "E_COOL", "OUTPUT_INTERVAL",
@@ -71,27 +71,6 @@ std::string remove_comments(std::string input_line) {
 }
 
 // Trim the spaces at the head and the tail of the string
-std::string trim_blank(std::string input_line) {
-    using std::string;
-    if (input_line.empty()) return input_line;
-    string::size_type st = input_line.find_first_not_of(" ");
-    if (st == string::npos) return "";
-    input_line = input_line.substr(st);
-    string::size_type fi = input_line.find_last_not_of(" ");
-    return input_line.substr(0, fi+1);
-}
-
-
-std::string trim_tab(std::string input_line) {
-    using std::string;
-    if (input_line.empty()) return input_line;
-    string::size_type st = input_line.find_first_not_of("\t");
-    if (st == string::npos) return "";
-    input_line = input_line.substr(st);
-    string::size_type fi = input_line.find_last_not_of("\t");
-    return input_line.substr(0, fi+1);
-}
-
 string ltrim_whitespace(string input_line) {
     string::size_type st = input_line.find_first_not_of(k_whitespace);
     return (st == string::npos)? "" : input_line.substr(st);
@@ -124,6 +103,16 @@ double str_to_number(string val) {
         mupSetExpr(math_parser, val.c_str());
         return mupEval(math_parser);
     }
+}
+
+string time_to_string() {
+    char filename[25];
+    struct tm *timenow;
+    time_t now = time(NULL);
+    timenow = gmtime(&now);
+    strftime(filename, sizeof(filename), "%Y-%m-%d-%H-%M-%S", timenow);
+    string s(filename);
+    return s;
 }
 
 int list_c(string str, vector<double>& v) {
@@ -182,7 +171,7 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             e_beam_args->binary = false;
         }
         else {
-            assert(false&& "WRONG VALUE FOR VEL_POS_CORR FOR E_BEAM!");
+            assert(false&& "WRONG VALUE FOR BINARY_FILE FOR E_BEAM!");
         }
     }
     else if (var == "MULTI_BUNCHES") {
@@ -193,7 +182,29 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             e_beam_args->multi_bunches = false;
         }
         else {
-            assert(false&& "WRONG VALUE FOR VEL_POS_CORR FOR E_BEAM!");
+            assert(false&& "WRONG VALUE FOR MULTI_BUNCHES FOR E_BEAM!");
+        }
+    }
+    else if (var == "P_SHIFT") {
+        if (val == "TRUE") {
+            e_beam_args->multi_bunches = true;
+        }
+        else if (val == "FALSE") {
+            e_beam_args->multi_bunches = false;
+        }
+        else {
+            assert(false&& "WRONG VALUE FOR P_SHIFT FOR E_BEAM!");
+        }
+    }
+    else if (var == "V_SHIFT") {
+        if (val == "TRUE") {
+            e_beam_args->multi_bunches = true;
+        }
+        else if (val == "FALSE") {
+            e_beam_args->multi_bunches = false;
+        }
+        else {
+            assert(false&& "WRONG VALUE FOR V_SHIFT FOR E_BEAM!");
         }
     }
     else if (var == "LIST_CX") {
@@ -448,6 +459,8 @@ void create_e_beam(Set_ptrs &ptrs) {
         }
 
     }
+    if(ptrs.e_beam_ptr->p_shift) ptrs.e_beam->set_p_shift(true);
+    if(ptrs.e_beam_ptr->v_shift) ptrs.e_beam->set_v_shift(true);
     std::cout<<"Electron beam created!"<<std::endl;
 }
 
@@ -855,8 +868,7 @@ void run(std::string &str, Set_ptrs &ptrs) {
     str = trim_whitespace(str);
     if (str.substr(0,5) == "SRAND") {
         string var = str.substr(6);
-        var = trim_blank(var);
-        var = trim_tab(var);
+        var = trim_whitespace(var);
         mupSetExpr(math_parser, var.c_str());
         srand(mupEval(math_parser));
         return;
@@ -1497,11 +1509,8 @@ void parse(std::string &str, muParserHandle_t &math_parser){
         var = trim_whitespace(var);
         mupSetExpr(math_parser, var.c_str());
         if(!save_to_file.is_open()) {
-            char filename[255];
-            struct tm *timenow;
-            time_t now = time(NULL);
-            timenow = gmtime(&now);
-            strftime(filename, sizeof(filename), "JSPEC_SAVE_%Y-%m-%d-%H-%M-%S.txt", timenow);
+            string filename = time_to_string();
+            filename = "JSPEC_SAVE_" + filename + ".txt";
             save_to_file.open (filename,std::ofstream::out | std::ofstream::app);
             if(save_to_file.is_open()){
                 std::cout<<"File opened: "<<filename<<" !"<<std::endl;

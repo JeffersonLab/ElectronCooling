@@ -96,6 +96,8 @@ protected:
     vector<double> cx_;     //List of cxs.
     vector<double> cy_;     //List of cys.
     vector<double> cz_;     //List of czs.
+    bool p_shift_ = false;             //Position shift. false: ion center and e- center overlap, true: there's a shift between the beam
+    bool v_shift_ = false;             //Vecocity shift.
 public:
     virtual ~EBeam(){};
     Velocity velocity() const {return velocity_;}
@@ -108,6 +110,10 @@ public:
     double gamma() const {return gamma_;}
     double beta() const {return beta_;}
     bool bunched()const {return bunched_;}
+    void set_p_shift(bool b){p_shift_ = b;}
+    void set_v_shift(bool b){v_shift_ = b;}
+    bool p_shift(){return p_shift_;}
+    bool v_shift(){return v_shift_;}
     virtual Shape shape() const = 0;
     virtual double length() const = 0;
     double neutral() const {return neutralisation_;}

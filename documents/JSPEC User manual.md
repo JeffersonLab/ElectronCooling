@@ -309,6 +309,8 @@ The following keywords records the results from the previous computation. They c
 | list_cx               | When multi_bunches to be true, use list_cx to set the horizontal coordinates of the electron bunches. The format should be integer,double,double, ... The first number should be an integer, which tells how many horizontal coordinates (the double flouting numbers) follows it. All the numbers are seperated by coma. |
 | list_cy               | When multi_bunches to be true, use list_cy to set the vertical coordinates of the electron bunches. The format is the same as that of list_cx. |
 | list_cz               | When multi_bunches to be true, use list_cz to set the longitudinal coordinates of the electron bunches. The format is the same as that of list_cx. |
+| p_shift               | True: centers of the electron beam and the ion beam do not overlap. |
+| v_shift               | True: velocities of the electron beam and the ion beam do not equal. |
 
 **section_ibs**
 

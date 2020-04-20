@@ -17,8 +17,6 @@ enum class IonSample {SINGLE_PARTICLE, MONTE_CARLO};
 enum class ECoolRateScratch {XP_BET, YP_BET, XP, YP, DP_P, V_TR, V_LONG, FORCE_X, FORCE_Y, FORCE_Z};
 
 class ECoolRate{
-    bool p_shift_ = false;             //Position shift. false: ion center and e- center overlap, true: there's a shift between the beam
-    bool v_shift_ = false;             //Vecocity shift.
     double bunch_separate_ = 0;
     double t_cooler_ = 0;
     int n_long_sample_ = 50;
@@ -42,8 +40,6 @@ public:
     vector<double>& scratch(ECoolRateScratch s);
     double t_cooler(){return t_cooler_;}
     void set_n_long_sample(int n){n_long_sample_ = n;}
-    void set_p_shift(bool b){p_shift_ = b;}
-    void set_v_shift(bool b){v_shift_ = b;}
     void ecool_rate(FrictionForceSolver &force, Beam &ion, Ions &ptcl, Cooler &cooler, EBeam &ebeam,
                   Ring &ring, double &rate_x, double &rate_y, double &rate_s);
 };
