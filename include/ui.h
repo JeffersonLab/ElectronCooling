@@ -72,6 +72,9 @@ struct Set_ecool{
      ForceFormula force = ForceFormula::PARKHOMCHUK;
      double tmpr_eff = 0;   //Effective temperature for Parkhomchuk formula.
      double v_eff = 0; //Effective velocity for Parkhomchuk formula.
+     size_t limit = 100;    //Parameters for GSL integration for non-magnetized friction force calculation.
+     double espabs = 0;   //Parameters for GSL integration for non-magnetized friction force calculation.
+     double esprel = 0;   //Parameters for GSL integration for non-magnetized friction force calculation.
 };
 
 struct Set_cooler{

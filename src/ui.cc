@@ -38,7 +38,7 @@ std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS"
     "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
     "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT"};
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF"};
-std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK"};
+std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK", "NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D", "NONMAG_NUM3D"};
 std::vector<string> SIMULATION_ARGS = {"TIME", "STEP_NUMBER", "SAMPLE_NUMBER", "IBS", "E_COOL", "OUTPUT_INTERVAL",
     "SAVE_PARTICLE_INTERVAL", "OUTPUT_FILE", "MODEL", "REF_BET_X", "REF_BET_Y", "REF_ALF_X", "REF_ALF_Y",
     "REF_DISP_X", "REF_DISP_Y", "REF_DISP_DX", "REF_DISP_DY", "FIXED_BUNCH_LENGTH", "RESET_TIME", "OVERWRITE",
@@ -651,6 +651,46 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
             }
             else if(fabs(ptrs.ecool_ptr->v_eff)>0) {
                 force_ptr->set_v_eff(ptrs.ecool_ptr->v_eff);
+            }
+            break;
+        }
+        case ForceFormula::NONMAG_MESHKOV: {
+            force_solver.reset(new ForceNonMagMeshkov());
+            break;
+        }
+        case ForceFormula::NONMAG_DERBENEV: {
+            force_solver.reset(new ForceNonMagDerbenev());
+            break;
+        }
+        case ForceFormula::NONMAG_NUM1D: {
+            size_t limit = ptrs.ecool_ptr->limit;
+            double esprel = ptrs.ecool_ptr->esprel;
+            double espabs = ptrs.ecool_ptr->espabs;
+            assert((esprel>=0&&espabs>=0&&"Wrong value for the parameter ESPREL or ESPABS in section_ecool!"));
+            force_solver.reset(new ForceNonMagNumeric1D(limit));
+            if(esprel>0) {
+                ForceNonMagNumeric1D* p = dynamic_cast<ForceNonMagNumeric1D*>(force_solver.get());
+                p->set_esprel(esprel);
+            }
+            if(espabs>0) {
+                ForceNonMagNumeric1D* p = dynamic_cast<ForceNonMagNumeric1D*>(force_solver.get());
+                p->set_espabs(esprel);
+            }
+            break;
+        }
+        case ForceFormula::NONMAG_NUM3D: {
+            size_t limit = ptrs.ecool_ptr->limit;
+            double esprel = ptrs.ecool_ptr->esprel;
+            double espabs = ptrs.ecool_ptr->espabs;
+            assert((esprel>=0&&espabs>=0&&"Wrong value for the parameter ESPREL or ESPABS in section_ecool!"));
+            force_solver.reset(new ForceNonMagNumeric3D(limit));
+            if(esprel>0) {
+                ForceNonMagNumeric3D* p = dynamic_cast<ForceNonMagNumeric3D*>(force_solver.get());
+                p->set_esprel(esprel);
+            }
+            if(espabs>0) {
+                ForceNonMagNumeric3D* p = dynamic_cast<ForceNonMagNumeric3D*>(force_solver.get());
+                p->set_espabs(esprel);
             }
             break;
         }
@@ -1418,6 +1458,10 @@ void set_ecool(string &str, Set_ecool *ecool_args){
 
     if (var == "FORCE_FORMULA") {
         if (val=="PARKHOMCHUK") ecool_args->force = ForceFormula::PARKHOMCHUK;
+        else if (val=="NONMAG_DERBENEV") ecool_args->force = ForceFormula::NONMAG_DERBENEV;
+        else if (val=="NONMAG_MESHKOV") ecool_args->force = ForceFormula::NONMAG_MESHKOV;
+        else if (val=="NONMAG_NUM1D") ecool_args->force = ForceFormula::NONMAG_NUM1D;
+        else if (val=="NONMAG_NUM3D") ecool_args->force = ForceFormula::NONMAG_NUM3D;
         else assert(false&&"Friction force formula NOT exists!");
     }
     else {
@@ -1432,6 +1476,16 @@ void set_ecool(string &str, Set_ecool *ecool_args){
             else if(var == "V_EFF") {
                 ecool_args->tmpr_eff = 0;
                 ecool_args->v_eff = std::stod(val);
+            }
+            else if (var == "LIMIT") {
+                std::stringstream sstream(val);
+                sstream >> ecool_args->limit;
+            }
+            else if (var == "ESPABS") {
+                ecool_args->espabs = std::stod(val);
+            }
+            else if (var == "ESPREL") {
+                ecool_args->esprel = std::stod(val);
             }
             else {
                 assert(false&&"Wrong arguments in section_ecool!");
@@ -1449,6 +1503,17 @@ void set_ecool(string &str, Set_ecool *ecool_args){
             else if(var == "V_EFF") {
                 ecool_args->tmpr_eff = 0;
                 ecool_args->v_eff = static_cast<double>(mupEval(math_parser));
+            }
+            else if (var == "LIMIT") {
+                int l = static_cast<int>(mupEval(math_parser));
+                assert(l>0&&"Wrong value for  the parameter LIMIT in section_ecool!");
+                ecool_args->limit = static_cast<size_t>(l);
+            }
+            else if(var == "ESPABS") {
+                ecool_args->espabs = static_cast<double>(mupEval(math_parser));
+            }
+            else if(var == "ESPREL") {
+                ecool_args->esprel = static_cast<double>(mupEval(math_parser));
             }
             else {
                 assert(false&&"Wrong arguments in section_ecool!");
