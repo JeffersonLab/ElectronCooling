@@ -40,8 +40,8 @@ section_ion #define the ion beam
 	rms_bunch_length = ds
 
 section_ring
-#	lattice = test.tfs
-	lattice = MEICColliderRedesign1IP.tfs
+	lattice = test.tfs
+
 
 section_cooler
 	length = 60
@@ -65,8 +65,12 @@ section_e_beam
 section_ecool
 #	smooth_rho_max = true
 	sample_number = 4000
-	force_formula = nonmag_num3d
-#	force_formula = nonmag_num1d
+#	use_gsl = false
+#	n_tr = 20
+#	n_l = 20
+#	n_phi = 20
+#	force_formula = nonmag_num3d
+	force_formula = nonmag_num1d
 #	force_formula = nonmag_meshkov
 #	force_formula = nonmag_derbenev
 #	force_formula = parkhomchuk
@@ -81,11 +85,16 @@ section_run
 === END ===
 ####################################################################
 Meshkov:
-Electron cooling rate (1/s):  -5.406e-002  -8.999e-002  -1.834e-001
+Electron cooling rate (1/s):   -1.918e-002  -3.062e-002  -6.246e-002
 
 Derbenev:
-Electron cooling rate (1/s):  -5.406e-002  -8.999e-002  -1.508e-001
+Electron cooling rate (1/s):   -1.918e-002  -3.062e-002  -5.122e-002
 
 Numerical 1D:
-Electron cooling rate (1/s): -7.567e-002  -1.080e-001  -2.024e-001
+Electron cooling rate (1/s):  -9.395e-003  -1.293e-002  -2.460e-002
+
+Numerical 3D: GSL false, 20x20x20
+Electron cooling rate (1/s):  -1.012e-002  -1.393e-002  -2.630e-002
+GSL true
+Electron cooling rate (1/s):  -9.975e-003  -1.373e-002  -2.593e-002
 ####################################################################

@@ -314,8 +314,9 @@ void ForceNonMagNumeric1D::force(double v, double v_tr, double v_l, double v2, d
     gsl_integration_qagiu(f, 0, espabs, esprel, limit, gw, &b_l, &error);
 
     double ve3_tr = ve_tr*ve_tr*ve_tr;
-    force_tr = f_const*ne*lc*v_tr*b_tr/ve3_tr;
-    force_l = f_const*ne*lc*v_l*b_l/ve3_tr;
+    double ff = -f_const*ne*lc/ve3_tr;
+    force_tr = ff*v_tr*b_tr;
+    force_l = ff*v_l*b_l;
 }
 
 double ForceNonMagNumeric3D::inner_norm_integrand(double vl, void*params) {
