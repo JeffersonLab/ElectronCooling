@@ -17,8 +17,8 @@ protected:
     const double k_f = -4*k_pi*k_c*k_c*k_ke*k_ke*k_e*k_e*k_e/(k_me*1e6);
     const double k_wp = 4*k_pi*k_c*k_c*k_e*k_ke/(k_me*1e6);
     const double k_rho_min = k_e*k_ke*k_c*k_c/(k_me*1e6);
-    void init(){};
-    void fin(){};
+    virtual void init(EBeam& ebeam){};
+    virtual void fin(){};
 public:
     void set_time_cooler(double t){time_cooler = t;}
     void set_mag_field(double x){mag_field = x;}
@@ -48,7 +48,7 @@ public:
 class ForceNonMag: public FrictionForceSolver {
 protected:
     bool smooth_rho_max = false;
-    double f_const(int charge_number){return charge_number*charge_number*k_f;}
+    virtual double f_const(int charge_number){return charge_number*charge_number*k_f;}
     double rho_min_const(int charge_number) {return charge_number*k_rho_min;}
     double rho_max_1(int charge_number, double density_e){return pow(3*charge_number/density_e, 1.0/3);}
     double rho_max_2(double v){return v*time_cooler;};
@@ -85,6 +85,7 @@ public:
 
 class ForceNonMagNumeric1D: public ForceNonMag {
 private:
+    double f_const(int charge_number){return 0.28209479177387814*charge_number*charge_number*k_f;} //Coef - 1/sqrt(4*pi)
     const double k_f = 2*sqrt(2*k_pi)*k_pi*k_c*k_c*k_ke*k_ke*k_e*k_e*k_e/(k_me*1e6);
     gsl_integration_workspace *gw = nullptr;
     size_t limit = 100;
@@ -116,8 +117,8 @@ private:
     gsl_integration_workspace *gow;
 
     size_t limit = 100;
-    double espabs = 1e-6;
-    double esprel = 1e-6;
+    double espabs = 1e-5;
+    double esprel = 1e-3;
     struct P{
         double v_tr;
         double v_l;
@@ -130,21 +131,61 @@ private:
         int flag;   //0: calculate B_tr; else: calculate B_l;
     }p;
 
+    bool use_gsl = false;
+    bool use_mean_rho_min = false;
+    double mean_rho_min = 0;
+    double mean_lc = 0;
+
+    bool first_run = true;
+    bool const_tmpr = true;
+    int n_tr = 20;
+    int n_l = 10;
+    int n_phi = 10;
+    double d;
+    double f_inv_norm;
+    vector<vector<double>> exp_vtr;
+    vector<double> hlf_v2tr;
+    vector<double> hlf_v2l;
+    vector<vector<double>> vtr_cos;
+    vector<double> vl;
+    vector<double> vtr;
+    vector<vector<double>> v2tr_sin2;
+
+    void pre_int(double sgm_vtr, double sgm_vl);
+    void calc_exp_vtr(double sgm_vtr, double sgm_vl);
+
+
+
+    void init(EBeam& ebeam);
     double inner_integrand(double phi, void* params);
     double middle_integrand(double vl, void* params);
     double outter_integrand(double vtr, void* params);
     double inner_norm_integrand(double vl, void* params);
     double outter_norm_integrand(double vtr, void* params);
+    void force_grid(double v, double v_tr, double v_l, double v2, double ve_tr, double ve_l, double ve2,
+                               double f_const, double rho_min_const, int charge_number, double ne,
+                               double& force_tr, double& force_l);
+    void force_gsl(double v, double v_tr, double v_l, double v2, double ve_tr, double ve_l, double ve2,
+                               double f_const, double rho_min_const, int charge_number, double ne,
+                               double& force_tr, double& force_l);
     void force(double v, double v_tr, double v_l, double v2, double ve_tr, double ve_l, double ve2,
                                double f_const, double rho_min_const, int charge_number, double ne,
                                double& force_tr, double& force_l);
 public:
     void set_espabs(double x){espabs = x;}
     void set_esprel(double x){esprel = x;}
+    void set_gsl(bool b) {use_gsl = b;}
+    void set_mean_rho_min(bool b) {use_mean_rho_min = b;}
+    void set_grid(int ntr, int nl, int nphi){n_tr = ntr; n_l = nl; n_phi = nphi; first_run = true;}
     ForceNonMagNumeric3D(int n=100):limit(n){giw = gsl_integration_workspace_alloc(limit); gmw = gsl_integration_workspace_alloc(limit);
         gow = gsl_integration_workspace_alloc(limit);}
-    ~ForceNonMagNumeric3D(){gsl_integration_workspace_free(giw); gsl_integration_workspace_free(gmw);
-        gsl_integration_workspace_free(gow);}
+    ~ForceNonMagNumeric3D(){
+        if(use_gsl) {
+            gsl_integration_workspace_free(giw);
+            gsl_integration_workspace_free(gmw);
+            gsl_integration_workspace_free(gow);
+        }
+    }
 };
 
 //gsl function wrapper for member functions in class.

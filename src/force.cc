@@ -4,6 +4,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "functions.h"
+
 
 
 void ForcePark::rho_lamor_dlt2_eff_e(double v2_eff_e, double mag_field, vector<double>& v_rms_l, vector<double>& v_rms_t, Temperature tpr,
@@ -102,6 +104,11 @@ void ForcePark::friction_force(int charge_number, int ion_number, vector<double>
     force_long.resize(ion_number);
 
     for(int i=0; i<ion_number; ++i){
+        if(iszero(density_e.at(i))) {
+            force_tr[i] = 0;
+            force_long[i] = 0;
+            continue;
+        }
         double v2 = v_tr[i]*v_tr[i]+v_long[i]*v_long[i];
         if(v2>0){
             double dlt = this->dlt(tpr, v2, dlt2_eff_e, i);
@@ -149,7 +156,7 @@ double ForceNonMag::rho_max(int charge_number, double v2, double ve2, double ne)
 
 void ForceNonMag::friction_force(int charge_number, int ion_number, vector<double>& v_tr, vector<double>& v_long,vector<double>& density_e,
                 EBeam& ebeam, vector<double>& force_tr, vector<double>& force_long) {
-    init();
+    init(ebeam);
     double f_const = this->f_const(charge_number);
     double rho_min_const = this->rho_min_const(charge_number);
     auto tpr = ebeam.temperature();
@@ -163,10 +170,15 @@ void ForceNonMag::friction_force(int charge_number, int ion_number, vector<doubl
     switch(tpr) {
     case Temperature::CONST: {
         double ve_l = ve_rms_l.at(0);
-        double ve_tr = ve_rms_l.at(0);
+        double ve_tr = ve_rms_tr.at(0);
         double ve2 = ve_l*ve_l + ve_tr*ve_tr;
 
         for(int i=0; i<ion_number; ++i) {
+            if(iszero(density_e.at(i))) {
+                force_tr[i] = 0;
+                force_long[i] = 0;
+                continue;
+            }
             double v2 = v_tr[i]*v_tr[i]+v_long[i]*v_long[i];
             double v = sqrt(v2);
             if(v2>0) {
@@ -182,6 +194,11 @@ void ForceNonMag::friction_force(int charge_number, int ion_number, vector<doubl
     }
     case Temperature::VARY: {
         for(int i=0; i<ion_number; ++i) {
+            if(iszero(density_e.at(i))) {
+                force_tr[i] = 0;
+                force_long[i] = 0;
+                continue;
+            }
             double v2 = v_tr[i]*v_tr[i]+v_long[i]*v_long[i];
             double v = sqrt(v2);
             if(v2>0) {
@@ -288,11 +305,11 @@ void ForceNonMagNumeric1D::force(double v, double v_tr, double v_l, double v2, d
     gsl_function_pp<decltype(ptr)> fp(ptr);
     gsl_function *f = static_cast<gsl_function*>(&fp);
 
-    double b_tr;
-    double error;
+    double b_tr = 0;
+    double error = 0;
     gsl_integration_qagiu(f, 0, espabs, esprel, limit, gw, &b_tr, &error);
 
-    double b_l;
+    double b_l = 0;
     p.flag = 1;
     gsl_integration_qagiu(f, 0, espabs, esprel, limit, gw, &b_l, &error);
 
@@ -334,13 +351,21 @@ double ForceNonMagNumeric3D::inner_integrand(double phi, void* params) {
     double rho_max = ((P*)params)->rho_max;
     int flag = ((P*)params)->flag;
     int charge_number = ((P*)params)->charge_number;
+    double lc = 0;
 
-    double sub_vl = v_l - vl;
-    double sub_vtr = v_tr - vtr*cos(phi);
-    double f_inv_bot = 1/(sub_vl*sub_vl + sub_vtr*sub_vtr + vtr*vtr*sin(phi)*sin(phi));
-    double rho_min = rho_min_const(charge_number)*f_inv_bot;
-    double lc = rho_max>rho_min?log(rho_max/rho_min):0;
-    double f = exp(-vtr*vtr/(2*ve_tr*ve_tr)-vl*vl/(2*ve_l*ve_l))*vtr*f_inv_bot;
+    double k = 1.41421356237;  //sqrt(2)
+    double sub_vl = v_l - k*ve_l*vl;
+    double sub_vtr = v_tr - k*ve_tr*vtr*cos(phi);
+    double f_bot = sub_vl*sub_vl + sub_vtr*sub_vtr + 2*ve_tr*ve_tr*vtr*vtr*sin(phi)*sin(phi);
+    double f_inv_bot = 1/f_bot;
+    double f = exp(-vtr*vtr-vl*vl)*vtr*f_inv_bot;
+    if(use_mean_rho_min) lc = mean_lc;
+    else {
+        double rho_min = rho_min_const(charge_number)*f_inv_bot;
+        lc = rho_max>rho_min?log(rho_max/rho_min):0;
+    }
+
+    f *= lc*sqrt(f_inv_bot);
     if(flag==0) return f*sub_vtr;
     else return f*sub_vl;
 }
@@ -378,25 +403,131 @@ double ForceNonMagNumeric3D::outter_integrand(double vtr, void* params) {
     return result;
 }
 
-void ForceNonMagNumeric3D::force(double v, double v_tr, double v_l, double v2, double ve_tr, double ve_l, double ve2,
+void ForceNonMagNumeric3D::init(EBeam& ebeam) {
+    auto tpr = ebeam.temperature();
+    if(tpr==Temperature::CONST) {
+        const_tmpr = true;
+    }
+    else {
+        const_tmpr = false;
+    }
+}
+
+void ForceNonMagNumeric3D::pre_int(double sgm_vtr, double sgm_vl) {
+    hlf_v2tr.resize(n_tr);
+    hlf_v2l.resize(n_l);
+    vtr_cos.resize(n_phi,vector<double>(n_tr));
+    vl.resize(n_l);
+    vtr.resize(n_tr);
+    v2tr_sin2.resize(n_phi,vector<double>(n_tr));
+
+    vector<double> phi(n_phi);
+
+    double d_phi = k_pi/n_phi;
+    phi.at(0) = d_phi/2;
+    for(int i=1; i<n_phi; ++i) phi.at(i) = phi.at(i-1) + d_phi;
+
+    double d_vtr = 3*sgm_vtr/n_tr;
+    vtr.at(0) = d_vtr/2;
+    for(int i=1; i<n_tr; ++i) vtr.at(i) = vtr.at(i-1) + d_vtr;
+
+    double d_vl = 6*sgm_vl/n_l;
+    vl.at(0) = -3*sgm_vl + d_vl/2;
+    for(int i=1; i<n_l; ++i) vl.at(i) = vl.at(i-1) + d_vl;
+
+    d = d_phi*d_vtr*d_vl;
+
+    for(int i=0; i<n_tr; ++i) hlf_v2tr.at(i) = vtr.at(i)*vtr.at(i);
+    for(int i=0; i<n_l; ++i) hlf_v2l.at(i) = -vl.at(i)*vl.at(i)/2;
+    for(auto& e: vl) e*= -1;
+    for(auto& e: phi) e = cos(e);   //cos(phi)
+    for(int i=0; i<n_phi; ++i) {
+        for(int j=0; j<n_tr; ++j) {
+            vtr_cos.at(i).at(j) = -phi.at(i)*vtr.at(j);
+        }
+    }
+    for(auto& e: phi) e = 1 - e*e;   //sin(phi)*sin(phi)
+    for(int i=0; i<n_phi; ++i) {
+        for(int j=0; j<n_tr; ++j) {
+            v2tr_sin2.at(i).at(j) = hlf_v2tr.at(j)*phi.at(i);
+        }
+    }
+
+    for(auto& e: hlf_v2tr) e /= -2;
+}
+
+void ForceNonMagNumeric3D::calc_exp_vtr(double sgm_vtr, double sgm_vl) {
+    exp_vtr.resize(n_l, vector<double>(n_tr));
+    double inv_ve2_tr = 1/(sgm_vtr*sgm_vtr);
+    double inv_ve2_l = 1/(sgm_vl*sgm_vl);
+    for(int i=0; i<n_l; ++i) {
+        for(int j=0; j<n_tr; ++j) {
+            exp_vtr.at(i).at(j) = exp(hlf_v2tr.at(j)*inv_ve2_tr + hlf_v2l.at(i)*inv_ve2_l)*vtr.at(j);
+        }
+    }
+    f_inv_norm = 0;
+    for(auto&v:exp_vtr)
+        for(auto&e:v)
+            f_inv_norm+=e;
+    f_inv_norm = 1/(n_phi*f_inv_norm);
+}
+
+void ForceNonMagNumeric3D::force_grid(double v, double v_tr, double v_l, double v2, double ve_tr, double ve_l, double ve2,
+                               double f_const, double rho_min_const, int charge_number, double ne,
+                               double& force_tr, double& force_l) {
+    if(first_run) {
+        pre_int(ve_tr, ve_l);
+        calc_exp_vtr(ve_tr, ve_l);
+        first_run = false;
+    }
+    else if(!const_tmpr) {
+        calc_exp_vtr(ve_tr, ve_l);
+    }
+    double f_tr = 0;
+    double f_l = 0;
+
+    double rho_max = this->rho_max(charge_number, v2, ve2, ne);
+    if(use_mean_rho_min) {
+        mean_rho_min = this->rho_min_const(charge_number)/(v2+ve2);
+        mean_lc = rho_max>mean_rho_min?log(rho_max/mean_rho_min):0;
+    }
+    for(int i=0; i<n_tr; ++i) {
+        for(int j=0; j<n_l; ++j) {
+            for(int k=0; k<n_phi; ++k) {
+                double sub_vl = v_l + vl.at(j);
+                double sub_vtr = v_tr + vtr_cos.at(k).at(i);
+                double f_bot = sub_vl*sub_vl + sub_vtr*sub_vtr + v2tr_sin2.at(k).at(i);
+                double f_inv_bot = 1/f_bot;
+                double rho_min = this->rho_min_const(charge_number)*f_inv_bot;
+                double lc = rho_max>rho_min?log(rho_max/rho_min):0;
+                double f = exp_vtr.at(j).at(i)*lc*(f_inv_bot*sqrt(f_inv_bot));
+                f_tr += sub_vtr*f;
+                f_l += sub_vl*f;
+            }
+        }
+    }
+
+    double ff = f_const*ne*f_inv_norm;
+    force_tr = ff*f_tr;
+    force_l = ff*f_l;
+}
+
+void ForceNonMagNumeric3D::force_gsl(double v, double v_tr, double v_l, double v2, double ve_tr, double ve_l, double ve2,
                                double f_const, double rho_min_const, int charge_number, double ne,
                                double& force_tr, double& force_l) {
     double rho_max = this->rho_max(charge_number, v2, ve2, ne);
-
+    if(use_mean_rho_min) {
+        mean_rho_min = this->rho_min_const(charge_number)/(v2+ve2);
+        mean_lc = rho_max>mean_rho_min?log(rho_max/mean_rho_min):0;
+    }
 
     p.ve_tr = ve_tr;
     p.ve_l = ve_l;
 
     ForceNonMagNumeric3D* class_ptr = this;
-    auto norm_ptr = [=](double x)->double{return class_ptr->outter_norm_integrand(x,&p);};
-    gsl_function_pp<decltype(norm_ptr)> norm_fp(norm_ptr);
-    gsl_function *f = static_cast<gsl_function*>(&norm_fp);
 
-    double norm;
     double error;
-    gsl_integration_qagiu(f, 0, espabs, esprel, limit, gow, &norm, &error);
-    norm *= k_pi;
-    double inv_norm = 1/norm;
+    double inv_norm = 0.35917424443382906;  //1/norm with norm = 0.886226925*k_pi
 
     p.v_tr = v_tr;
     p.v_l = v_l;
@@ -405,17 +536,28 @@ void ForceNonMagNumeric3D::force(double v, double v_tr, double v_l, double v2, d
 
     auto ptr = [=](double x)->double{return class_ptr->outter_integrand(x,&p);};
     gsl_function_pp<decltype(ptr)> fp(ptr);
-    f = static_cast<gsl_function*>(&fp);
+    gsl_function *f = static_cast<gsl_function*>(&fp);
 
     double f_tr;
     p.flag = 0;
     gsl_integration_qagiu(f, 0, espabs, esprel, limit, gow, &f_tr, &error);
-    double f_l;
+    double f_l = 0;
     p.flag = 1;
     gsl_integration_qagiu(f, 0, espabs, esprel, limit, gow, &f_l, &error);
 
-    double ve3_tr = ve_tr*ve_tr*ve_tr;
-    force_tr = f_const*ne*f_tr*inv_norm;
-    force_l = f_const*ne*f_l*inv_norm;
+    double ff = f_const*ne*inv_norm;
+    force_tr = ff*f_tr;
+    force_l = ff*f_l;
 }
 
+void ForceNonMagNumeric3D::force(double v, double v_tr, double v_l, double v2, double ve_tr, double ve_l, double ve2,
+                               double f_const, double rho_min_const, int charge_number, double ne,
+                               double& force_tr, double& force_l) {
+    if(use_gsl) {
+        force_gsl(v, v_tr, v_l, v2, ve_tr, ve_l, ve2, f_const, rho_min_const, charge_number, ne, force_tr, force_l);
+    }
+    else {
+        force_grid(v, v_tr, v_l, v2, ve_tr, ve_l, ve2, f_const, rho_min_const, charge_number, ne, force_tr, force_l);
+    }
+
+}

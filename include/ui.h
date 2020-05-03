@@ -75,6 +75,12 @@ struct Set_ecool{
      size_t limit = 100;    //Parameters for GSL integration for non-magnetized friction force calculation.
      double espabs = 0;   //Parameters for GSL integration for non-magnetized friction force calculation.
      double esprel = 0;   //Parameters for GSL integration for non-magnetized friction force calculation.
+     bool smooth_rho_max = false; //Parameter for non-magnetized friction force cooling.
+     bool use_gsl = false;
+     bool use_mean_rho_min = false;
+     int n_tr = 0;
+     int n_l = 0;
+     int n_phi = 0;
 };
 
 struct Set_cooler{

@@ -37,7 +37,8 @@ std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS"
     "SIGMA_Z", "LENGTH", "E_NUMBER", "RH", "RV", "R_INNER", "R_OUTTER", "PARTICLE_FILE", "TOTAL_PARTICLE_NUMBER",
     "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
     "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT"};
-std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF"};
+std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF", "SMOOTH_RHO_MAX", "USE_GSL",
+    "N_TR", "N_L", "N_PHI"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK", "NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D", "NONMAG_NUM3D"};
 std::vector<string> SIMULATION_ARGS = {"TIME", "STEP_NUMBER", "SAMPLE_NUMBER", "IBS", "E_COOL", "OUTPUT_INTERVAL",
     "SAVE_PARTICLE_INTERVAL", "OUTPUT_FILE", "MODEL", "REF_BET_X", "REF_BET_Y", "REF_ALF_X", "REF_ALF_Y",
@@ -629,6 +630,11 @@ void calculate_ibs(Set_ptrs &ptrs, bool calc = true) {
     }
 }
 
+void smooth_rho_max(Set_ptrs &ptrs) {
+    ForceNonMag* p =  dynamic_cast<ForceNonMag*>(force_solver.get());
+    if(ptrs.ecool_ptr->smooth_rho_max) p->set_smooth_rho_max(true);
+    else p->set_smooth_rho_max(false);
+}
 void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
     assert(ptrs.cooler.get()!=nullptr && "MUST CREATE THE COOLER BEFORE CALCULATE ELECTRON COOLING RATE!");
     assert(ptrs.e_beam.get()!=nullptr && "MUST CREATE THE ELECTRON BEAM BEFORE CALCULATE ELECTRON COOLING RATE!");
@@ -656,10 +662,12 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
         }
         case ForceFormula::NONMAG_MESHKOV: {
             force_solver.reset(new ForceNonMagMeshkov());
+            smooth_rho_max(ptrs);
             break;
         }
         case ForceFormula::NONMAG_DERBENEV: {
             force_solver.reset(new ForceNonMagDerbenev());
+            smooth_rho_max(ptrs);
             break;
         }
         case ForceFormula::NONMAG_NUM1D: {
@@ -676,6 +684,7 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
                 ForceNonMagNumeric1D* p = dynamic_cast<ForceNonMagNumeric1D*>(force_solver.get());
                 p->set_espabs(esprel);
             }
+            smooth_rho_max(ptrs);
             break;
         }
         case ForceFormula::NONMAG_NUM3D: {
@@ -683,15 +692,31 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
             double esprel = ptrs.ecool_ptr->esprel;
             double espabs = ptrs.ecool_ptr->espabs;
             assert((esprel>=0&&espabs>=0&&"Wrong value for the parameter ESPREL or ESPABS in section_ecool!"));
-            force_solver.reset(new ForceNonMagNumeric3D(limit));
-            if(esprel>0) {
+            if(ptrs.ecool_ptr->use_gsl) {
+                force_solver.reset(new ForceNonMagNumeric3D(limit));
                 ForceNonMagNumeric3D* p = dynamic_cast<ForceNonMagNumeric3D*>(force_solver.get());
-                p->set_esprel(esprel);
+                p->set_gsl(true);
+                if(esprel>0) p->set_esprel(esprel);
+                if(espabs>0) p->set_espabs(esprel);
+                if(ptrs.ecool_ptr->use_mean_rho_min) p->set_mean_rho_min(true);
+                else p->set_mean_rho_min(false);
             }
-            if(espabs>0) {
+            else {
+                force_solver.reset(new ForceNonMagNumeric3D());
                 ForceNonMagNumeric3D* p = dynamic_cast<ForceNonMagNumeric3D*>(force_solver.get());
-                p->set_espabs(esprel);
+                p->set_gsl(false);
+                int n_tr = ptrs.ecool_ptr->n_tr;
+                int n_l = ptrs.ecool_ptr->n_l;
+                int n_phi = ptrs.ecool_ptr->n_phi;
+                if(n_tr>0 || n_l>0 || n_phi>0) {
+                    assert(n_tr>0&&n_l>9&&n_phi>0&&"Wrong value for the parameters N_TR, N_L & N_PHI in section_ecool");
+                    p->set_grid(n_tr, n_l, n_phi);
+                }
+                if(ptrs.ecool_ptr->use_mean_rho_min) p->set_mean_rho_min(true);
+                else p->set_mean_rho_min(false);
             }
+
+            smooth_rho_max(ptrs);
             break;
         }
         default: {
@@ -1464,6 +1489,16 @@ void set_ecool(string &str, Set_ecool *ecool_args){
         else if (val=="NONMAG_NUM3D") ecool_args->force = ForceFormula::NONMAG_NUM3D;
         else assert(false&&"Friction force formula NOT exists!");
     }
+    else if (var == "SMOOTH_RHO_MAX" ) {
+        if (val == "ON" || val == "TRUE") ecool_args->smooth_rho_max = true;
+        else if (val == "OFF" || val == "FALSE") ecool_args->smooth_rho_max = false;
+        else assert(false&&"WRONG VALUE FOR THE PARAMETER SMOOTH_RHO_MAX IN SECTION_ECOOL!");
+    }
+    else if (var == "USE_GSL" ) {
+        if (val == "ON" || val == "TRUE") ecool_args->use_gsl = true;
+        else if (val == "OFF" || val == "FALSE") ecool_args->use_gsl = false;
+        else assert(false&&"WRONG VALUE FOR THE PARAMETER USE_GSL IN SECTION_ECOOL!");
+    }
     else {
         if (math_parser == NULL) {
             if (var == "SAMPLE_NUMBE") {
@@ -1486,6 +1521,15 @@ void set_ecool(string &str, Set_ecool *ecool_args){
             }
             else if (var == "ESPREL") {
                 ecool_args->esprel = std::stod(val);
+            }
+            else if (var == "N_TR") {
+                ecool_args->n_tr = std::stoi(val);
+            }
+            else if (var == "N_PHI") {
+                ecool_args->n_phi = std::stoi(val);
+            }
+            else if (var == "N_L") {
+                ecool_args->n_l = std::stoi(val);
             }
             else {
                 assert(false&&"Wrong arguments in section_ecool!");
@@ -1514,6 +1558,15 @@ void set_ecool(string &str, Set_ecool *ecool_args){
             }
             else if(var == "ESPREL") {
                 ecool_args->esprel = static_cast<double>(mupEval(math_parser));
+            }
+            else if(var == "N_TR") {
+                ecool_args->n_tr = static_cast<int>(mupEval(math_parser));
+            }
+            else if(var == "N_L") {
+                ecool_args->n_l = static_cast<int>(mupEval(math_parser));
+            }
+            else if(var == "N_PHI") {
+                ecool_args->n_phi = static_cast<int>(mupEval(math_parser));
             }
             else {
                 assert(false&&"Wrong arguments in section_ecool!");
