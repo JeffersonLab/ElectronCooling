@@ -1,3 +1,9 @@
+05/06/2020
+1. Allow to print multiple variables at once, such as PRINT X, Y, Z.
+2. Fixed the bug that math functions cannot be recognized. This is because the math functions are
+defined in lower case in the muMathparser, which is actually case sensitive, but JSPEC2 converts 
+the input file into upper case for convenience. Now most math functions are redefined in upper case.
+
 05/03/2020
 1. Add four formulas for non-magnetized friction force calculation: nonmag-Derbenev, nonmag-Meshkov, 
 nonmag-num1D, nonmag-num3D.
