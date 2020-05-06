@@ -1590,9 +1590,14 @@ void parse(std::string &str, muParserHandle_t &math_parser){
     }
     else if (str.substr(0,5) == "PRINT") {
         string var = str.substr(6);
-        var = trim_whitespace(var);
-        mupSetExpr(math_parser, var.c_str());
-        std::cout<<var<<" = "<<mupEval(math_parser)<<std::endl;
+        auto ss = std::stringstream(var);
+        while(ss.good()) {
+            string subvar;
+            getline(ss, subvar, ',');
+            subvar = trim_whitespace(subvar);
+            mupSetExpr(math_parser, subvar.c_str());
+            std::cout<<subvar<<" = "<<mupEval(math_parser)<<std::endl;
+        }
     }
     else if (str.substr(0,4) == "SAVE") {
         string var = str.substr(5);
