@@ -12,7 +12,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_51_x64_compiler" />
-				<Option parameters="..\examples\test_multi_lines.txt" />
+				<Option parameters="..\run\imp_test.txt" />
 				<Compiler>
 					<Add option="-std=c++11" />
 					<Add option="-g" />
@@ -31,9 +31,9 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_51_x64_compiler" />
-				<Option parameters="..\examples\test_end_and_save_command.txt" />
+				<Option parameters="..\run\imp_test.txt" />
 				<Compiler>
-					<Add option="-O3" />
+					<Add option="-O2" />
 					<Add option="-std=c++11" />
 					<Add directory="src" />
 					<Add directory="include" />
@@ -46,6 +46,9 @@
 				</Linker>
 			</Target>
 		</Build>
+		<Compiler>
+			<Add option="-g" />
+		</Compiler>
 		<Unit filename="include/arbitrary_electron_beam.h" />
 		<Unit filename="include/beam.h" />
 		<Unit filename="include/constants.h" />
@@ -58,7 +61,6 @@
 		<Unit filename="include/luminosity.h" />
 		<Unit filename="include/math_parser.h" />
 		<Unit filename="include/muParserDLL.h" />
-		<Unit filename="include/other_effects.h" />
 		<Unit filename="include/particle_model.h" />
 		<Unit filename="include/ring.h" />
 		<Unit filename="include/rms_dynamic.h" />
@@ -75,7 +77,6 @@
 		<Unit filename="src/luminosity.cc" />
 		<Unit filename="src/main.cc" />
 		<Unit filename="src/math_parser.cc" />
-		<Unit filename="src/other_effects.cc" />
 		<Unit filename="src/particle_model.cc" />
 		<Unit filename="src/ring.cc" />
 		<Unit filename="src/rms_dynamic.cc" />

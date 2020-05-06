@@ -10,7 +10,7 @@
 #include "ring.h"
 
 void TurnByTurnModel::apply_edge_kick(Cooler& cooler, EBeam& ebeam, Beam& ion, Ions& ion_sample, ECoolRate* ecool_solver) {
-    ::edge_effect(ebeam, ion, ion_sample, cooler, dt);
+//    ::edge_effect(ebeam, ion, ion_sample, cooler, dt);
     vector<double>& x = ion_sample.cdnt(Phase::X);
     vector<double>& y = ion_sample.cdnt(Phase::Y);
     vector<double>& ds = ion_sample.cdnt(Phase::DS);

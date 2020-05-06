@@ -273,10 +273,10 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
                 e_beam_args->buffer = std::stoi(val);
             }
             else if (var == "RISE_TIME") {
-                e_beam_args->t_rising = std::stoi(val);
+                e_beam_args->t_rising = std::stod(val);
             }
             else if (var == "FALL_TIME") {
-                e_beam_args->t_falling = std::stoi(val);
+                e_beam_args->t_falling = std::stod(val);
             }
             else {
                 assert(false&&"Wrong arguments in section_e_beam!");
@@ -601,6 +601,7 @@ void create_cooler(Set_ptrs &ptrs) {
     assert(length>0 && section_number>0 && bet_x>0 && bet_y>0 && "WRONG PARAMETER VALUE FOR COOLER!");
     ptrs.cooler.reset(new Cooler(length, section_number, magnetic_field, bet_x, bet_y, disp_x, disp_y, alpha_x, alpha_y,
                                  disp_dx, disp_dy));
+    if(ptrs.cooler_ptr->pipe_radius>0) ptrs.cooler->set_pipe_radius(ptrs.cooler_ptr->pipe_radius);
     std::cout<<"Cooler created!"<<std::endl;
 }
 
