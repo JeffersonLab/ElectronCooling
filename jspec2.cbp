@@ -20,7 +20,7 @@
 					<Add directory="include" />
 				</Compiler>
 				<Linker>
-					<Add option="-lmuparser" />
+					<Add option="-lmuparser -lgsl" />
 					<Add directory="lib" />
 					<Add directory="include" />
 				</Linker>
@@ -40,7 +40,7 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add option="-lmuparser" />
+					<Add option="-lmuparser -lgsl" />
 					<Add directory="lib" />
 					<Add directory="include" />
 				</Linker>

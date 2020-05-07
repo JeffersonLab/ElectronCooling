@@ -249,14 +249,14 @@ void AddFun(muParserHandle_t hParser) {
     mupDefineMultFun(hParser, _T("MIN"), Min, 1);
 }
 
-
 //Initialize the math parser environment
 void initialize_parser(muParserHandle_t &math_parser) {
     math_parser = mupCreate(muBASETYPE_FLOAT);              // initialize the parser
     mupSetErrorHandler(math_parser, OnError);
     mupSetVarFactory(math_parser, AddVariable, NULL);       // Set a variable factory
-    AddConst(math_parser);
-    AddFun(math_parser);                                // Add constants
+    AddConst(math_parser);                                  // Add constants
+    AddFun(math_parser);                                    // Add functions
+
 
     //Set variables to save the calculation/simulation results.
     mupDefineVar(math_parser, "VL_EMIT_NX", &uircd.emit_nx);
@@ -287,7 +287,6 @@ int use_parser(int argc, char* argv[])
     mupSetVarFactory(hParser, AddVariable, NULL);
 
     AddConst(hParser);
-
 
     ListConst(hParser);
 

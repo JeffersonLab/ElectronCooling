@@ -325,12 +325,18 @@ The following keywords records the results from the previous computation. They c
 
 **section_ecool**
 
-| Keywords      | Meaning                                                      |
-| ------------- | ------------------------------------------------------------ |
-| sample_number | Number of the sample ions.                                   |
-| force_formula | Choose the formula for friction force calculation. Now only support the Parkhomchuk formul, using  force_formula = PARKHOMCHUK. |
-| t_eff         | Set the effective temperature for parkhomchuk formula. The value should NOT be negative. Setting this parameter makes the "v_eff" be zero. |
-| v_eff         | Set the effective velocity for parkhomchuk formula. Setting this parameter make the "t_eff" be zero. |
+| Keywords          | Meaning                                                      |
+| ----------------- | ------------------------------------------------------------ |
+| sample_number     | Number of the sample ions.                                   |
+| force_formula     | Choose the formula for friction force calculation. Now support four formulas for non-magnetized cooling force ("NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D", and "NONMAG_NUM3D")  and the Parkhomchuk formula for magnetized cooling force. |
+| t_eff             | Set the effective temperature for parkhomchuk formula. The value should NOT be negative. Setting this parameter makes the "v_eff" be zero. |
+| v_eff             | Set the effective velocity for parkhomchuk formula. Setting this parameter make the "t_eff" be zero. |
+| smooth_rho_max    | Use the formula that has a smooth dependence on ion velocity to calculate the maximum impact parameter for non-magnetized friction force. |
+| use_mean_rho_mean | Use the mean minimal impact parameter to calculate the Coulomb logrithm in the 3D numerical formula for non-magnetized friction force. |
+| use_gsl           | Use gsl integrator to perform the 3D numerical integration for non-magnetized friction force. If set false, one can perform the 3D integration in a regular grid, which could be faster with a little sacrifice on accuracy. |
+| n_tr              | Set the number of grid for the 3D integration in a regular grid when calculating non-magnetized force, when use_gsl is false. |
+| n_l               | Set the number of grid for the 3D integration in a regular grid when calculating non-magnetized force, when use_gsl is false. |
+| n_phi             | Set the number of grid for the 3D integration in a regular grid when calculating non-magnetized force, when use_gsl is false. |
 
 **section_luminosity**
 

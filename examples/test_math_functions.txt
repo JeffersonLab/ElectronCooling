@@ -1,0 +1,6 @@
+section_scratch
+	g = sin(0.5*k_pi)
+	h = max(1.0, 2.2, -0.5)
+	i = abs(-3.3)
+	j = floor(2.1)
+	print g, h,i,	j
