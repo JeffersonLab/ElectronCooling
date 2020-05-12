@@ -6,7 +6,19 @@
 
 #include "functions.h"
 
+double FrictionForceSolver::max_impact_factor(double v_dlt, int charge_number,double density_e){
 
+    //double wp_const = 4 * k_pi * k_c*k_c * k_e * k_ke / (k_me*1e6);
+//    double wp = sqrt(4 * k_pi * k_c*k_c * k_re * density_e);
+    double wp = sqrt(k_wp*density_e);
+    double rho_max = v_dlt / wp; //The shelding radius, rho_sh
+    double rho_max_2 = pow(3 * charge_number / density_e, 1.0/3);
+    if(rho_max<rho_max_2) rho_max = rho_max_2;
+    double rho_max_3 = v_dlt * time_cooler;
+    if(rho_max>rho_max_3) rho_max = rho_max_3;
+
+    return rho_max;
+}
 
 void ForcePark::rho_lamor_dlt2_eff_e(double v2_eff_e, double mag_field, vector<double>& v_rms_l, vector<double>& v_rms_t, Temperature tpr,
                           int ion_number, vector<double>& dlt2_eff_e, vector<double>& rho_lamor) {
@@ -116,14 +128,16 @@ void ForcePark::friction_force(int charge_number, int ion_number, vector<double>
             //Calculate rho_min
             double rho_min = rho_min_const/dlt;
             dlt = sqrt(dlt);
-            double wp = sqrt(wp_const*density_e[i]);
 
-            //Calculate rho_max
-            double rho_max = dlt/wp;
-            double rho_max_2 = pow(3*charge_number/density_e[i], 1.0/3);
-            if(rho_max<rho_max_2) rho_max = rho_max_2;
-            double rho_max_3 = dlt*time_cooler;
-            if(rho_max>rho_max_3) rho_max = rho_max_3;
+            double rho_max = max_impact_factor(dlt, charge_number, density_e[i]);
+//            double wp = sqrt(wp_const*density_e[i]);
+//
+//            //Calculate rho_max
+//            double rho_max = dlt/wp;
+//            double rho_max_2 = pow(3*charge_number/density_e[i], 1.0/3);
+//            if(rho_max<rho_max_2) rho_max = rho_max_2;
+//            double rho_max_3 = dlt*time_cooler;
+//            if(rho_max>rho_max_3) rho_max = rho_max_3;
 
             double lc = this->lc(tpr, rho_max, rho_min, rho_lamor, i);   //Coulomb Logarithm
             //Calculate friction force
@@ -561,4 +575,129 @@ void ForceNonMagNumeric3D::force(double v, double v_tr, double v_l, double v2, d
         force_grid(v, v_tr, v_l, v2, ve_tr, ve_l, ve2, f_const, rho_min_const, charge_number, ne, force_tr, force_l);
     }
 
+}
+
+
+void ForceMeshkov::force(double ve_tr, double ve_l, double ve2_tr, double ve2_l, double v_tr, double v_l,
+                         double v2, double rho_min_const, int charge_number,  double density, double f_const,
+        double& force_tr,double& force_l) {
+        double rho_L    = k_me_kg * ve_tr / ( mag_field * k_e ); //SI units, in m
+        double wp = sqrt(k_wp*density);
+        //A fudge factor to smooth the friction force shape. Using the
+        // "Classical" default definition here from the BETACOOL documentation
+        double k = 2;
+        //The Number of multiple adiabatic collisions with a single electron
+        double v_sh = sqrt(v2 + ve2_l);
+        double N_col = 1 + ve_tr/(k_pi*v_sh);
+//        //dynamic shielding radius
+//        double rho_sh = sqrt(v2 + ve2_l) / wp;
+        //minimum impact parameter
+        double rho_min = rho_min_const / (v2 + ve2_l);  //in units of m
+        //intermediate impact parameter
+        double rho_F = rho_L * v_sh / ve_tr;
+        double rho_max = max_impact_factor(v_sh,charge_number,density);
+        double rho_min_mag = k*rho_L;
+        if(rho_min_mag<rho_min) rho_min_mag = rho_min;
+        //Coulomb Logarithms
+        double L_M = rho_max>rho_min_mag? log(rho_max/rho_min_mag): 0;
+        double L_A = k*rho_L>rho_F? log(k*rho_L/rho_F): 0;
+        double L_F = rho_F>rho_min? log(rho_F/rho_min): 0;
+
+        double ellipse = (v_tr*v_tr)/ve2_tr + (v_l*v_l)/ve2_l;
+        double v3 = v2*sqrt(v2);
+
+        double f_tr = 0;
+        double f_l = 0;
+
+        if(v2 > ve2_tr) { //Region I
+           double k1 = 1-3*v_l*v_l/v2;  //(v2_tr-2*v2_l)/v2
+           double k2 = 2 + k1;         //3*v2_tr/v2
+
+           f_tr = 2*L_F + L_M*k1;
+           f_tr /= v3;
+
+           f_l = 2 + 2*L_F + L_M*k2;
+           f_l /= v3;
+        }
+        else if(v2 < ve2_l) { //Region III
+            double ve3_tr = ve2_tr*ve_tr;
+            double ve3_l = ve2_l*ve_l;
+            f_tr = 2*(L_F + N_col*L_A)/ve3_tr + L_M/ve3_l;
+            f_l = 2*(L_F + N_col*L_A)/(ve2_tr*ve_l) + L_M/ve3_l;
+          }
+
+        //Region II (a or b)
+        else{ //This constrains to a donut shape (d_paral_e < sqrt(v2) < d_perp_e).
+            f_tr = (1-3*v_l*v_l/v2) * (L_M/v3);
+            f_tr += (2/(ve2_tr*ve_tr)) * (L_F + N_col*L_A);
+
+            if( ellipse <= 1.0 ){ // Region IIb
+                  //This is the same as result_long in Region 3
+                  f_l = 2*(L_F + N_col*L_A)/(ve2_tr*ve_l) + L_M/(ve2_l*ve_l);
+            }
+            else{ //It must be Region IIa
+                  f_l = (((3*v_tr*v_tr*L_M)/v2) + 2) / v3;
+                  f_l += 2 * (L_F + N_col*L_A)/(ve2_tr * v_l);
+            }
+        }
+
+        force_tr = f_const * density * v_tr;
+        force_l = f_const * density * v_l;
+}
+
+void ForceMeshkov::friction_force(int charge_number, int ion_number,
+            vector<double>& v_tr, vector<double>& v_l, vector<double>& density,
+            EBeam& ebeam, vector<double>& force_tr, vector<double>& force_long) {
+
+    double rho_min_const = charge_number * k_rho_min;
+    double f_const = k_f*charge_number*charge_number/2;
+    force_tr.resize(ion_number);
+    force_long.resize(ion_number);
+    auto tpr = ebeam.temperature();
+    vector<double> ve_rms_l = ebeam.get_v(EBeamV::V_RMS_L);
+    vector<double> ve_rms_tr =  ebeam.get_v(EBeamV::V_RMS_TR);
+
+    switch(tpr) {
+    case Temperature::CONST: {
+        double ve_l = ve_rms_l.at(0);
+        double ve_tr = ve_rms_tr.at(0);
+        double ve2_tr = ve_tr*ve_tr;
+        double ve2_l = ve_l*ve_l;
+        double ve2 = ve2_tr + ve2_l;
+        for(int i=0; i<ion_number; ++i) {
+            if(iszero(density.at(i))) {
+                force_tr[i] = 0;
+                force_long[i] = 0;
+                continue;
+            }
+            double v2 = v_tr[i]*v_tr[i]+v_l[i]*v_l[i];
+            double v = sqrt(v2);
+            if(v2>0) {
+                force(ve_tr, ve_l, ve2_tr, ve2_l, v_tr[i], v_l[i],v2, rho_min_const, charge_number, density[i], f_const, force_tr[i], force_long[i]);
+            }
+        }
+        break;
+    }
+    case Temperature::VARY: {
+
+        for(int i=0; i<ion_number; ++i) {
+            if(iszero(density.at(i))) {
+                force_tr[i] = 0;
+                force_long[i] = 0;
+                continue;
+            }
+            double v2 = v_tr[i]*v_tr[i]+v_l[i]*v_l[i];
+            double v = sqrt(v2);
+            if(v2>0) {
+                double ve_l = ve_rms_l.at(i);
+                double ve_tr = ve_rms_tr.at(i);
+                double ve2_tr = ve_tr*ve_tr;
+                double ve2_l = ve_l*ve_l;
+                double ve2 = ve2_tr + ve2_l;
+                force(ve_tr, ve_l, ve2_tr, ve2_l, v_tr[i], v_l[i],v2, density[i], rho_min_const, charge_number, f_const, force_tr[i], force_long[i]);
+            }
+        }
+        break;
+    }
+    }
 }

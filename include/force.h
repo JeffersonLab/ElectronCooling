@@ -19,6 +19,7 @@ protected:
     const double k_rho_min = k_e*k_ke*k_c*k_c/(k_me*1e6);
     virtual void init(EBeam& ebeam){};
     virtual void fin(){};
+    double max_impact_factor(double v_dlt, int charge_number,double density_e);
 public:
     void set_time_cooler(double t){time_cooler = t;}
     void set_mag_field(double x){mag_field = x;}
@@ -204,4 +205,13 @@ template< typename F >
 };
 
 
+class ForceMeshkov: public FrictionForceSolver {
+protected:
+    void force(double ve_tr, double ve_l, double ve2_tr, double ve2_l, double v_tr, double v_l, double v2,
+               double rho_min_const, int charge_number,  double density, double f_const, double& force_tr,double& force_l);
+public:
+    virtual void friction_force(int charge_number, int ion_number,
+            vector<double>& v_tr, vector<double>& v_l, vector<double>& density,
+            EBeam& ebeam, vector<double>& force_tr, vector<double>& force_long);
+};
 #endif // FORCE_H
