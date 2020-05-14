@@ -2,6 +2,7 @@
 1. Change the default output file name to "output_" followed by the input script file.
 2. Add "cv_l" (longitudinal center velocity) to the electron beam, which allows to add an additional 
 longitudinal velocity shift to the electron beam conveniently. 
+3. Print the input script file name to screen.
 
 05/06/2020
 1. Allow to print multiple variables at once, such as PRINT X, Y, Z.

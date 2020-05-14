@@ -1619,6 +1619,7 @@ void parse(std::string &str, muParserHandle_t &math_parser){
             save_to_file.open (filename,std::ofstream::out | std::ofstream::app);
             if(save_to_file.is_open()){
                 std::cout<<"File opened: "<<filename<<" !"<<std::endl;
+                save_to_file<<"INPUT: "<<input_script_name<<std::endl;
             }
             else {
                 std::cout<<"Failed to open file: "<<filename<<" !"<<std::endl;
