@@ -36,6 +36,8 @@ int main(int argc, char** argv) {
     if(argc>1) {
         std::ifstream input_file(argv[1]);
         input_script_name = argv[1];
+        size_t sep = input_script_name.find_last_of("\\/");
+        input_script_name = input_script_name.substr(sep+1);
         std::cout<<"INPUT: "<<input_script_name<<std::endl;
         string line;
         Section sec_flag = Section::NONE;
