@@ -146,7 +146,7 @@ struct Set_dynamic{
     int output_intvl = 1;
     int save_ptcl_intvl = -1;
     double t0 = 0;
-    std::string filename = "output_dynamic.txt";
+    std::string filename = "";
     DynamicModel model = DynamicModel::RMS;
     Twiss twiss_ref;
 };

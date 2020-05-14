@@ -26,6 +26,7 @@ using std::string;
 
 extern std::map<std::string, Section> sections;
 extern muParserHandle_t math_parser;
+extern string input_script_name;
 
 enum class Test {IBS, ECOOL, BOTH,DYNAMICBOTHBUNCHED, MATH_PARSER};
 
@@ -34,6 +35,7 @@ int main(int argc, char** argv) {
 
     if(argc>1) {
         std::ifstream input_file(argv[1]);
+        input_script_name = argv[1];
         string line;
         Section sec_flag = Section::NONE;
         Set_ptrs ptrs;

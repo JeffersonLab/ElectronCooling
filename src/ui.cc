@@ -22,6 +22,7 @@ std::unique_ptr<Ions> ion_sample = nullptr;
 
 Record uircd;
 std::ofstream save_to_file;
+std::string input_script_name;
 
 muParserHandle_t math_parser = NULL;
 std::vector<string> ION_ARGS = {"CHARGE_NUMBER", "MASS", "KINETIC_ENERGY", "NORM_EMIT_X", "NORM_EMIT_Y",
@@ -880,6 +881,7 @@ void run_simulation(Set_ptrs &ptrs) {
     simulator->set_fixed_bunch_length(fixed_bunch_length);
     if (output_intvl>1) simulator->set_output_intvl(output_intvl);
     if (save_ptcl_intvl>0) simulator->set_ion_save(save_ptcl_intvl);
+    if(ptrs.dynamic_ptr->filename.empty()) ptrs.dynamic_ptr->filename = "output_"+input_script_name;
     simulator->set_output_file(ptrs.dynamic_ptr->filename);
     simulator->set_reset_time(ptrs.dynamic_ptr->reset_time?true:false);
     simulator->set_overwrite(ptrs.dynamic_ptr->overwrite?true:false);
