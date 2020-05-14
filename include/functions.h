@@ -4,7 +4,7 @@
 #include <random>
 #include <string>
 
-bool iszero(double &x);
+bool iszero(double x);
 double rd(double x, double y, double z);
 bool file_exists(std::string fileName);
 

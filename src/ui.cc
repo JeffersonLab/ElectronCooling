@@ -8,6 +8,7 @@
 #include <sstream>
 
 #include "constants.h"
+#include "functions.h"
 
 
 using std::string;
@@ -36,7 +37,7 @@ std::vector<string> E_BEAM_SHAPE_TYPES = {"DC_UNIFORM", "BUNCHED_GAUSSIAN", "BUN
 std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS", "CURRENT", "SIGMA_X", "SIGMA_Y",
     "SIGMA_Z", "LENGTH", "E_NUMBER", "RH", "RV", "R_INNER", "R_OUTTER", "PARTICLE_FILE", "TOTAL_PARTICLE_NUMBER",
     "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
-    "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT"};
+    "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT", "CV_L"};
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF", "SMOOTH_RHO_MAX", "USE_GSL",
     "N_TR", "N_L", "N_PHI", "USE_MEAN_RHO_MIN"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK", "NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D", "NONMAG_NUM3D"};
@@ -273,6 +274,9 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             else if (var == "BUFFER_SIZE") {
                 e_beam_args->buffer = std::stoi(val);
             }
+            else if (var == "CV_L") {
+                e_beam_args->cv_l = std::stod(val);
+            }
             else {
                 assert(false&&"Wrong arguments in section_e_beam!");
             }
@@ -332,6 +336,9 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             }
             else if (var == "BUFFER_SIZE") {
                 e_beam_args->buffer = mupEval(math_parser);
+            }
+            else if (var == "CV_L") {
+                e_beam_args->cv_l = mupEval(math_parser);
             }
             else {
                 assert(false&&"Wrong arguments in section_e_beam!");
@@ -446,6 +453,7 @@ void create_e_beam(Set_ptrs &ptrs) {
     }
     if(ptrs.e_beam_ptr->p_shift) ptrs.e_beam->set_p_shift(true);
     if(ptrs.e_beam_ptr->v_shift) ptrs.e_beam->set_v_shift(true);
+    if(!iszero(ptrs.e_beam_ptr->cv_l)) ptrs.e_beam->set_cv_l(ptrs.e_beam_ptr->cv_l);
     std::cout<<"Electron beam created!"<<std::endl;
 }
 

@@ -130,6 +130,7 @@ struct Set_e_beam{
      bool corr = false;
      bool binary = false;
      int buffer = 1000;
+     double cv_l = 0;
 };
 
 struct Set_dynamic{

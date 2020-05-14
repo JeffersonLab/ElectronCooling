@@ -12,7 +12,7 @@ bool file_exists(std::string fileName)
     return infile.good();
 }
 
-bool iszero(double &x) {
+bool iszero(double x) {
     double err = 1.0e-60;
     if (x<err&&x>-err) {
 //        x = 0;

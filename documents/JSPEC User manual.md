@@ -311,6 +311,7 @@ The following keywords records the results from the previous computation. They c
 | list_cz               | When multi_bunches to be true, use list_cz to set the longitudinal coordinates of the electron bunches. The format is the same as that of list_cx. |
 | p_shift               | True: centers of the electron beam and the ion beam do not overlap. |
 | v_shift               | True: velocities of the electron beam and the ion beam do not equal. |
+| cv_l                  | An additional longitudinal velocity of the electron bunch.   |
 
 **section_ibs**
 
