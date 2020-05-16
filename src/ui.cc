@@ -108,16 +108,6 @@ double str_to_number(string val) {
     }
 }
 
-string time_to_string() {
-    char filename[25];
-    struct tm *timenow;
-    time_t now = time(NULL);
-    timenow = gmtime(&now);
-    strftime(filename, sizeof(filename), "%Y-%m-%d-%H-%M-%S", timenow);
-    string s(filename);
-    return s;
-}
-
 int list_c(string str, vector<double>& v) {
     std::istringstream ss(str);
     string val;
@@ -1614,7 +1604,7 @@ void parse(std::string &str, muParserHandle_t &math_parser){
         var = trim_whitespace(var);
         mupSetExpr(math_parser, var.c_str());
         if(!save_to_file.is_open()) {
-            string filename = time_to_string();
+            string filename = time_to_filename();
             filename = "JSPEC_SAVE_" + filename + ".txt";
             save_to_file.open (filename,std::ofstream::out | std::ofstream::app);
             if(save_to_file.is_open()){

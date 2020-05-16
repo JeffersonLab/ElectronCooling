@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdio>
 #include <fstream>
+#include <gsl/gsl_errno.h>
 #include <iostream>
 
 #include "functions.h"
@@ -307,11 +308,19 @@ void ForceNonMagNumeric1D::force(double v, double v_tr, double v_l, double v2, d
 
     double b_tr = 0;
     double error = 0;
-    gsl_integration_qagiu(f, 0, espabs, esprel, limit, gw, &b_tr, &error);
+    int status =  gsl_integration_qagiu(f, 0, espabs, esprel, limit, gw, &b_tr, &error);
+    if(status == GSL_EDIVERGE){
+        status = gsl_integration_qagiu(f, 0, 1e-10, 1e-10, 10*limit, gw, &b_tr, &error);
+        if(status == GSL_EDIVERGE) std::cout<<"GSL integration qagui error for transverse friction force!"<<std::endl;
+    }
 
     double b_l = 0;
     p.flag = 1;
-    gsl_integration_qagiu(f, 0, espabs, esprel, limit, gw, &b_l, &error);
+    status = gsl_integration_qagiu(f, 0, espabs, esprel, limit, gw, &b_l, &error);
+    if(status == GSL_EDIVERGE){
+        status = gsl_integration_qagiu(f, 0, 1e-10, 1e-10, 10*limit, gw, &b_l, &error);
+        if(status == GSL_EDIVERGE) std::cout<<"GSL integration qagui error for longitudinal friction force!"<<std::endl;
+    }
 
     double ve3_tr = ve_tr*ve_tr*ve_tr;
     double ff = -f_const*ne*lc/ve3_tr;

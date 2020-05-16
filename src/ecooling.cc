@@ -75,8 +75,14 @@ void ECoolRate::force(int n_sample, Beam &ion, EBeam &ebeam, Cooler &cooler, Fri
     //set parameters for friction force calculation
     force_solver.set_mag_field(cooler.magnetic_field());
     force_solver.set_time_cooler(t_cooler_);
-    if(!iszero(ebeam.cv_l())) {
-        double cv_l = ebeam.cv_l();
+    double beta_i = ion.beta();
+    double beta_e = ebeam.beta();
+    double d_beta = beta_e-beta_i;
+    double cv_l = 0;
+    if(!iszero(d_beta, 1e-6)) cv_l = d_beta*k_c;
+    if(!iszero(ebeam.cv_l(), 1e-6)) cv_l += ebeam.cv_l();
+
+    if(!iszero(cv_l, 1e-6)) {
         for(auto& v: v_long) {
             v -= cv_l;
         }

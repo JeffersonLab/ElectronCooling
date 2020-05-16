@@ -12,6 +12,7 @@
 #include "cooler.h"
 #include "ecooling.h"
 #include "force.h"
+#include "functions.h"
 #include "ibs.h"
 #include "ions.h"
 #include "luminosity.h"
@@ -38,6 +39,7 @@ int main(int argc, char** argv) {
         input_script_name = argv[1];
         size_t sep = input_script_name.find_last_of("\\/");
         input_script_name = input_script_name.substr(sep+1);
+        std::cout<<"START: "<<time_to_string()<<std::endl;
         std::cout<<"INPUT: "<<input_script_name<<std::endl;
         string line;
         Section sec_flag = Section::NONE;
@@ -166,6 +168,8 @@ int main(int argc, char** argv) {
             }
         }
         ui_quit();
+        std::cout<<"END: "<<time_to_string()<<std::endl;
+        std::cout<<"INPUT: "<<input_script_name<<std::endl;
     }
     else {
         Test test = Test::MATH_PARSER;

@@ -5,8 +5,11 @@
 #include <string>
 
 bool iszero(double x);
+bool iszero(double x, double err);
 double rd(double x, double y, double z);
 bool file_exists(std::string fileName);
+std::string time_to_string();
+std::string time_to_filename();
 
 template <typename T>
 int gaussian_random(int n, T& random_num, double sigma=1, double avg=0){

@@ -13,13 +13,42 @@ bool file_exists(std::string fileName)
 }
 
 bool iszero(double x) {
-    double err = 1.0e-60;
+    double err = 1.0e-20;
     if (x<err&&x>-err) {
 //        x = 0;
         return true;
     }
     return false;
 }
+
+bool iszero(double x, double err) {
+    if (err<0) err *= -1;
+    if (x<err&&x>-err) {
+        return true;
+    }
+    return false;
+}
+
+std::string time_to_string() {
+    char filename[25];
+    struct tm *timenow;
+    time_t now = time(NULL);
+    timenow = gmtime(&now);
+    strftime(filename, sizeof(filename), "%Y-%m-%d %H:%M:%S", timenow);
+    std::string s(filename);
+    return s;
+}
+
+std::string time_to_filename() {
+    char filename[25];
+    struct tm *timenow;
+    time_t now = time(NULL);
+    timenow = gmtime(&now);
+    strftime(filename, sizeof(filename), "%Y-%m-%d-%H-%M-%S", timenow);
+    std::string s(filename);
+    return s;
+}
+
 
 
 /** \brief Computes Carlson's elliptic integral of the second kind, RD(x, y, z).
