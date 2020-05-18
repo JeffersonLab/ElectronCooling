@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <gsl/gsl_integration.h>
+#include <gsl/gsl_errno.h>
 #include <vector>
 #include "beam.h"
 #include "constants.h"
@@ -105,7 +106,7 @@ private:
 public:
     void set_espabs(double x){espabs = x;}
     void set_esprel(double x){esprel = x;}
-    ForceNonMagNumeric1D(int n=100):limit(n){gw = gsl_integration_workspace_alloc(limit);}
+    ForceNonMagNumeric1D(int n=100):limit(n){gsl_set_error_handler_off();gw = gsl_integration_workspace_alloc(limit);}
     ~ForceNonMagNumeric1D(){gsl_integration_workspace_free(gw);}
 };
 

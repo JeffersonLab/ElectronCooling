@@ -133,6 +133,7 @@ struct Set_e_beam{
      int buffer = 1000;
      double t_rising = 0;
      double t_falling = 0;
+     double cv_l = 0;
 };
 
 struct Set_dynamic{
@@ -149,7 +150,7 @@ struct Set_dynamic{
     int output_intvl = 1;
     int save_ptcl_intvl = -1;
     double t0 = 0;
-    std::string filename = "output_dynamic.txt";
+    std::string filename = "";
     DynamicModel model = DynamicModel::RMS;
     Twiss twiss_ref;
 };

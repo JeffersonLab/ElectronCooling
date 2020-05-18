@@ -8,6 +8,7 @@
 #include <sstream>
 
 #include "constants.h"
+#include "functions.h"
 
 
 using std::string;
@@ -21,6 +22,7 @@ std::unique_ptr<Ions> ion_sample = nullptr;
 
 Record uircd;
 std::ofstream save_to_file;
+std::string input_script_name;
 
 muParserHandle_t math_parser = NULL;
 std::vector<string> ION_ARGS = {"CHARGE_NUMBER", "MASS", "KINETIC_ENERGY", "NORM_EMIT_X", "NORM_EMIT_Y",
@@ -36,7 +38,7 @@ std::vector<string> E_BEAM_SHAPE_TYPES = {"DC_UNIFORM", "BUNCHED_GAUSSIAN", "BUN
 std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS", "CURRENT", "SIGMA_X", "SIGMA_Y",
     "SIGMA_Z", "LENGTH", "E_NUMBER", "RH", "RV", "R_INNER", "R_OUTTER", "PARTICLE_FILE", "TOTAL_PARTICLE_NUMBER",
     "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
-    "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT", "RISE_TIME", "FALL_TIME"};
+    "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT", "RISE_TIME", "FALL_TIME", "CV_L"};
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF", "SMOOTH_RHO_MAX", "USE_GSL",
     "N_TR", "N_L", "N_PHI", "USE_MEAN_RHO_MIN"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK", "NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D", "NONMAG_NUM3D"};
@@ -104,16 +106,6 @@ double str_to_number(string val) {
         mupSetExpr(math_parser, val.c_str());
         return mupEval(math_parser);
     }
-}
-
-string time_to_string() {
-    char filename[25];
-    struct tm *timenow;
-    time_t now = time(NULL);
-    timenow = gmtime(&now);
-    strftime(filename, sizeof(filename), "%Y-%m-%d-%H-%M-%S", timenow);
-    string s(filename);
-    return s;
 }
 
 int list_c(string str, vector<double>& v) {
@@ -279,6 +271,9 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             else if (var == "FALL_TIME") {
                 e_beam_args->t_falling = std::stod(val);
             }
+            else if (var == "CV_L") {
+                e_beam_args->cv_l = std::stod(val);
+            }
             else {
                 assert(false&&"Wrong arguments in section_e_beam!");
             }
@@ -344,6 +339,9 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             }
             else if (var == "FALL_TIME") {
                 e_beam_args->t_falling = mupEval(math_parser);
+            }
+            else if (var == "CV_L") {
+                e_beam_args->cv_l = mupEval(math_parser);
             }
             else {
                 assert(false&&"Wrong arguments in section_e_beam!");
@@ -462,6 +460,7 @@ void create_e_beam(Set_ptrs &ptrs) {
     }
     if(ptrs.e_beam_ptr->p_shift) ptrs.e_beam->set_p_shift(true);
     if(ptrs.e_beam_ptr->v_shift) ptrs.e_beam->set_v_shift(true);
+    if(!iszero(ptrs.e_beam_ptr->cv_l)) ptrs.e_beam->set_cv_l(ptrs.e_beam_ptr->cv_l);
     std::cout<<"Electron beam created!"<<std::endl;
 }
 
@@ -889,6 +888,7 @@ void run_simulation(Set_ptrs &ptrs) {
     simulator->set_fixed_bunch_length(fixed_bunch_length);
     if (output_intvl>1) simulator->set_output_intvl(output_intvl);
     if (save_ptcl_intvl>0) simulator->set_ion_save(save_ptcl_intvl);
+    if(ptrs.dynamic_ptr->filename.empty()) ptrs.dynamic_ptr->filename = "output_"+input_script_name;
     simulator->set_output_file(ptrs.dynamic_ptr->filename);
     simulator->set_reset_time(ptrs.dynamic_ptr->reset_time?true:false);
     simulator->set_overwrite(ptrs.dynamic_ptr->overwrite?true:false);
@@ -1633,11 +1633,12 @@ void parse(std::string &str, muParserHandle_t &math_parser){
         var = trim_whitespace(var);
         mupSetExpr(math_parser, var.c_str());
         if(!save_to_file.is_open()) {
-            string filename = time_to_string();
+            string filename = time_to_filename();
             filename = "JSPEC_SAVE_" + filename + ".txt";
             save_to_file.open (filename,std::ofstream::out | std::ofstream::app);
             if(save_to_file.is_open()){
                 std::cout<<"File opened: "<<filename<<" !"<<std::endl;
+                save_to_file<<"INPUT: "<<input_script_name<<std::endl;
             }
             else {
                 std::cout<<"Failed to open file: "<<filename<<" !"<<std::endl;

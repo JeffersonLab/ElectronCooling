@@ -6,12 +6,12 @@
 #include "functions.h"
 
 void ParticleModel::update_ibeam(Beam& ion, Ions& ion_sample, Ring& ring, EBeam& ebeam, Cooler& cooler, ECoolRate* ecool_solver) {
+    vector<double>& dp_p = ion_sample.cdnt(Phase::DP_P);
     if(ecool) {
         double freq = k_c*ion.beta()/ring.circ()*cooler.section_number();
         ecool_solver->adjust_rate(ion, ebeam, {&freq});
         apply_cooling_kick(freq, ion, ion_sample, ecool_solver);
     }
-
     if(ibs) {
         apply_ibs_kick(ion, ion_sample);
     }
@@ -36,7 +36,11 @@ void ParticleModel::apply_cooling_kick(double freq, Beam& ion, Ions& ion_sample,
     for(int i=0; i<ion_sample.n_sample(); ++i) {
         xp[i] = !iszero(xp[i])?xp[i]*exp(force_x[i]*t_cooler*dt*freq/(xp[i]*p0)):xp[i];
         yp[i] = !iszero(yp[i])?yp[i]*exp(force_y[i]*t_cooler*dt*freq/(yp[i]*p0)):yp[i];
-        dp_p[i] = !iszero(dp_p[i])?dp_p[i]*exp(force_z[i]*t_cooler*dt*freq/(dp_p[i]*p0)):dp_p[i];
+        double dp = force_z[i]*t_cooler*dt*freq/(dp_p[i]*p0);
+        if(!iszero(dp_p[i],1e-7)) {
+            dp_p[i] = dp>0.15?dp_p[i]*(1+dp):dp_p[i]*exp(dp);
+        }
+//        dp_p[i] = !iszero(dp_p[i],1e-7)?dp_p[i]*exp(force_z[i]*t_cooler*dt*freq/(dp_p[i]*p0)):dp_p[i];
     }
 }
 

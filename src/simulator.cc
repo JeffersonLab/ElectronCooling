@@ -6,12 +6,6 @@
 
 extern Record uircd;
 
-//ECoolRate* ecool_solver = nullptr;
-//FrictionForceSolver* force_solver = nullptr;
-//LuminositySolver* lum_solver = nullptr;
-//Simulator* simulator = nullptr;
-//extern IBSSolver* ibs_solver;
-
 void Simulator::output_sddshead() {
     using std::endl;
     outfile<<"SDDS1"<<endl;
