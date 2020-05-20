@@ -40,7 +40,8 @@ int main(int argc, char** argv) {
         size_t sep = input_script_name.find_last_of("\\/");
         input_script_name = input_script_name.substr(sep+1);
         std::cout<<"START: "<<time_to_string()<<std::endl;
-        std::cout<<"INPUT: "<<input_script_name<<std::endl;
+        std::cout<<"INPUT: "<<input_script_name<<std::endl
+            <<"============================================="<<std::endl<<std::endl;
         string line;
         Section sec_flag = Section::NONE;
         Set_ptrs ptrs;
@@ -168,7 +169,8 @@ int main(int argc, char** argv) {
             }
         }
         ui_quit();
-        std::cout<<"END: "<<time_to_string()<<std::endl;
+        std::cout<<std::endl<<"============================================="<<std::endl
+            <<"END: "<<time_to_string()<<std::endl;
         std::cout<<"INPUT: "<<input_script_name<<std::endl;
     }
     else {

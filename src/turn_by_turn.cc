@@ -35,14 +35,18 @@ void TurnByTurnModel::apply_edge_kick(Cooler& cooler, EBeam& ebeam, Beam& ion, I
     double q = ion.charge_number()*k_e;
     double coef = q*ecool_solver->t_cooler()*cooler.section_number()/p0;
     for(int i=0; i<n; ++i) {
-        dp_p.at(i) = dp_p.at(i)*exp(rdn.at(i)*coef/dp_p.at(i));
+        dp_p[i] *= (1+rdn.at(i)*coef/dp_p.at(i));
+//        dp_p.at(i) = dp_p.at(i)*exp(rdn.at(i)*coef/dp_p.at(i));
+
+//        double dp = rdn.at(i)*coef/dp_p.at(i);
+//        dp_p[i] = dp>0.15?dp_p[i]*(1+dp):dp_p[i]*exp(dp);
     }
 }
 
 void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
     //Transverse
     //New betatron oscillation coordinates
-    auto twiss = ion_sample.get_twiss();
+    Twiss& twiss = ion_sample.get_twiss();
 
     int n_sample = ion_sample.n_sample();
     ion_sample.adjust_disp_inv();
@@ -51,10 +55,10 @@ void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
     assert(ring.tunes.qx>0&&ring.tunes.qy>0&&"Transverse tunes are needed for Turn_by_turn model");
     double Qx = ring.tunes.qx;
     double Qy = ring.tunes.qy;
-    auto x_bet = ion_sample.cdnt(Phase::X_BET);
-    auto xp_bet = ion_sample.cdnt(Phase::XP_BET);
-    auto y_bet = ion_sample.cdnt(Phase::Y_BET);
-    auto yp_bet = ion_sample.cdnt(Phase::YP_BET);
+    vector<double>& x_bet = ion_sample.cdnt(Phase::X_BET);
+    vector<double>& xp_bet = ion_sample.cdnt(Phase::XP_BET);
+    vector<double>& y_bet = ion_sample.cdnt(Phase::Y_BET);
+    vector<double>& yp_bet = ion_sample.cdnt(Phase::YP_BET);
     double bet_x = twiss.bet_x;
     double bet_y = twiss.bet_y;
     double alf_x = twiss.alf_x;
@@ -75,8 +79,8 @@ void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
     }
 
     //Longitudinal motion.
-    auto dp_p = ion_sample.cdnt(Phase::DP_P);
-    auto ds = ion_sample.cdnt(Phase::DS);
+    vector<double>& dp_p = ion_sample.cdnt(Phase::DP_P);
+    vector<double>& ds = ion_sample.cdnt(Phase::DS);
     if (ring.tunes.qs>0||ring.rf.v>0) {    //RF, synchrotron oscillation.
 //        assert(ring.tunes->qs>0||ring.rf->v>0&&"Longitudinal tune or RF cavity needed for Turn_by_turn model");
 
