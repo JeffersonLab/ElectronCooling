@@ -294,6 +294,9 @@ The following keywords records the results from the previous computation. They c
 | sigma_x               | RMS size in horizontal direction of bunched_gaussian electron beam in [m]. |
 | sigma_y               | RMS size in vertical direction of bunched_gaussian electron beam in [m]. |
 | sigma_z               | RMS bunch length of bunched_gaussian electron beam in [m].   |
+| sigma_dx              | RMS angle in horizontal direction. Instead of directly defining the temperatures, one can define the temperature of a Gaussian bunch with the three parameters sigma_dx, sigma_dy, and sigma_dpp. When they are defined, temperatures are igonred. |
+| sigma_dy              | RMS angle in vertical direction.Instead of directly defining the temperatures, one can define the temperature of a Gaussian bunch with the three parameters sigma_dx, sigma_dy, and sigma_dpp. When they are defined, temperatures are igonred. |
+| sigma_dpp             | momentum spread in longitudinal direction. Instead of directly defining the temperatures, one can define the temperature of a Gaussian bunch with the three parameters sigma_dx, sigma_dy, and sigma_dpp. When they are defined, temperatures are igonred. |
 | rh                    | Length of the semi-axis in horizontal direction in [m].      |
 | rv                    | Length of the semi-axis in vertical direction in [m].        |
 | r_inner               | Inner radius of a hollow beam in [m]                         |

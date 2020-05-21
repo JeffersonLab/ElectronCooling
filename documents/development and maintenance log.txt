@@ -1,3 +1,6 @@
+05/21/2020
+1. Define the angles of the Gaussian electron bunch.
+
 05/13/2020
 1. Change the default output file name to "output_" followed by the input script file.
 2. Add "cv_l" (longitudinal center velocity) to the electron beam, which allows to add an additional 
