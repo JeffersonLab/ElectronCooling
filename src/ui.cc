@@ -38,7 +38,7 @@ std::vector<string> E_BEAM_SHAPE_TYPES = {"DC_UNIFORM", "BUNCHED_GAUSSIAN", "BUN
 std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS", "CURRENT", "SIGMA_X", "SIGMA_Y",
     "SIGMA_Z", "LENGTH", "E_NUMBER", "RH", "RV", "R_INNER", "R_OUTTER", "PARTICLE_FILE", "TOTAL_PARTICLE_NUMBER",
     "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
-    "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT", "CV_L"};
+    "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT", "CV_L", "SIGMA_XP", "SIGMA_YP", "SIGMA_DPP"};
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF", "SMOOTH_RHO_MAX", "USE_GSL",
     "N_TR", "N_L", "N_PHI", "USE_MEAN_RHO_MIN"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK", "NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D", "NONMAG_NUM3D"};
@@ -228,6 +228,14 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             }
             else if (var == "SIGMA_Z") {
                 e_beam_args->sigma_z = std::stod(val);
+            }else if (var == "SIMGA_XP") {
+                e_beam_args->sigma_xp = std::stod(val);
+            }
+            else if (var == "SIGMA_YP") {
+                e_beam_args->sigma_yp = std::stod(val);
+            }
+            else if (var == "SIGMA_DPP") {
+                e_beam_args->sigma_dpp = std::stod(val);
             }
             else if (var == "RH") {
                 e_beam_args->rh = std::stod(val);
@@ -291,6 +299,15 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             }
             else if (var == "SIGMA_Z") {
                 e_beam_args->sigma_z = mupEval(math_parser);
+            }
+            else if (var == "SIGMA_XP") {
+                e_beam_args->sigma_xp = mupEval(math_parser);
+            }
+            else if (var == "SIGMA_YP") {
+                e_beam_args->sigma_yp = mupEval(math_parser);
+            }
+            else if (var == "SIGMA_DPP") {
+                e_beam_args->sigma_dpp = mupEval(math_parser);
             }
             else if (var == "RH") {
                 e_beam_args->rh = mupEval(math_parser);
@@ -425,6 +442,17 @@ void create_e_beam(Set_ptrs &ptrs) {
     if(shape != "BUNCHED_USER_DEFINED") {
         ptrs.e_beam->set_tpr(tmp_tr, tmp_l);
     }
+
+    if(shape == "BUNCHED_GAUSSIAN") {
+        double sigma_xp = ptrs.e_beam_ptr->sigma_xp;
+        double sigma_yp = ptrs.e_beam_ptr->sigma_yp;
+        double sigma_dpp = ptrs.e_beam_ptr->sigma_dpp;
+        if(!iszero(sigma_xp, 1e-8) && !iszero(sigma_yp, 1e-8) && !iszero(sigma_dpp, 1e-8)) {
+            GaussianBunch* ptr = dynamic_cast<GaussianBunch*>(ptrs.e_beam.get());
+            ptr->set_angles(sigma_xp, sigma_yp, sigma_dpp);
+        }
+    }
+
     if(ptrs.e_beam_ptr->multi_bunches) {
         ptrs.e_beam->set_multi_bunches(true);
         int n = ptrs.e_beam_ptr->n_cx;

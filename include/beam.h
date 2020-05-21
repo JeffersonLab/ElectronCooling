@@ -238,14 +238,19 @@ class GaussianBunch: public EBeam{
     double sigma_x_;
     double sigma_y_;
     double sigma_s_;
+    double sigma_xp_;
+    double sigma_yp_;
+    double sigma_dpp_;
  public:
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
                 double cx, double cy, double cz);
     Shape shape() const {return Shape::GAUSSIAN_BUNCH;}
     double length() const {return 6*sigma_s_;}
+    void set_angles(double sigma_xp, double sigma_yp, double sigma_dpp);
     GaussianBunch(double n_electron, double sigma_x, double sigma_y, double sigma_s):n_electron_(n_electron),
                 sigma_x_(sigma_x),sigma_y_(sigma_y),sigma_s_(sigma_s){};
+
 
 };
 

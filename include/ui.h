@@ -106,6 +106,9 @@ struct Set_e_beam{
      double sigma_x = 0;
      double sigma_y = 0;
      double sigma_z = 0;
+     double sigma_xp = 0;
+     double sigma_yp = 0;
+     double sigma_dpp = 0;
      double current = 0;
      double radius = 0;
      double length = 0;

@@ -92,6 +92,17 @@ void EBeam::set_v_avg(double v_avg_tx, double v_avg_ty, double v_avg_long) {
     v_avg_l.at(0) = v_avg_long;
 }
 
+void GaussianBunch::set_angles(double sigma_xp, double sigma_yp, double sigma_dpp) {
+    sigma_xp_ = sigma_xp;
+    sigma_yp_ = sigma_yp;
+    sigma_dpp_ = sigma_dpp;
+    double tpr_t = (sigma_xp*sigma_xp + sigma_yp*sigma_yp)*beta_*beta_*gamma_*gamma_*k_me*1e6/2;
+    double tpr_l = sigma_dpp*sigma_dpp*beta_*beta_*k_me*1e6;
+    set_tpr(tpr_t, tpr_l);
+//    std::cout<<"Transverse temperature [eV]: "<<tpr_t<<std::endl;
+//    std::cout<<"Longitudinal temperature [eV]: "<<tpr_l<<std::endl;
+}
+
 void UniformCylinder::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n_particle) {
     int nq = this->charge_number();
     if (nq<0) nq *= -1;
