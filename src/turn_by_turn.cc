@@ -48,9 +48,6 @@ void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
     //New betatron oscillation coordinates
     Twiss& twiss = ion_sample.get_twiss();
 
-    int n_sample = ion_sample.n_sample();
-    ion_sample.adjust_disp_inv();
-
     //Transverse motion by tunes
     assert(ring.tunes.qx>0&&ring.tunes.qy>0&&"Transverse tunes are needed for Turn_by_turn model");
     double Qx = ring.tunes.qx;
@@ -59,6 +56,27 @@ void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
     vector<double>& xp_bet = ion_sample.cdnt(Phase::XP_BET);
     vector<double>& y_bet = ion_sample.cdnt(Phase::Y_BET);
     vector<double>& yp_bet = ion_sample.cdnt(Phase::YP_BET);
+
+    vector<double>& dp_p = ion_sample.cdnt(Phase::DP_P);
+    vector<double>& ds = ion_sample.cdnt(Phase::DS);
+
+    int n_sample = ion_sample.n_sample();
+    ion_sample.adjust_disp_inv();
+
+    if(idx>=0 && idx<n_sample) {
+        if(file_exists(filename_single_particle)) {
+            out_single_particle<<x_bet.at(idx)<<' '<<xp_bet.at(idx)<<' '<<y_bet.at(idx)<<' '<<yp_bet.at(idx)<<' '
+                                <<dp_p.at(idx)<<' '<<ds.at(idx)<<endl;
+        }
+        else {
+            filename_single_particle += time_to_filename()+".txt";
+            out_single_particle.open(filename_single_particle);
+            out_single_particle.precision(10);
+        }
+    }
+
+
+
     double bet_x = twiss.bet_x;
     double bet_y = twiss.bet_y;
     double alf_x = twiss.alf_x;
@@ -79,8 +97,8 @@ void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
     }
 
     //Longitudinal motion.
-    vector<double>& dp_p = ion_sample.cdnt(Phase::DP_P);
-    vector<double>& ds = ion_sample.cdnt(Phase::DS);
+//    vector<double>& dp_p = ion_sample.cdnt(Phase::DP_P);
+//    vector<double>& ds = ion_sample.cdnt(Phase::DS);
     if (ring.tunes.qs>0||ring.rf.v>0) {    //RF, synchrotron oscillation.
 //        assert(ring.tunes->qs>0||ring.rf->v>0&&"Longitudinal tune or RF cavity needed for Turn_by_turn model");
 
