@@ -153,7 +153,14 @@ void ECoolRate::apply_kick(int n_sample, Beam &ion, Ions& ion_sample) {
     for(int i=0; i<n_sample; ++i){
         xp[i] = !iszero(ixp[i])?ixp[i]*exp(force_x[i]*t_cooler_/(p0*ixp[i])):ixp[i];
         yp[i] = !iszero(iyp[i])?iyp[i]*exp(force_y[i]*t_cooler_/(p0*iyp[i])):iyp[i];
-        dp_p[i] = !iszero(idp_p[i])?idp_p[i]*exp(force_z[i]*t_cooler_/(p0*idp_p[i])):idp_p[i];
+//        dp_p[i] = !iszero(idp_p[i])?idp_p[i]*exp(force_z[i]*t_cooler_/(p0*idp_p[i])):idp_p[i];
+        double dp = force_z[i]*t_cooler_/(idp_p[i]*p0);
+        if(!iszero(idp_p[i],1e-7)) {
+            dp_p[i] = dp>0.15?idp_p[i]*(1+dp):idp_p[i]*exp(dp);
+        }
+        else {
+            dp_p[i] = idp_p[i];
+        }
     }
 }
 

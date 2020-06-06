@@ -40,7 +40,7 @@ std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS"
     "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
     "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT", "CV_L", "SIGMA_XP", "SIGMA_YP", "SIGMA_DPP"};
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF", "SMOOTH_RHO_MAX", "USE_GSL",
-    "N_TR", "N_L", "N_PHI", "USE_MEAN_RHO_MIN"};
+    "N_TR", "N_L", "N_PHI", "USE_MEAN_RHO_MIN", "MODEL", "SAMPLE_NUMBER_TR", "SAMPLE_NUMBER_L"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK", "NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D", "NONMAG_NUM3D"};
 std::vector<string> SIMULATION_ARGS = {"TIME", "STEP_NUMBER", "SAMPLE_NUMBER", "IBS", "E_COOL", "OUTPUT_INTERVAL",
     "SAVE_PARTICLE_INTERVAL", "OUTPUT_FILE", "MODEL", "REF_BET_X", "REF_BET_Y", "REF_ALF_X", "REF_ALF_Y",
@@ -485,6 +485,7 @@ void define_ion_beam(std::string &str, Set_ion *ion_args){
     var = trim_whitespace(var);
     val = trim_whitespace(val);
     assert(std::find(ION_ARGS.begin(),ION_ARGS.end(),var)!=ION_ARGS.end() && "WRONG COMMANDS IN SECTION_ION!");
+
     if(math_parser==NULL) {
         if (var=="CHARGE_NUMBER") {
             ion_args->n_charge = std::stoi(val);
@@ -662,11 +663,18 @@ void smooth_rho_max(Set_ptrs &ptrs) {
     if(ptrs.ecool_ptr->smooth_rho_max) p->set_smooth_rho_max(true);
     else p->set_smooth_rho_max(false);
 }
+
 void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
     assert(ptrs.cooler.get()!=nullptr && "MUST CREATE THE COOLER BEFORE CALCULATE ELECTRON COOLING RATE!");
     assert(ptrs.e_beam.get()!=nullptr && "MUST CREATE THE ELECTRON BEAM BEFORE CALCULATE ELECTRON COOLING RATE!");
     assert(ptrs.ecool_ptr.get()!=nullptr && "PLEASE SET UP THE PARAMETERS FOR ELECTRON COOLING RATE CALCULATION!");
     int n_sample = ptrs.ecool_ptr->n_sample;
+    int n_tr = ptrs.ecool_ptr->n_sample_tr;
+    int n_l = ptrs.ecool_ptr->n_sample_l;
+    if(ptrs.ecool_ptr->model == IonSampleType::SINGLE_PARTICLE) {
+        assert(n_tr>0 && n_l>0 && "NEED TO SET N_TR AND N_L FOR SINGLE PARTICLE MODEL.");
+        n_sample = n_tr*n_tr*n_l;
+    }
     assert(n_sample > 0 && "WRONG PARAMETER VALUE FOR ELECTRON COOLING RATE CALCULATION!");
     assert(ptrs.ion_beam.get()!=nullptr && "MUST CREATE THE ION BEAM BEFORE CALCULATE ELECTRON COOLING RATE!");
     assert(ptrs.ring.get()!=nullptr && "MUST CREATE THE RING BEFORE CALCULATE ELECTRON COOLING RATE!");
@@ -751,9 +759,25 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
         }
     }
 
-    ion_sample.reset(new Ions_MonteCarlo(n_sample));
-    ion_sample->set_twiss(*ptrs.cooler);
-    ion_sample->create_samples(*ptrs.ion_beam);
+    switch(ptrs.ecool_ptr->model) {
+    case IonSampleType::MONTE_CARLO : {
+        ion_sample.reset(new Ions_MonteCarlo(n_sample));
+        ion_sample->set_twiss(*ptrs.cooler);
+        ion_sample->create_samples(*ptrs.ion_beam);
+        break;
+    }
+    case IonSampleType::SINGLE_PARTICLE : {
+        ion_sample.reset(new Ions_SingleParticle(n_tr, n_l));
+        ion_sample->set_twiss(*ptrs.cooler);
+        Ions_SingleParticle* ptr = dynamic_cast<Ions_SingleParticle*>(ion_sample.get());
+        ptr->single_particle_grid(*ptrs.ion_beam);
+        ion_sample->create_samples(*ptrs.ion_beam);
+        break;
+    }
+    default : {
+        assert(false&&"Wrong ion sample type!");
+    }
+    }
 
     if(calc) {
         ecool_solver->ecool_rate(*force_solver, *ptrs.ion_beam, *ion_sample, *ptrs.cooler, *ptrs.e_beam, *ptrs.ring, rx, ry, rz);
@@ -1527,10 +1551,27 @@ void set_ecool(string &str, Set_ecool *ecool_args){
         else if (val == "OFF" || val == "FALSE") ecool_args->use_gsl = false;
         else assert(false&&"WRONG VALUE FOR THE PARAMETER USE_GSL IN SECTION_ECOOL!");
     }
+    else if (var == "MODEL") {
+        if (val == "SINGLE_PARTICLE") {
+            ecool_args->model = IonSampleType::SINGLE_PARTICLE;
+        }
+        else if (val == "MONTE_CARLO") {
+            ecool_args->model = IonSampleType::MONTE_CARLO;
+        }
+        else {
+            assert(false&& "WRONG VALUE FOR ION BEAM MODEL!");
+        }
+    }
     else {
         if (math_parser == NULL) {
-            if (var == "SAMPLE_NUMBE") {
+            if (var == "SAMPLE_NUMBER") {
                 ecool_args->n_sample = std::stod(val);
+            }
+            else if (var=="SAMPLE_NUMBER_TR") {
+                ecool_args->n_sample_tr = std::stoi(val);
+            }
+            else if (var=="SAMPLE_NUMBER_L") {
+                ecool_args->n_sample_l = std::stoi(val);
             }
             else if(var == "TMP_EFF") {
                 ecool_args->tmpr_eff = std::stod(val);
@@ -1567,6 +1608,12 @@ void set_ecool(string &str, Set_ecool *ecool_args){
             mupSetExpr(math_parser, val.c_str());
             if (var == "SAMPLE_NUMBER") {
                 ecool_args->n_sample = static_cast<double>(mupEval(math_parser));
+            }
+            else if (var=="SAMPLE_NUMBER_TR") {
+                ecool_args->n_sample_tr = static_cast<int>(mupEval(math_parser));
+            }
+            else if (var=="SAMPLE_NUMBER_L") {
+                ecool_args->n_sample_l = static_cast<int>(mupEval(math_parser));
             }
             else if(var == "TMP_EFF") {
                 ecool_args->tmpr_eff = static_cast<double>(mupEval(math_parser));

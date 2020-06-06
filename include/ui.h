@@ -81,6 +81,9 @@ struct Set_ecool{
      int n_tr = 0;
      int n_l = 0;
      int n_phi = 0;
+     IonSampleType model = IonSampleType::MONTE_CARLO;
+    int n_sample_tr = 0;
+    int n_sample_l = 0;
 };
 
 struct Set_cooler{
