@@ -22,6 +22,8 @@ protected:
     IonSampleType sample_type_ = IonSampleType::MONTE_CARLO;
     Twiss twiss;
     double center_[3] = {0,0,0};
+    bool bunched_ = true;
+    double beta_s_ = 0;
 public:
     void adjust_disp();
     void adjust_disp_inv();

@@ -214,6 +214,8 @@ void Ions_SingleParticle::emit(vector<double>& x_bet, vector<double>& xp_bet, ve
     emit_y /= 2*n_sample;
     emit_s /= n_sample;
 
+    if(bunched_) emit_s /= 2;
+
 }
 
 void Ions_SingleParticle::emit(double& emit_x, double& emit_y, double& emit_s) {
@@ -326,6 +328,9 @@ void Ions_MonteCarlo::create_samples(Beam& ion) {
     ::adjust_disp(dy, y_bet, dp_p, y, n_sample);
     ::adjust_disp(dpx, xp_bet, dp_p, xp, n_sample);
     ::adjust_disp(dpy, yp_bet, dp_p, yp, n_sample);
+
+    bunched_ = ion.bunched();
+    if(bunched_) beta_s_ = ion->sigma_s()/ion->dp_p();
 }
 
 Ions_SingleParticle::Ions_SingleParticle(int n_tr, int n_l):n_tr_(n_tr),n_l_(n_l) {
@@ -437,4 +442,7 @@ void Ions_SingleParticle::create_samples(Beam& ion) {
     ::adjust_disp(dy, y_bet, dp_p, y, cnt);
     ::adjust_disp(dpx, xp_bet, dp_p, xp, cnt);
     ::adjust_disp(dpy, yp_bet, dp_p, yp, cnt);
+
+    bunched_ = ion.bunched();
+    if(bunched_) beta_s_ = ion->sigma_s()/ion->dp_p();
 }
