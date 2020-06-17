@@ -223,7 +223,7 @@ void ECoolRate::ecool_rate(FrictionForceSolver &force_solver, Beam &ion,
     adjust_disp_inv(t.disp_y, y_bet, dp_p, ion_sample.cdnt(Phase::Y), n_sample);
     adjust_disp_inv(t.disp_dy, yp_bet, dp_p, yp, n_sample);
 
-    ion_sample.emit(x_bet, xp_bet, y_bet, yp_bet, dp_p, emit_x, emit_y, emit_z);
+    ion_sample.emit(x_bet, xp_bet, y_bet, yp_bet, dp_p, ion_sample.cdnt(Phase::DS), emit_x, emit_y, emit_z);
 
     rate_x = emit_x/emit_x0-1;
     rate_y = emit_y/emit_y0-1;

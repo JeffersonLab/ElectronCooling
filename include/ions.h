@@ -39,7 +39,7 @@ public:
     void center(double &cx, double &cy, double &cz){cx = center_[0]; cy = center_[1]; cz = center_[2];}
     virtual void emit(double& emit_x, double& emit_y, double& emit_s) = 0;
     virtual void emit(vector<double>& x_bet, vector<double>& xp_bet, vector<double>& y_bet, vector<double>& yp_bet,
-                      vector<double>& dp_p, double& emit_x, double& emit_y, double& emit_s) = 0;
+                      vector<double>& dp_p,vector<double>&ds, double& emit_x, double& emit_y, double& emit_s) = 0;
     virtual void create_samples(Beam& ion) = 0;
 };
 
@@ -52,7 +52,7 @@ public:
     Ions_MonteCarlo(std::string filename, int n,int skip = 0, bool binary = false, int n_buffer = 1000);
     virtual void emit(double& emit_x, double& emit_y, double& emit_s);
     virtual void emit(vector<double>& x_bet, vector<double>& xp_bet, vector<double>& y_bet, vector<double>& yp_bet,
-                      vector<double>& dp_p, double& emit_x, double& emit_y, double& emit_s);
+                      vector<double>& dp_p, vector<double>&ds, double& emit_x, double& emit_y, double& emit_s);
     virtual void create_samples(Beam& ion);
 
 };
@@ -67,7 +67,7 @@ public:
     Ions_SingleParticle(int n_tr, int n_l);
     virtual void emit(double& emit_x, double& emit_y, double& emit_s);
     virtual void emit(vector<double>& x_bet, vector<double>& xp_bet, vector<double>& y_bet, vector<double>& yp_bet,
-                      vector<double>& dp_p, double& emit_x, double& emit_y, double& emit_s);
+                      vector<double>& dp_p, vector<double>&ds, double& emit_x, double& emit_y, double& emit_s);
     virtual void create_samples(Beam& ion);
 };
 
