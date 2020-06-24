@@ -8,7 +8,7 @@
 #include "constants.h"
 
 using std::vector;
-enum class ForceFormula {PARKHOMCHUK, NONMAG_DERBENEV, NONMAG_MESHKOV, NONMAG_NUM1D, NONMAG_NUM3D};
+enum class ForceFormula {PARKHOMCHUK, NONMAG_DERBENEV, NONMAG_MESHKOV, NONMAG_NUM1D, NONMAG_NUM3D, MESHKOV};
 
 class FrictionForceSolver{
 protected:

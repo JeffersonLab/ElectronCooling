@@ -580,7 +580,7 @@ void ForceNonMagNumeric3D::force(double v, double v_tr, double v_l, double v2, d
 
 void ForceMeshkov::force(double ve_tr, double ve_l, double ve2_tr, double ve2_l, double v_tr, double v_l,
                          double v2, double rho_min_const, int charge_number,  double density, double f_const,
-        double& force_tr,double& force_l) {
+                        double& force_tr,double& force_l) {
         double rho_L    = k_me_kg * ve_tr / ( mag_field * k_e ); //SI units, in m
         double wp = sqrt(k_wp*density);
         //A fudge factor to smooth the friction force shape. Using the
@@ -641,8 +641,8 @@ void ForceMeshkov::force(double ve_tr, double ve_l, double ve2_tr, double ve2_l,
             }
         }
 
-        force_tr = f_const * density * v_tr;
-        force_l = f_const * density * v_l;
+        force_tr = f_const * density * v_tr * f_tr;
+        force_l = f_const * density * v_l * f_l;
 }
 
 void ForceMeshkov::friction_force(int charge_number, int ion_number,
