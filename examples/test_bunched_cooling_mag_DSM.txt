@@ -64,8 +64,14 @@ section_e_beam
 
 section_ecool
 	sample_number = 4000
-	force_formula = Meshkov
-#	smooth_factor = 3
+#	n_tr = 20
+#	n_l = 20
+#	n_phi = 20
+#	force_formula = nonmag_num3d
+	force_formula = DSM
+	n_step = 100
+#	magnetic_only = true
+#	smooth_factor = 2
 section_run
 	srand 0
  	create_ion_beam

@@ -583,9 +583,7 @@ void ForceMeshkov::force(double ve_tr, double ve_l, double ve2_tr, double ve2_l,
                         double& force_tr,double& force_l) {
         double rho_L    = k_me_kg * ve_tr / ( mag_field * k_e ); //SI units, in m
         double wp = sqrt(k_wp*density);
-        //A fudge factor to smooth the friction force shape. Using the
-        // "Classical" default definition here from the BETACOOL documentation
-        double k = 2;
+
         //The Number of multiple adiabatic collisions with a single electron
         double v_sh = sqrt(v2 + ve2_l);
         double N_col = 1 + ve_tr/(k_pi*v_sh);
@@ -654,8 +652,8 @@ void ForceMeshkov::friction_force(int charge_number, int ion_number,
     force_tr.resize(ion_number);
     force_long.resize(ion_number);
     auto tpr = ebeam.temperature();
-    vector<double> ve_rms_l = ebeam.get_v(EBeamV::V_RMS_L);
-    vector<double> ve_rms_tr =  ebeam.get_v(EBeamV::V_RMS_TR);
+    vector<double>& ve_rms_l = ebeam.get_v(EBeamV::V_RMS_L);
+    vector<double>& ve_rms_tr =  ebeam.get_v(EBeamV::V_RMS_TR);
 
     switch(tpr) {
     case Temperature::CONST: {
@@ -700,4 +698,299 @@ void ForceMeshkov::friction_force(int charge_number, int ion_number,
         break;
     }
     }
+}
+
+void ForceDSM::calc_alpha() {
+//    sin_a.resize(n_a);
+    cos_a.resize(n_a);
+    tan_a.resize(n_a);
+    double da = k_pi/n_a;
+    double a = (-k_pi+da)/2;
+    for(int i=0; i<n_a; ++i) {
+//        sin_a.at(i) = sin(a);
+        cos_a.at(i) = cos(a);
+        tan_a.at(i) = tan(a);
+        a += da;
+    }
+}
+
+void ForceDSM::calc_ve() {
+    t2.resize(n_ve);
+    ve.resize(n_ve);
+    double dt = 1.0/n_ve;
+    double t = dt/2;
+    for(int i=0; i<n_ve; ++i) {
+        ve.at(i) = (1-t)/t;
+        t2.at(i) = t*t;
+        t += dt;
+    }
+}
+
+void ForceDSM::calc_exp_ve2(double ve2_l, vector<double>& t2) {
+    exp_ve2.resize(n_ve);
+    double coef = -1/(2*ve2_l);
+    for(int i=0; i<n_ve; ++i) {
+        exp_ve2.at(i) = exp(coef*ve.at(i)*ve.at(i))/t2.at(i);
+    }
+}
+
+void ForceDSM::init(EBeam& ebeam) {
+    auto tpr = ebeam.temperature();
+    if(tpr==Temperature::CONST) {
+        const_tpr = true;
+    }
+    else {
+        const_tpr = false;
+    }
+}
+
+
+void ForceDSM::pre_int(double sgm_vtr, double sgm_vl) {
+    hlf_v2tr.resize(n_tr);
+    hlf_v2l.resize(n_l);
+    vtr_cos.resize(n_phi,vector<double>(n_tr));
+    vl.resize(n_l);
+    vtr.resize(n_tr);
+    v2tr_sin2.resize(n_phi,vector<double>(n_tr));
+
+    vector<double> phi(n_phi);
+
+    double d_phi = k_pi/n_phi;
+    phi.at(0) = d_phi/2;
+    for(int i=1; i<n_phi; ++i) phi.at(i) = phi.at(i-1) + d_phi;
+
+    double d_vtr = 3*sgm_vtr/n_tr;
+    vtr.at(0) = d_vtr/2;
+    for(int i=1; i<n_tr; ++i) vtr.at(i) = vtr.at(i-1) + d_vtr;
+
+    double d_vl = 6*sgm_vl/n_l;
+    vl.at(0) = -3*sgm_vl + d_vl/2;
+    for(int i=1; i<n_l; ++i) vl.at(i) = vl.at(i-1) + d_vl;
+
+    d = d_phi*d_vtr*d_vl;
+
+    for(int i=0; i<n_tr; ++i) hlf_v2tr.at(i) = vtr.at(i)*vtr.at(i);
+    for(int i=0; i<n_l; ++i) hlf_v2l.at(i) = -vl.at(i)*vl.at(i)/2;
+    for(auto& e: vl) e*= -1;
+    for(auto& e: phi) e = cos(e);   //cos(phi)
+    for(int i=0; i<n_phi; ++i) {
+        for(int j=0; j<n_tr; ++j) {
+            vtr_cos.at(i).at(j) = -phi.at(i)*vtr.at(j);
+        }
+    }
+    for(auto& e: phi) e = 1 - e*e;   //sin(phi)*sin(phi)
+    for(int i=0; i<n_phi; ++i) {
+        for(int j=0; j<n_tr; ++j) {
+            v2tr_sin2.at(i).at(j) = hlf_v2tr.at(j)*phi.at(i);
+        }
+    }
+
+    for(auto& e: hlf_v2tr) e /= -2;
+}
+
+void ForceDSM::calc_exp_vtr(double sgm_vtr, double sgm_vl) {
+    exp_vtr.resize(n_l, vector<double>(n_tr));
+    double inv_ve2_tr = 1/(sgm_vtr*sgm_vtr);
+    double inv_ve2_l = 1/(sgm_vl*sgm_vl);
+    for(int i=0; i<n_l; ++i) {
+        for(int j=0; j<n_tr; ++j) {
+            exp_vtr.at(i).at(j) = exp(hlf_v2tr.at(j)*inv_ve2_tr + hlf_v2l.at(i)*inv_ve2_l)*vtr.at(j);
+        }
+    }
+    f_inv_norm = 0;
+    for(auto&v:exp_vtr)
+        for(auto&e:v)
+            f_inv_norm+=e;
+    f_inv_norm = 1/(n_phi*f_inv_norm);
+}
+
+
+
+void ForceDSM::force(double ve_tr, double ve_l, double ve2_tr, double ve2_l, double v_tr, double v_l,
+                         double v2, double rho_min_const, int charge_number,  double density, double f_const,
+                        double& force_tr,double& force_l) {
+        double rho_L    = k_me_kg * ve_tr / ( mag_field * k_e ); //SI units, in m
+        double wp = sqrt(k_wp*density);
+
+        //The Number of multiple adiabatic collisions with a single electron
+        double v_sh = sqrt(v2 + ve2_l);
+        double N_col = 1 + ve_tr/(k_pi*v_sh);
+//        //dynamic shielding radius
+//        double rho_sh = sqrt(v2 + ve2_l) / wp;
+        //minimum impact parameter
+        double rho_min = rho_min_const / (v2 + ve2_l);  //in units of m
+        //intermediate impact parameter
+        double rho_F = rho_L * v_sh / ve_tr;
+        double rho_max = max_impact_factor(v_sh,charge_number,density);
+        double rho_min_mag = k*rho_L;
+        if(rho_min_mag<rho_min) rho_min_mag = rho_min;
+        //Coulomb Logarithms
+        double L_M = rho_max>rho_min_mag? log(rho_max/rho_min_mag): 0;
+        double L_A = k*rho_L>rho_F? log(k*rho_L/rho_F): 0;
+        double L_F = rho_F>rho_min? log(rho_F/rho_min): 0;
+        if(rho_F>rho_max) L_F = rho_max>rho_min? log(rho_max/rho_min): 0;
+        double f_tr = 0;
+        double f_l = 0;
+        double f_mag_tr = 0;
+        double f_mag_l = 0;
+        double f_fa_tr = 0;
+        double f_fa_l = 0;
+
+        force_l = 0;
+        force_tr = 0;
+
+        if(L_M>0) {
+            if(first_run) {
+                calc_alpha();
+                calc_ve();
+                calc_exp_ve2(ve2_l, t2);
+                first_run = false;
+            }
+
+            double y = v_l/ve_l;
+            double z = v_tr/ve_l;
+            int sgn = 1;
+            if(z<0) {
+                sgn = -1;
+                z *= -1;
+            }
+
+            for(int i=0; i<n_a; ++i) {
+                double yztan = y + z*tan_a.at(i);
+                double exp_yztan2 = exp(-yztan*yztan/2);
+                double ycos_zsin = yztan*cos_a.at(i);
+                double fi_l = ycos_zsin*exp_yztan2;
+                f_tr += tan_a.at(i)*fi_l;
+                f_l += fi_l;
+            }
+            double da = k_pi/n_a;
+            f_tr *= da;
+            f_l *= da;
+            if(iszero(z)) {
+                f_l = 2*v_l/ve_l*exp(-v_l*v_l/(2*ve2_l));
+            }
+            double coef = f_const*density*L_M/(sqrt(2*k_pi)*ve2_l);
+            f_mag_tr += sgn*coef*f_tr;
+            f_mag_l += coef*f_l;
+
+            f_l = 0;
+            if(v2>ve2_l) {  //Non-logarithm contribution
+                if(!const_tpr) calc_exp_ve2(ve2_l,t2);
+                for(int i=0; i<n_ve; ++i) {
+                    double vm = v_l - ve.at(i);
+                    double vp = v_l + ve.at(i);
+                    double bm = v_tr*v_tr + vm*vm;
+                    bm = sqrt(bm*bm*bm);
+                    double bp = v_tr*v_tr + vp*vp;
+                    bp = sqrt(bp*bp*bp);
+                    f_l += (vm/bm+vp/bp)*exp_ve2.at(i);
+                }
+                double dt = 1.0/n_ve;
+                f_l *= dt;
+                coef = 2*coef/L_M;
+                f_mag_l += coef*f_l;
+            }
+
+            force_tr += f_mag_tr;
+            force_l += f_mag_l;
+        }
+
+        if(mag_only) return;
+        if(L_A>0 || L_F>0) {    //Fast collision & adiabatic collision
+            if(first_run_fa) {
+                pre_int(ve_tr, ve_l);
+                calc_exp_vtr(ve_tr, ve_l);
+                first_run_fa = false;
+            }
+            else if(!const_tpr) {
+                calc_exp_vtr(ve_tr, ve_l);
+            }
+            f_tr = 0;
+            f_l = 0;
+
+            for(int i=0; i<n_tr; ++i) {
+                for(int j=0; j<n_l; ++j) {
+                    for(int k=0; k<n_phi; ++k) {
+                        double sub_vl = v_l + vl.at(j);
+                        double sub_vtr = v_tr + vtr_cos.at(k).at(i);
+                        double f_bot = sub_vl*sub_vl + sub_vtr*sub_vtr + v2tr_sin2.at(k).at(i);
+                        double f_inv_bot = 1/f_bot;
+                        double rho_min = rho_min_const*f_inv_bot;
+                        L_F = rho_F>rho_min? log(rho_F/rho_min): 0;
+                        if(rho_F>rho_max) L_F = rho_max>rho_min? log(rho_max/rho_min): 0;
+                        double f = exp_vtr.at(j).at(i)*(L_F+N_col*L_A)*(f_inv_bot*sqrt(f_inv_bot));
+                        f_tr += sub_vtr*f;
+                        f_l += sub_vl*f;
+                    }
+                }
+            }
+
+            double ff = 2*f_const*density*f_inv_norm;
+            f_fa_tr = ff*f_tr;
+            f_fa_l = ff*f_l;
+        }
+        force_tr += f_fa_tr;
+        force_l += f_fa_l;
+
+}
+
+void ForceDSM::friction_force(int charge_number, int ion_number,
+            vector<double>& v_tr, vector<double>& v_l, vector<double>& density,
+            EBeam& ebeam, vector<double>& force_tr, vector<double>& force_long) {
+
+    init(ebeam);
+
+    double rho_min_const = charge_number * k_rho_min;
+    double f_const_non_mag = k_f*charge_number*charge_number;
+    double f_const = f_const_non_mag/2;
+    force_tr.resize(ion_number);
+    force_long.resize(ion_number);
+    auto tpr = ebeam.temperature();
+    vector<double>& ve_rms_l = ebeam.get_v(EBeamV::V_RMS_L);
+    vector<double>& ve_rms_tr =  ebeam.get_v(EBeamV::V_RMS_TR);
+
+    switch(tpr) {
+    case Temperature::CONST: {
+        double ve_l = ve_rms_l.at(0);
+        double ve_tr = ve_rms_tr.at(0);
+        double ve2_tr = ve_tr*ve_tr;
+        double ve2_l = ve_l*ve_l;
+        double ve2 = ve2_tr + ve2_l;
+        for(int i=0; i<ion_number; ++i) {
+            if(iszero(density.at(i))) {
+                force_tr[i] = 0;
+                force_long[i] = 0;
+                continue;
+            }
+            double v2 = v_tr[i]*v_tr[i]+v_l[i]*v_l[i];
+            double v = sqrt(v2);
+            if(v2>0) {
+                force(ve_tr, ve_l, ve2_tr, ve2_l, v_tr[i], v_l[i],v2, rho_min_const, charge_number, density[i], f_const, force_tr[i], force_long[i]);
+            }
+        }
+        break;
+    }
+    case Temperature::VARY: {
+
+        for(int i=0; i<ion_number; ++i) {
+            if(iszero(density.at(i))) {
+                force_tr[i] = 0;
+                force_long[i] = 0;
+                continue;
+            }
+            double v2 = v_tr[i]*v_tr[i]+v_l[i]*v_l[i];
+            double v = sqrt(v2);
+            if(v2>0) {
+                double ve_l = ve_rms_l.at(i);
+                double ve_tr = ve_rms_tr.at(i);
+                double ve2_tr = ve_tr*ve_tr;
+                double ve2_l = ve_l*ve_l;
+                double ve2 = ve2_tr + ve2_l;
+                force(ve_tr, ve_l, ve2_tr, ve2_l, v_tr[i], v_l[i],v2, density[i], rho_min_const, charge_number, f_const, force_tr[i], force_long[i]);
+            }
+        }
+        break;
+    }
+    }
+
 }

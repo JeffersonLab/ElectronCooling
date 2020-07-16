@@ -81,6 +81,9 @@ struct Set_ecool{
      int n_tr = 0;
      int n_l = 0;
      int n_phi = 0;
+     int n_step = 0;
+     double smooth_factor = 2;
+     bool magnetic_only = false;
 };
 
 struct Set_cooler{
