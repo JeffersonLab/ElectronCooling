@@ -84,6 +84,11 @@ struct Set_ecool{
      int n_step = 0;
      double smooth_factor = 2;
      bool magnetic_only = false;
+     IonSampleType model = IonSampleType::MONTE_CARLO;
+    int n_sample_tr = 0;
+    int n_sample_l = 0;
+    bool dual_force_solver = false;
+    ForceFormula force_l = ForceFormula::PARKHOMCHUK;
 };
 
 struct Set_cooler{
@@ -109,6 +114,9 @@ struct Set_e_beam{
      double sigma_x = 0;
      double sigma_y = 0;
      double sigma_z = 0;
+     double sigma_xp = 0;
+     double sigma_yp = 0;
+     double sigma_dpp = 0;
      double current = 0;
      double radius = 0;
      double length = 0;
@@ -133,6 +141,7 @@ struct Set_e_beam{
      bool corr = false;
      bool binary = false;
      int buffer = 1000;
+     double cv_l = 0;
 };
 
 struct Set_dynamic{
@@ -148,7 +157,7 @@ struct Set_dynamic{
     int output_intvl = 1;
     int save_ptcl_intvl = -1;
     double t0 = 0;
-    std::string filename = "output_dynamic.txt";
+    std::string filename = "";
     DynamicModel model = DynamicModel::RMS;
     Twiss twiss_ref;
 };

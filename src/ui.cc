@@ -8,6 +8,7 @@
 #include <sstream>
 
 #include "constants.h"
+#include "functions.h"
 
 
 using std::string;
@@ -16,11 +17,13 @@ std::unique_ptr<Simulator> simulator = nullptr;
 std::unique_ptr<IBSSolver> ibs_solver = nullptr;
 std::unique_ptr<ECoolRate> ecool_solver = nullptr;
 std::unique_ptr<FrictionForceSolver> force_solver= nullptr;
+std::unique_ptr<FrictionForceSolver> force_solver_l= nullptr;
 std::unique_ptr<LuminositySolver> lum_solver = nullptr;
 std::unique_ptr<Ions> ion_sample = nullptr;
 
 Record uircd;
 std::ofstream save_to_file;
+std::string input_script_name;
 
 muParserHandle_t math_parser = NULL;
 std::vector<string> ION_ARGS = {"CHARGE_NUMBER", "MASS", "KINETIC_ENERGY", "NORM_EMIT_X", "NORM_EMIT_Y",
@@ -36,9 +39,10 @@ std::vector<string> E_BEAM_SHAPE_TYPES = {"DC_UNIFORM", "BUNCHED_GAUSSIAN", "BUN
 std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS", "CURRENT", "SIGMA_X", "SIGMA_Y",
     "SIGMA_Z", "LENGTH", "E_NUMBER", "RH", "RV", "R_INNER", "R_OUTTER", "PARTICLE_FILE", "TOTAL_PARTICLE_NUMBER",
     "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
-    "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT"};
+    "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT", "CV_L", "SIGMA_XP", "SIGMA_YP", "SIGMA_DPP"};
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF", "SMOOTH_RHO_MAX", "USE_GSL",
-    "N_TR", "N_L", "N_PHI", "USE_MEAN_RHO_MIN", "N_STEP", "SMOOTH_FACTOR", "MAGNETIC_ONLY"};
+    "N_TR", "N_L", "N_PHI", "USE_MEAN_RHO_MIN",  "MODEL", "SAMPLE_NUMBER_TR", "SAMPLE_NUMBER_L","N_STEP", "SMOOTH_FACTOR",
+    "MAGNETIC_ONLY", "DUAL_FORCE", "FORCE_FORMULA_L"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK", "NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D", "NONMAG_NUM3D", "MESHKOV"};
 std::vector<string> SIMULATION_ARGS = {"TIME", "STEP_NUMBER", "SAMPLE_NUMBER", "IBS", "E_COOL", "OUTPUT_INTERVAL",
     "SAVE_PARTICLE_INTERVAL", "OUTPUT_FILE", "MODEL", "REF_BET_X", "REF_BET_Y", "REF_ALF_X", "REF_ALF_Y",
@@ -104,16 +108,6 @@ double str_to_number(string val) {
         mupSetExpr(math_parser, val.c_str());
         return mupEval(math_parser);
     }
-}
-
-string time_to_string() {
-    char filename[25];
-    struct tm *timenow;
-    time_t now = time(NULL);
-    timenow = gmtime(&now);
-    strftime(filename, sizeof(filename), "%Y-%m-%d-%H-%M-%S", timenow);
-    string s(filename);
-    return s;
 }
 
 int list_c(string str, vector<double>& v) {
@@ -236,6 +230,14 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             }
             else if (var == "SIGMA_Z") {
                 e_beam_args->sigma_z = std::stod(val);
+            }else if (var == "SIMGA_XP") {
+                e_beam_args->sigma_xp = std::stod(val);
+            }
+            else if (var == "SIGMA_YP") {
+                e_beam_args->sigma_yp = std::stod(val);
+            }
+            else if (var == "SIGMA_DPP") {
+                e_beam_args->sigma_dpp = std::stod(val);
             }
             else if (var == "RH") {
                 e_beam_args->rh = std::stod(val);
@@ -273,6 +275,9 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             else if (var == "BUFFER_SIZE") {
                 e_beam_args->buffer = std::stoi(val);
             }
+            else if (var == "CV_L") {
+                e_beam_args->cv_l = std::stod(val);
+            }
             else {
                 assert(false&&"Wrong arguments in section_e_beam!");
             }
@@ -296,6 +301,15 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             }
             else if (var == "SIGMA_Z") {
                 e_beam_args->sigma_z = mupEval(math_parser);
+            }
+            else if (var == "SIGMA_XP") {
+                e_beam_args->sigma_xp = mupEval(math_parser);
+            }
+            else if (var == "SIGMA_YP") {
+                e_beam_args->sigma_yp = mupEval(math_parser);
+            }
+            else if (var == "SIGMA_DPP") {
+                e_beam_args->sigma_dpp = mupEval(math_parser);
             }
             else if (var == "RH") {
                 e_beam_args->rh = mupEval(math_parser);
@@ -332,6 +346,9 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             }
             else if (var == "BUFFER_SIZE") {
                 e_beam_args->buffer = mupEval(math_parser);
+            }
+            else if (var == "CV_L") {
+                e_beam_args->cv_l = mupEval(math_parser);
             }
             else {
                 assert(false&&"Wrong arguments in section_e_beam!");
@@ -427,6 +444,17 @@ void create_e_beam(Set_ptrs &ptrs) {
     if(shape != "BUNCHED_USER_DEFINED") {
         ptrs.e_beam->set_tpr(tmp_tr, tmp_l);
     }
+
+    if(shape == "BUNCHED_GAUSSIAN") {
+        double sigma_xp = ptrs.e_beam_ptr->sigma_xp;
+        double sigma_yp = ptrs.e_beam_ptr->sigma_yp;
+        double sigma_dpp = ptrs.e_beam_ptr->sigma_dpp;
+        if(!iszero(sigma_xp, 1e-8) && !iszero(sigma_yp, 1e-8) && !iszero(sigma_dpp, 1e-8)) {
+            GaussianBunch* ptr = dynamic_cast<GaussianBunch*>(ptrs.e_beam.get());
+            ptr->set_angles(sigma_xp, sigma_yp, sigma_dpp);
+        }
+    }
+
     if(ptrs.e_beam_ptr->multi_bunches) {
         ptrs.e_beam->set_multi_bunches(true);
         int n = ptrs.e_beam_ptr->n_cx;
@@ -446,6 +474,7 @@ void create_e_beam(Set_ptrs &ptrs) {
     }
     if(ptrs.e_beam_ptr->p_shift) ptrs.e_beam->set_p_shift(true);
     if(ptrs.e_beam_ptr->v_shift) ptrs.e_beam->set_v_shift(true);
+    if(!iszero(ptrs.e_beam_ptr->cv_l)) ptrs.e_beam->set_cv_l(ptrs.e_beam_ptr->cv_l);
     std::cout<<"Electron beam created!"<<std::endl;
 }
 
@@ -458,6 +487,7 @@ void define_ion_beam(std::string &str, Set_ion *ion_args){
     var = trim_whitespace(var);
     val = trim_whitespace(val);
     assert(std::find(ION_ARGS.begin(),ION_ARGS.end(),var)!=ION_ARGS.end() && "WRONG COMMANDS IN SECTION_ION!");
+
     if(math_parser==NULL) {
         if (var=="CHARGE_NUMBER") {
             ion_args->n_charge = std::stoi(val);
@@ -635,19 +665,9 @@ void smooth_rho_max(Set_ptrs &ptrs) {
     if(ptrs.ecool_ptr->smooth_rho_max) p->set_smooth_rho_max(true);
     else p->set_smooth_rho_max(false);
 }
-void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
-    assert(ptrs.cooler.get()!=nullptr && "MUST CREATE THE COOLER BEFORE CALCULATE ELECTRON COOLING RATE!");
-    assert(ptrs.e_beam.get()!=nullptr && "MUST CREATE THE ELECTRON BEAM BEFORE CALCULATE ELECTRON COOLING RATE!");
-    assert(ptrs.ecool_ptr.get()!=nullptr && "PLEASE SET UP THE PARAMETERS FOR ELECTRON COOLING RATE CALCULATION!");
-    int n_sample = ptrs.ecool_ptr->n_sample;
-    assert(n_sample > 0 && "WRONG PARAMETER VALUE FOR ELECTRON COOLING RATE CALCULATION!");
-    assert(ptrs.ion_beam.get()!=nullptr && "MUST CREATE THE ION BEAM BEFORE CALCULATE ELECTRON COOLING RATE!");
-    assert(ptrs.ring.get()!=nullptr && "MUST CREATE THE RING BEFORE CALCULATE ELECTRON COOLING RATE!");
-    double rx, ry, rz;
 
-    ecool_solver.reset(new ECoolRate());
-
-    switch(ptrs.ecool_ptr->force) {
+void create_force_solver(Set_ptrs &ptrs, ForceFormula formula, std::unique_ptr<FrictionForceSolver> &force_solver) {
+    switch(formula) {
         case ForceFormula::PARKHOMCHUK: {
             force_solver.reset(new ForcePark());
             ForcePark* force_ptr = dynamic_cast<ForcePark*>(force_solver.get());
@@ -753,10 +773,57 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
             assert(false&&"WRONG FRICTION FORCE FORMULA SELECTED!");
         }
     }
+}
 
-    ion_sample.reset(new Ions_MonteCarlo(n_sample));
-    ion_sample->set_twiss(*ptrs.cooler);
-    ion_sample->create_samples(*ptrs.ion_beam);
+void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
+    assert(ptrs.cooler.get()!=nullptr && "MUST CREATE THE COOLER BEFORE CALCULATE ELECTRON COOLING RATE!");
+    assert(ptrs.e_beam.get()!=nullptr && "MUST CREATE THE ELECTRON BEAM BEFORE CALCULATE ELECTRON COOLING RATE!");
+    assert(ptrs.ecool_ptr.get()!=nullptr && "PLEASE SET UP THE PARAMETERS FOR ELECTRON COOLING RATE CALCULATION!");
+    int n_sample = ptrs.ecool_ptr->n_sample;
+    int n_tr = ptrs.ecool_ptr->n_sample_tr;
+    int n_l = ptrs.ecool_ptr->n_sample_l;
+    if(ptrs.ecool_ptr->model == IonSampleType::SINGLE_PARTICLE) {
+        assert(n_tr>0 && n_l>0 && "NEED TO SET N_TR AND N_L FOR SINGLE PARTICLE MODEL.");
+        n_sample = n_tr*n_tr*n_l;
+    }
+    assert(n_sample > 0 && "WRONG PARAMETER VALUE FOR ELECTRON COOLING RATE CALCULATION!");
+    assert(ptrs.ion_beam.get()!=nullptr && "MUST CREATE THE ION BEAM BEFORE CALCULATE ELECTRON COOLING RATE!");
+    assert(ptrs.ring.get()!=nullptr && "MUST CREATE THE RING BEFORE CALCULATE ELECTRON COOLING RATE!");
+    double rx, ry, rz;
+
+    ecool_solver.reset(new ECoolRate());
+
+    create_force_solver(ptrs, ptrs.ecool_ptr->force, force_solver);
+    if(ptrs.ecool_ptr->dual_force_solver) {
+        if(ptrs.ecool_ptr->force!=ptrs.ecool_ptr->force_l){
+            create_force_solver(ptrs, ptrs.ecool_ptr->force_l, force_solver_l);
+            ecool_solver->set_second_force_solver(force_solver_l.get());
+        }
+        else {
+            ptrs.ecool_ptr->dual_force_solver = false;
+        }
+    }
+    ecool_solver->set_dual_force_solver(ptrs.ecool_ptr->dual_force_solver);
+
+    switch(ptrs.ecool_ptr->model) {
+    case IonSampleType::MONTE_CARLO : {
+        ion_sample.reset(new Ions_MonteCarlo(n_sample));
+        ion_sample->set_twiss(*ptrs.cooler);
+        ion_sample->create_samples(*ptrs.ion_beam);
+        break;
+    }
+    case IonSampleType::SINGLE_PARTICLE : {
+        ion_sample.reset(new Ions_SingleParticle(n_tr, n_l));
+        ion_sample->set_twiss(*ptrs.cooler);
+        Ions_SingleParticle* ptr = dynamic_cast<Ions_SingleParticle*>(ion_sample.get());
+        ptr->single_particle_grid(*ptrs.ion_beam);
+        ion_sample->create_samples(*ptrs.ion_beam);
+        break;
+    }
+    default : {
+        assert(false&&"Wrong ion sample type!");
+    }
+    }
 
     if(calc) {
         ecool_solver->ecool_rate(*force_solver, *ptrs.ion_beam, *ion_sample, *ptrs.cooler, *ptrs.e_beam, *ptrs.ring, rx, ry, rz);
@@ -902,6 +969,7 @@ void run_simulation(Set_ptrs &ptrs) {
     simulator->set_fixed_bunch_length(fixed_bunch_length);
     if (output_intvl>1) simulator->set_output_intvl(output_intvl);
     if (save_ptcl_intvl>0) simulator->set_ion_save(save_ptcl_intvl);
+    if(ptrs.dynamic_ptr->filename.empty()) ptrs.dynamic_ptr->filename = "output_"+input_script_name;
     simulator->set_output_file(ptrs.dynamic_ptr->filename);
     simulator->set_reset_time(ptrs.dynamic_ptr->reset_time?true:false);
     simulator->set_overwrite(ptrs.dynamic_ptr->overwrite?true:false);
@@ -939,7 +1007,7 @@ void run_simulation(Set_ptrs &ptrs) {
     }
 
     simulator->run(*ptrs.ion_beam, *ion_sample, *ptrs.cooler, *ptrs.e_beam, *ptrs.ring,
-                   ibs_solver.get(), ecool_solver.get(), force_solver.get(), lum_solver.get());
+                   ibs_solver.get(), ecool_solver.get(), force_solver.get(),  lum_solver.get());
 }
 
 void run(std::string &str, Set_ptrs &ptrs) {
@@ -1521,6 +1589,16 @@ void set_ecool(string &str, Set_ecool *ecool_args){
         else if (val=="DSM") ecool_args->force = ForceFormula::DSM;
         else assert(false&&"Friction force formula NOT exists!");
     }
+    else if (var == "FORCE_FORMULA_L") {
+        if (val=="PARKHOMCHUK") ecool_args->force_l = ForceFormula::PARKHOMCHUK;
+        else if (val=="NONMAG_DERBENEV") ecool_args->force_l = ForceFormula::NONMAG_DERBENEV;
+        else if (val=="NONMAG_MESHKOV") ecool_args->force_l = ForceFormula::NONMAG_MESHKOV;
+        else if (val=="NONMAG_NUM1D") ecool_args->force_l = ForceFormula::NONMAG_NUM1D;
+        else if (val=="NONMAG_NUM3D") ecool_args->force_l = ForceFormula::NONMAG_NUM3D;
+        else if (val=="MESHKOV") ecool_args->force_l = ForceFormula::MESHKOV;
+        else if (val=="DSM") ecool_args->force_l = ForceFormula::DSM;
+        else assert(false&&"Friction force formula NOT exists!");
+    }
     else if (var == "SMOOTH_RHO_MAX" ) {
         if (val == "ON" || val == "TRUE") ecool_args->smooth_rho_max = true;
         else if (val == "OFF" || val == "FALSE") ecool_args->smooth_rho_max = false;
@@ -1536,10 +1614,32 @@ void set_ecool(string &str, Set_ecool *ecool_args){
         else if (val == "OFF" || val == "FALSE") ecool_args->magnetic_only = false;
         else assert(false&&"WRONG VALUE FOR THE PARAMETER USE_GSL IN SECTION_ECOOL!");
     }
+    else if (var == "MODEL") {
+        if (val == "SINGLE_PARTICLE") {
+            ecool_args->model = IonSampleType::SINGLE_PARTICLE;
+        }
+        else if (val == "MONTE_CARLO") {
+            ecool_args->model = IonSampleType::MONTE_CARLO;
+        }
+        else {
+            assert(false&& "WRONG VALUE FOR ION BEAM MODEL!");
+        }
+    }
+    else if (var == "DUAL_FORCE" ) {
+        if (val == "ON" || val == "TRUE") ecool_args->dual_force_solver = true;
+        else if (val == "OFF" || val == "FALSE") ecool_args->dual_force_solver = false;
+        else assert(false&&"WRONG VALUE FOR THE PARAMETER DUAL_FORCE_SOLVER IN SECTION_ECOOL!");
+    }
     else {
         if (math_parser == NULL) {
-            if (var == "SAMPLE_NUMBE") {
+            if (var == "SAMPLE_NUMBER") {
                 ecool_args->n_sample = std::stod(val);
+            }
+            else if (var=="SAMPLE_NUMBER_TR") {
+                ecool_args->n_sample_tr = std::stoi(val);
+            }
+            else if (var=="SAMPLE_NUMBER_L") {
+                ecool_args->n_sample_l = std::stoi(val);
             }
             else if(var == "TMP_EFF") {
                 ecool_args->tmpr_eff = std::stod(val);
@@ -1582,6 +1682,12 @@ void set_ecool(string &str, Set_ecool *ecool_args){
             mupSetExpr(math_parser, val.c_str());
             if (var == "SAMPLE_NUMBER") {
                 ecool_args->n_sample = static_cast<double>(mupEval(math_parser));
+            }
+            else if (var=="SAMPLE_NUMBER_TR") {
+                ecool_args->n_sample_tr = static_cast<int>(mupEval(math_parser));
+            }
+            else if (var=="SAMPLE_NUMBER_L") {
+                ecool_args->n_sample_l = static_cast<int>(mupEval(math_parser));
             }
             else if(var == "TMP_EFF") {
                 ecool_args->tmpr_eff = static_cast<double>(mupEval(math_parser));
@@ -1653,11 +1759,12 @@ void parse(std::string &str, muParserHandle_t &math_parser){
         var = trim_whitespace(var);
         mupSetExpr(math_parser, var.c_str());
         if(!save_to_file.is_open()) {
-            string filename = time_to_string();
+            string filename = time_to_filename();
             filename = "JSPEC_SAVE_" + filename + ".txt";
             save_to_file.open (filename,std::ofstream::out | std::ofstream::app);
             if(save_to_file.is_open()){
                 std::cout<<"File opened: "<<filename<<" !"<<std::endl;
+                save_to_file<<"INPUT: "<<input_script_name<<std::endl;
             }
             else {
                 std::cout<<"Failed to open file: "<<filename<<" !"<<std::endl;

@@ -294,6 +294,9 @@ The following keywords records the results from the previous computation. They c
 | sigma_x               | RMS size in horizontal direction of bunched_gaussian electron beam in [m]. |
 | sigma_y               | RMS size in vertical direction of bunched_gaussian electron beam in [m]. |
 | sigma_z               | RMS bunch length of bunched_gaussian electron beam in [m].   |
+| sigma_dx              | RMS angle in horizontal direction. Instead of directly defining the temperatures, one can define the temperature of a Gaussian bunch with the three parameters sigma_dx, sigma_dy, and sigma_dpp. When they are defined, temperatures are igonred. |
+| sigma_dy              | RMS angle in vertical direction.Instead of directly defining the temperatures, one can define the temperature of a Gaussian bunch with the three parameters sigma_dx, sigma_dy, and sigma_dpp. When they are defined, temperatures are igonred. |
+| sigma_dpp             | momentum spread in longitudinal direction. Instead of directly defining the temperatures, one can define the temperature of a Gaussian bunch with the three parameters sigma_dx, sigma_dy, and sigma_dpp. When they are defined, temperatures are igonred. |
 | rh                    | Length of the semi-axis in horizontal direction in [m].      |
 | rv                    | Length of the semi-axis in vertical direction in [m].        |
 | r_inner               | Inner radius of a hollow beam in [m]                         |
@@ -311,6 +314,7 @@ The following keywords records the results from the previous computation. They c
 | list_cz               | When multi_bunches to be true, use list_cz to set the longitudinal coordinates of the electron bunches. The format is the same as that of list_cx. |
 | p_shift               | True: centers of the electron beam and the ion beam do not overlap. |
 | v_shift               | True: velocities of the electron beam and the ion beam do not equal. |
+| cv_l                  | An additional longitudinal velocity of the electron bunch.   |
 
 **section_ibs**
 
@@ -363,26 +367,26 @@ The following keywords records the results from the previous computation. They c
 
 **section_simulation**
 
-| Keywords               | Meaning                                  |
-| ---------------------- | ---------------------------------------- |
-| time                   | Total time to simulate, in [s].          |
+| Keywords               | Meaning                                                      |
+| ---------------------- | ------------------------------------------------------------ |
+| time                   | Total time to simulate, in [s].                              |
 | step_number            | Total number of steps. The time interval of each step is time/step_number. |
 | sample_number          | Number of the sample ions. The parameter must be set when using the Particle model to simulate the IBS expansion process without cooling. When setting this parameter with cooling effect, the "sample_number" parameter in the "section_ecool" will be overwritten by this value. |
 | ibs                    | Choose to simulate the IBS effect or not by setting the value as "true" or "false". |
 | e_cool                 | Choose to simulate the electron cooling effect or not by setting the value as "true" or "false". |
-| model                  | "RMS" or "Particle" model to choose for the simulation. |
-| output_file            | Output file name                         |
+| model                  | "RMS" or "Particle" model to choose for the simulation.      |
+| output_file            | Output file name. Default value is "output_" followed by the input script file name. |
 | output_interval        | The interval of steps to write into the output file. Default is one. |
 | save_particle_interval | The interval of steps to save the 6D coordinates of the ions. No saving if the value is less than zero. Default is -1. This is only useful when using the Particle model in simulations. |
 | ref_bet_x              | TWISS parameters for the reference point. Only needed when the "model beam" method is selected and the electron cooling effect is not included in the simulation. |
-| ref_bet_y              | Same as above.                           |
-| ref_alf_x              | Same as above.                           |
-| ref_alf_y              | Same as above.                           |
-| ref_disp_x             | Same as above.                           |
-| ref_disp_y             | Same as above.                           |
-| ref_disp_dx            | Same as above.                           |
-| ref_disp_dy            | Same as above.                           |
-| fixed_bunch_length     | Maintain a constant ion bunch length. Default is false. |
+| ref_bet_y              | Same as above.                                               |
+| ref_alf_x              | Same as above.                                               |
+| ref_alf_y              | Same as above.                                               |
+| ref_disp_x             | Same as above.                                               |
+| ref_disp_y             | Same as above.                                               |
+| ref_disp_dx            | Same as above.                                               |
+| ref_disp_dy            | Same as above.                                               |
+| fixed_bunch_length     | Maintain a constant ion bunch length. Default is false.      |
 | reset_time             | Whether to reset the starting time to zero (value: true) or use the final time from the previous simulation (value: false). |
 | overwrite              | Whether overwrite the output file is it exists. The default value is true. If the value is false, a new output file will be generated. The name of the new file is created by adding a number before the specific file name. |
 | calc_luminosity        | Whether to calculate the luminosity during the simulation: yes (true) or no (false). The default value is false. |

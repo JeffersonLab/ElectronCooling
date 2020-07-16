@@ -181,7 +181,7 @@ void adjust_disp(double dx, vector<double>& x_bet, vector<double>& dp_p, vector<
 }
 
 void Ions_MonteCarlo::emit(vector<double>& x_bet, vector<double>& xp_bet, vector<double>& y_bet, vector<double>& yp_bet,
-                      vector<double>& dp_p, double& emit_x, double& emit_y, double& emit_s) {
+                      vector<double>& dp_p, vector<double>& ds, double& emit_x, double& emit_y, double& emit_s) {
     int n_sample = n_;
     emit_x = ::emit(x_bet, xp_bet, n_sample);
     emit_y = ::emit(y_bet, yp_bet, n_sample);
@@ -189,11 +189,11 @@ void Ions_MonteCarlo::emit(vector<double>& x_bet, vector<double>& xp_bet, vector
 }
 
 void Ions_MonteCarlo::emit(double& emit_x, double& emit_y, double& emit_s){
-    emit(x_bet, xp_bet, y_bet, yp_bet, dp_p, emit_x, emit_y, emit_s);
+    emit(x_bet, xp_bet, y_bet, yp_bet, dp_p, ds, emit_x, emit_y, emit_s);
 }
 
 void Ions_SingleParticle::emit(vector<double>& x_bet, vector<double>& xp_bet, vector<double>& y_bet, vector<double>& yp_bet,
-                      vector<double>& dp_p, double& emit_x, double& emit_y, double& emit_s) {
+                      vector<double>& dp_p, vector<double>& ds, double& emit_x, double& emit_y, double& emit_s) {
     double alf_x = twiss.alf_x;
     double alf_y = twiss.alf_y;
     double beta_x = twiss.bet_x;
@@ -205,19 +205,23 @@ void Ions_SingleParticle::emit(vector<double>& x_bet, vector<double>& xp_bet, ve
     emit_y = 0;
     emit_s = 0;
     int n_sample = n_;
+    double inv_beta_s2 = 0;
+    if(bunched_) inv_beta_s2 = 1/(beta_s_*beta_s_);
     for(int i=0; i<n_sample; ++i) {
         emit_x += beta_x*xp_bet[i]*xp_bet[i]+2*alf_x*x_bet[i]*xp_bet[i]+gamma_x*x_bet[i]*x_bet[i];
         emit_y += beta_y*yp_bet[i]*yp_bet[i]+2*alf_y*y_bet[i]*yp_bet[i]+gamma_y*y_bet[i]*y_bet[i];
         emit_s += dp_p[i]*dp_p[i];
+        if(bunched_) emit_s += ds[i]*ds[i]*inv_beta_s2;
     }
     emit_x /= 2*n_sample;
     emit_y /= 2*n_sample;
     emit_s /= n_sample;
 
+    if(bunched_) emit_s /= 2;
 }
 
 void Ions_SingleParticle::emit(double& emit_x, double& emit_y, double& emit_s) {
-    emit(x_bet, xp_bet, y_bet, yp_bet, dp_p, emit_x, emit_y, emit_s);
+    emit(x_bet, xp_bet, y_bet, yp_bet, dp_p, ds, emit_x, emit_y, emit_s);
 }
 
 //Generate Gaussian random number in S frame with given Twiss parameters
@@ -326,6 +330,9 @@ void Ions_MonteCarlo::create_samples(Beam& ion) {
     ::adjust_disp(dy, y_bet, dp_p, y, n_sample);
     ::adjust_disp(dpx, xp_bet, dp_p, xp, n_sample);
     ::adjust_disp(dpy, yp_bet, dp_p, yp, n_sample);
+
+    bunched_ = ion.bunched();
+    if(bunched_) beta_s_ = ion.sigma_s()/ion.dp_p();
 }
 
 Ions_SingleParticle::Ions_SingleParticle(int n_tr, int n_l):n_tr_(n_tr),n_l_(n_l) {
@@ -437,4 +444,7 @@ void Ions_SingleParticle::create_samples(Beam& ion) {
     ::adjust_disp(dy, y_bet, dp_p, y, cnt);
     ::adjust_disp(dpx, xp_bet, dp_p, xp, cnt);
     ::adjust_disp(dpy, yp_bet, dp_p, yp, cnt);
+
+    bunched_ = ion.bunched();
+    if(bunched_) beta_s_ = ion.sigma_s()/ion.dp_p();
 }

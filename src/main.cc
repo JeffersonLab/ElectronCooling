@@ -12,6 +12,7 @@
 #include "cooler.h"
 #include "ecooling.h"
 #include "force.h"
+#include "functions.h"
 #include "ibs.h"
 #include "ions.h"
 #include "luminosity.h"
@@ -26,6 +27,7 @@ using std::string;
 
 extern std::map<std::string, Section> sections;
 extern muParserHandle_t math_parser;
+extern string input_script_name;
 
 enum class Test {IBS, ECOOL, BOTH,DYNAMICBOTHBUNCHED, MATH_PARSER};
 
@@ -34,6 +36,11 @@ int main(int argc, char** argv) {
 
     if(argc>1) {
         std::ifstream input_file(argv[1]);
+        input_script_name = argv[1];
+        size_t sep = input_script_name.find_last_of("\\/");
+        input_script_name = input_script_name.substr(sep+1);
+        std::cout<<"START: "<<time_to_string()<<std::endl;
+        std::cout<<"INPUT: "<<input_script_name<<std::endl;
         string line;
         Section sec_flag = Section::NONE;
         Set_ptrs ptrs;
@@ -161,6 +168,8 @@ int main(int argc, char** argv) {
             }
         }
         ui_quit();
+        std::cout<<"END: "<<time_to_string()<<std::endl;
+        std::cout<<"INPUT: "<<input_script_name<<std::endl;
     }
     else {
         Test test = Test::MATH_PARSER;

@@ -64,12 +64,10 @@ section_e_beam
 
 section_ecool
 	sample_number = 4000
-#	n_tr = 20
-#	n_l = 20
-#	n_phi = 20
+	dual_force = true
+	force_formula = DSM	
+	force_formula_l = PARKHOMCHUK
 #	n_step = 100
-	force_formula = DSM
-	n_step = 100
 #	magnetic_only = true
 #	smooth_factor = 2
 section_run

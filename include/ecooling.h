@@ -21,6 +21,7 @@ class ECoolRate{
     double t_cooler_ = 0;
     int n_long_sample_ = 50;
     int scratch_size = 0;
+    bool dual_force_solver = false;
     vector<double> ne;
     vector<double> xp_bet, yp_bet, xp, yp, dp_p, x, y, x_bet, y_bet;
     vector<double> v_tr, v_long;
@@ -35,7 +36,10 @@ class ECoolRate{
     void lab_frame(int n_sample, double gamma_e);
     void force_distribute(int n_sample, Beam &ion, Ions &ion_sample);
     void apply_kick(int n_sample, Beam &ion, Ions& ion_sample);
+    FrictionForceSolver* force_solver_l;
 public:
+    void set_dual_force_solver(bool b){dual_force_solver = b;}
+    void set_second_force_solver(FrictionForceSolver* force) {force_solver_l = force;}
     void adjust_rate(Beam &ion, EBeam &ebeam, initializer_list<double*> func);
     vector<double>& scratch(ECoolRateScratch s);
     double t_cooler(){return t_cooler_;}
