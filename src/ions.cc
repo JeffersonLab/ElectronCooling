@@ -186,6 +186,8 @@ void Ions_MonteCarlo::emit(vector<double>& x_bet, vector<double>& xp_bet, vector
     emit_x = ::emit(x_bet, xp_bet, n_sample);
     emit_y = ::emit(y_bet, yp_bet, n_sample);
     emit_s = ::emit_p(dp_p, n_sample);
+    if(bunched_)
+        emit_s += emit_p(ds, n_sample)/(beta_s_*beta_s_);
 }
 
 void Ions_MonteCarlo::emit(double& emit_x, double& emit_y, double& emit_s){
@@ -216,8 +218,6 @@ void Ions_SingleParticle::emit(vector<double>& x_bet, vector<double>& xp_bet, ve
     emit_x /= 2*n_sample;
     emit_y /= 2*n_sample;
     emit_s /= n_sample;
-
-    if(bunched_) emit_s /= 2;
 }
 
 void Ions_SingleParticle::emit(double& emit_x, double& emit_y, double& emit_s) {

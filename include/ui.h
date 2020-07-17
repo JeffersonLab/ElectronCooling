@@ -105,7 +105,6 @@ struct Set_cooler{
      double alpha_y = 0;
 };
 
-
 struct Set_e_beam{
      double gamma = 0;
      double tmp_tr = 0;
