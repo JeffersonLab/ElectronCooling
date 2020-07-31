@@ -1,0 +1,84 @@
+section_scratch
+	#Ion beam parameters:
+	ex = 0.65e-6	# normalized horizontal emittance
+	ey = 0.13e-6	# normalized vertical emittance
+	dp = 0.0006	# momentum spread	
+	np = 1.06e10	# proton number
+	ds = 0.025	# proton bunch length
+	ke = 100000	# proton kinetic energy
+	me = 938.272	# proton mass
+	gamma = ke/me+1
+	beta = (1-gamma^(-2))^(1/2)
+	dx = 0	# horizontal dispersion at the cooler
+	dy = 0	# vertical dispersion at the cooler
+#	cpl = 0.38	# transverse coupling
+	twiss_beta = 100 # beta function at the cooler
+	sigma_x = (twiss_beta*ex/beta/gamma)^(1/2) # rms horizontal bunch size
+	sigma_y = (twiss_beta*ey/beta/gamma)^(1/2) # rms vertical bunch size
+	radius_x = sigma_x*1.0
+	radius_y = sigma_y*1.0
+	print radius_x
+	print radius_y
+
+	#Electron beam parameters:
+	q_e = 3.2E-9*0.37	# electron number
+	l_e = 0.05	# electron bunch length	
+	I_e = q_e*beta*k_c/l_e	# peak current of the electron beam
+	n_e = q_e/k_e
+	print I_e
+	print n_e
+
+
+section_ion #define the ion beam
+	charge_number = 1
+	mass = 938.272
+   	kinetic_energy = ke
+	norm_emit_x = ex
+	norm_emit_y = ey
+	momentum_spread = dp
+	particle_number = np
+	rms_bunch_length = ds
+
+section_ring
+#	lattice = test.tfs
+	lattice = MEICColliderRedesign1IP.tfs
+
+section_cooler
+	length = 60
+	section_number = 1
+	magnetic_field = 1
+	bet_x = twiss_beta
+	bet_y = twiss_beta
+	disp_x = dx
+	disp_y = dy
+
+section_e_beam
+	gamma = gamma
+	shape = bunched_gaussian
+	sigma_x = radius_x
+	sigma_y = radius_x
+	sigma_z = l_e
+	e_number = n_e
+	tmp_tr = 0.246
+	tmp_l = 0.184
+
+section_ecool
+	sample_number = 4000
+	dual_force = true
+	force_formula = DSM	
+	force_formula_l = PARKHOMCHUK
+#	n_step = 100
+#	magnetic_only = true
+#	smooth_factor = 2
+section_run
+	srand 0
+ 	create_ion_beam
+	create_ring
+	create_e_beam
+	create_cooler
+	calculate_ecool
+
+=== END ===
+####################################################################
+
+####################################################################

@@ -9,7 +9,7 @@
 #include "constants.h"
 
 using std::vector;
-enum class ForceFormula {PARKHOMCHUK, NONMAG_DERBENEV, NONMAG_MESHKOV, NONMAG_NUM1D, NONMAG_NUM3D};
+enum class ForceFormula {PARKHOMCHUK, NONMAG_DERBENEV, NONMAG_MESHKOV, NONMAG_NUM1D, NONMAG_NUM3D, MESHKOV, DSM};
 
 class FrictionForceSolver{
 protected:
@@ -20,6 +20,7 @@ protected:
     const double k_rho_min = k_e*k_ke*k_c*k_c/(k_me*1e6);
     virtual void init(EBeam& ebeam){};
     virtual void fin(){};
+    double max_impact_factor(double v_dlt, int charge_number,double density_e);
 public:
     void set_time_cooler(double t){time_cooler = t;}
     void set_mag_field(double x){mag_field = x;}
@@ -205,4 +206,68 @@ template< typename F >
 };
 
 
+class ForceMeshkov: public FrictionForceSolver {
+protected:
+    //A fudge factor to smooth the friction force shape. Using the
+        // "Classical" default definition here from the BETACOOL documentation
+    double k = 2;
+    void force(double ve_tr, double ve_l, double ve2_tr, double ve2_l, double v_tr, double v_l, double v2,
+               double rho_min_const, int charge_number,  double density, double f_const, double& force_tr,double& force_l);
+public:
+    void set_smooth_factor(double x){k = x;}
+    virtual void friction_force(int charge_number, int ion_number,
+            vector<double>& v_tr, vector<double>& v_l, vector<double>& density,
+            EBeam& ebeam, vector<double>& force_tr, vector<double>& force_long);
+};
+
+class ForceDSM: public FrictionForceSolver {    //Derbenev-Skrinsky-Meshkov formula for magnetized cooling.
+    bool mag_only = false;
+
+     //A fudge factor to smooth the friction force shape. Using the
+    // "Classical" default definition here from the BETACOOL documentation
+    double k = 2;
+    int n_a = 100;
+    int n_ve = 100;
+    bool first_run = true;
+    bool const_tpr = true;
+    vector<double> a;
+//    vector<double> sin_a;
+    vector<double> cos_a;
+    vector<double> tan_a;
+    vector<double> t2;
+    vector<double> ve;
+    vector<double> exp_ve2;
+
+    bool first_run_fa = true;
+    int n_tr = 20;
+    int n_l = 10;
+    int n_phi = 10;
+    double d;
+    double f_inv_norm;
+    vector<vector<double>> exp_vtr;
+    vector<double> hlf_v2tr;
+    vector<double> hlf_v2l;
+    vector<vector<double>> vtr_cos;
+    vector<double> vl;
+    vector<double> vtr;
+    vector<vector<double>> v2tr_sin2;
+
+protected:
+    void init(EBeam& ebeam);
+    void pre_int(double sgm_vtr, double sgm_vl);
+    void calc_exp_vtr(double sgm_vtr, double sgm_vl);
+    void calc_alpha();
+    void calc_ve();
+    void calc_exp_ve2(double ve2_l, vector<double>& t2);
+    void force(double ve_tr, double ve_l, double ve2_tr, double ve2_l, double v_tr, double v_l, double v2,
+               double rho_min_const, int charge_number,  double density, double f_const, double& force_tr,double& force_l);
+public:
+    void set_smooth_factor(double x){k = x;}
+    void set_steps(int i) {n_a = i; n_ve = i; first_run = true;}
+    void set_grid(int ntr, int nl, int nphi){n_tr = ntr; n_l = nl; n_phi = nphi; first_run_fa = true;}
+    void set_mag_only(bool b){mag_only = b;}
+    virtual void friction_force(int charge_number, int ion_number,
+            vector<double>& v_tr, vector<double>& v_l, vector<double>& density,
+            EBeam& ebeam, vector<double>& force_tr, vector<double>& force_long);
+};
 #endif // FORCE_H

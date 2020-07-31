@@ -88,6 +88,12 @@ void ECoolRate::force(int n_sample, Beam &ion, EBeam &ebeam, Cooler &cooler, Fri
         }
     }
     force_solver.friction_force(ion.charge_number(), n_sample, v_tr, v_long, ne, ebeam, force_x, force_z);
+
+    if(dual_force_solver){
+        force_solver_l->set_mag_field(cooler.magnetic_field());
+        force_solver_l->set_time_cooler(t_cooler_);
+        force_solver_l->friction_force(ion.charge_number(), n_sample, v_tr, v_long, ne, ebeam, force_y, force_z); //force_y will be ignored in the following.
+    }
 }
 
 void ECoolRate::bunched_to_coasting(Beam &ion, Ions& ion_sample, EBeam &ebeam, Cooler &cooler,
@@ -153,7 +159,14 @@ void ECoolRate::apply_kick(int n_sample, Beam &ion, Ions& ion_sample) {
     for(int i=0; i<n_sample; ++i){
         xp[i] = !iszero(ixp[i])?ixp[i]*exp(force_x[i]*t_cooler_/(p0*ixp[i])):ixp[i];
         yp[i] = !iszero(iyp[i])?iyp[i]*exp(force_y[i]*t_cooler_/(p0*iyp[i])):iyp[i];
-        dp_p[i] = !iszero(idp_p[i])?idp_p[i]*exp(force_z[i]*t_cooler_/(p0*idp_p[i])):idp_p[i];
+//        dp_p[i] = !iszero(idp_p[i])?idp_p[i]*exp(force_z[i]*t_cooler_/(p0*idp_p[i])):idp_p[i];
+        double dp = force_z[i]*t_cooler_/(idp_p[i]*p0);
+        if(!iszero(idp_p[i],1e-7)) {
+            dp_p[i] = dp>0.15?idp_p[i]*(1+dp):idp_p[i]*exp(dp);
+        }
+        else {
+            dp_p[i] = idp_p[i];
+        }
     }
 }
 
@@ -216,7 +229,7 @@ void ECoolRate::ecool_rate(FrictionForceSolver &force_solver, Beam &ion,
     adjust_disp_inv(t.disp_y, y_bet, dp_p, ion_sample.cdnt(Phase::Y), n_sample);
     adjust_disp_inv(t.disp_dy, yp_bet, dp_p, yp, n_sample);
 
-    ion_sample.emit(x_bet, xp_bet, y_bet, yp_bet, dp_p, emit_x, emit_y, emit_z);
+    ion_sample.emit(x_bet, xp_bet, y_bet, yp_bet, dp_p, ion_sample.cdnt(Phase::DS), emit_x, emit_y, emit_z);
 
     rate_x = emit_x/emit_x0-1;
     rate_y = emit_y/emit_y0-1;

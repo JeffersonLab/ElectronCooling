@@ -81,6 +81,14 @@ struct Set_ecool{
      int n_tr = 0;
      int n_l = 0;
      int n_phi = 0;
+     int n_step = 0;
+     double smooth_factor = 2;
+     bool magnetic_only = false;
+     IonSampleType model = IonSampleType::MONTE_CARLO;
+    int n_sample_tr = 0;
+    int n_sample_l = 0;
+    bool dual_force_solver = false;
+    ForceFormula force_l = ForceFormula::PARKHOMCHUK;
 };
 
 struct Set_cooler{
@@ -98,7 +106,6 @@ struct Set_cooler{
      double pipe_radius = 0;
 };
 
-
 struct Set_e_beam{
      double gamma = 0;
      double tmp_tr = 0;
@@ -107,6 +114,9 @@ struct Set_e_beam{
      double sigma_x = 0;
      double sigma_y = 0;
      double sigma_z = 0;
+     double sigma_xp = 0;
+     double sigma_yp = 0;
+     double sigma_dpp = 0;
      double current = 0;
      double radius = 0;
      double length = 0;
