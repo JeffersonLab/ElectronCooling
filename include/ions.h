@@ -41,6 +41,7 @@ public:
     virtual void emit(vector<double>& x_bet, vector<double>& xp_bet, vector<double>& y_bet, vector<double>& yp_bet,
                       vector<double>& dp_p,vector<double>&ds, double& emit_x, double& emit_y, double& emit_s) = 0;
     virtual void create_samples(Beam& ion) = 0;
+    double beta_s(){return beta_s_;}
 };
 
 class Ions_MonteCarlo: public Ions{

@@ -119,11 +119,16 @@ void ParticleModel::update_beam_parameters(Beam &ion, Ions& ion_sample) {
     ion_sample.emit(emit_x, emit_y, emit_z);
     ion.set_emit_x(emit_x);
     ion.set_emit_y(emit_y);
-    ion.set_dp_p(sqrt(emit_z));
+
 
     if(ion.bunched()) {
         double sigma_s = rms(ion_sample.n_sample(), ion_sample.cdnt(Phase::DS));
         ion.set_sigma_s(sigma_s);
+        double beta_s = ion_sample.beta_s();
+        ion.set_dp_p(sqrt(emit_z-sigma_s*sigma_s/(beta_s*beta_s)));
+    }
+    else {
+        ion.set_dp_p(sqrt(emit_z));
     }
 }
 
