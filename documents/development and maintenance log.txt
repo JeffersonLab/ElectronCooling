@@ -1,3 +1,6 @@
+09/04/2020
+1. Add the fixed-bunch-length feature to the particle model. 
+
 05/21/2020
 1. Define the angles of the Gaussian electron bunch.
 
