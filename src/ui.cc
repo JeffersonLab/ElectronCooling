@@ -927,7 +927,7 @@ void run_simulation(Set_ptrs &ptrs) {
     bool fixed_bunch_length = ptrs.dynamic_ptr->fixed_bunch_length;
 
     if(fixed_bunch_length) {
-        assert(ptrs.dynamic_ptr->model==DynamicModel::RMS&&"ERROR: THE PARAMETER FIXED_BUNCH_LENGTH WORKS ONLY FOR RMS MODEL");
+//        assert(ptrs.dynamic_ptr->model==DynamicModel::RMS&&"ERROR: THE PARAMETER FIXED_BUNCH_LENGTH WORKS ONLY FOR RMS MODEL");
         assert(ptrs.ring->rf.gamma_tr>0&&"ERROR: DEFINE THE TRANSITION GAMMA OF THE RING WHEN THE PARAMETER FIXED_BUNCH_LENGTH IS CHOSEN");
     }
     double t = ptrs.dynamic_ptr->time;

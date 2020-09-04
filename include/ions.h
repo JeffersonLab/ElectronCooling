@@ -42,6 +42,7 @@ public:
                       vector<double>& dp_p,vector<double>&ds, double& emit_x, double& emit_y, double& emit_s) = 0;
     virtual void create_samples(Beam& ion) = 0;
     double beta_s(){return beta_s_;}
+    void update_bet_s(Beam& ion){beta_s_ = ion.sigma_s()/ion.dp_p();}
 };
 
 class Ions_MonteCarlo: public Ions{
