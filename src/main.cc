@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cmath>
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <regex>
 
@@ -33,9 +34,12 @@ enum class Test {IBS, ECOOL, BOTH,DYNAMICBOTHBUNCHED, MATH_PARSER};
 
 int main(int argc, char** argv) {
     srand(time(NULL));
+    int line_count = 0;
 
     if(argc>1) {
-        std::ifstream input_file(argv[1]);
+//        std::ifstream input_file(argv[1]);
+        std::fstream input_file;
+        input_file.open(argv[1], std::ios::in | std::ios::out | std::ios::app);
         input_script_name = argv[1];
         size_t sep = input_script_name.find_last_of("\\/");
         input_script_name = input_script_name.substr(sep+1);
@@ -48,6 +52,7 @@ int main(int argc, char** argv) {
             initialize_parser(math_parser);
         }
         while (std::getline(input_file,line)) {
+            ++line_count;
             if(!line.empty() && line[line.size()-1] == '\r') line.erase(line.size()-1);
             if (!line.empty()) {
                 line = remove_comments(line);
@@ -157,7 +162,7 @@ int main(int argc, char** argv) {
                                 break;
                             }
                             case Section::SECTION_SCRATCH: {
-                                parse(line, math_parser);
+                                parse(input_file, line_count, line, math_parser);
                                 break;
                             }
                             case Section::SECTION_COMMENT: {
@@ -172,6 +177,7 @@ int main(int argc, char** argv) {
         ui_quit();
         std::cout<<"END: "<<time_to_string()<<std::endl;
         std::cout<<"INPUT: "<<input_script_name<<std::endl;
+        input_file.close();
     }
     else {
         Test test = Test::MATH_PARSER;

@@ -25,6 +25,7 @@ Record uircd;
 std::ofstream save_to_file;
 std::string input_script_name;
 
+
 muParserHandle_t math_parser = NULL;
 std::vector<string> ION_ARGS = {"CHARGE_NUMBER", "MASS", "KINETIC_ENERGY", "NORM_EMIT_X", "NORM_EMIT_Y",
     "MOMENTUM_SPREAD", "PARTICLE_NUMBER", "RMS_BUNCH_LENGTH"};
@@ -1731,8 +1732,16 @@ void set_ecool(string &str, Set_ecool *ecool_args){
     }
 }
 
-void parse(std::string &str, muParserHandle_t &math_parser){
+std::fstream& go_to_line(std::fstream& file, int num){
+    file.seekg(std::ios::beg);
+    for(int i=0; i < num - 1; ++i){
+        file.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+    }
+    return file;
+}
 
+void parse(std::fstream &input_file, int line_count, std::string &str, muParserHandle_t &math_parser){
+    static int append_count = 0; //Check if the APPEND and APPENDSTR command are called for the first time.
     if (str == "LIST_VAR") {
         ListVar(math_parser);
     }
@@ -1755,6 +1764,24 @@ void parse(std::string &str, muParserHandle_t &math_parser){
             std::cout<<subvar<<" = "<<mupEval(math_parser)<<std::endl;
         }
     }
+    else if (str.substr(0,7) == "SAVESTR") {
+        string var = str.substr(8);
+        var = trim_whitespace(var);
+        if(!save_to_file.is_open()) {
+            string filename = time_to_filename();
+            filename = "JSPEC_SAVE_" + filename + ".txt";
+            save_to_file.open (filename,std::ofstream::out | std::ofstream::app);
+            if(save_to_file.is_open()){
+                std::cout<<"File opened: "<<filename<<" !"<<std::endl;
+                save_to_file<<"INPUT: "<<input_script_name<<std::endl;
+            }
+            else {
+                std::cout<<"Failed to open file: "<<filename<<" !"<<std::endl;
+            }
+
+        }
+        save_to_file<<var<<std::endl;
+    }
     else if (str.substr(0,4) == "SAVE") {
         string var = str.substr(5);
         var = trim_whitespace(var);
@@ -1773,6 +1800,29 @@ void parse(std::string &str, muParserHandle_t &math_parser){
 
         }
         save_to_file<<var<<" = "<<mupEval(math_parser)<<std::endl;
+    }
+    else if(str.substr(0,9) == "APPENDSTR") {
+        string var = str.substr(10);
+        var = trim_whitespace(var);
+        if(append_count<1) {
+            ++append_count;
+            input_file<<std::endl<<"========="<<std::endl;
+            input_file<<time_to_string()<<std::endl;
+        }
+        input_file<<var<<std::endl;
+        go_to_line(input_file, line_count+1);
+    }
+    else if (str.substr(0,6) == "APPEND") {
+        string var = str.substr(7);
+        var = trim_whitespace(var);
+        mupSetExpr(math_parser, var.c_str());
+        if(append_count<1) {
+            ++append_count;
+            input_file<<std::endl<<"========="<<std::endl;
+            input_file<<time_to_string()<<std::endl;
+        }
+        input_file<<var<<" = "<<mupEval(math_parser)<<std::endl;
+        go_to_line(input_file, line_count+1);
     }
     else {
         mupSetExpr(math_parser, str.c_str());

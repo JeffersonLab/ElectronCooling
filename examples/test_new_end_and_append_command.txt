@@ -74,10 +74,19 @@ section_run
 	calculate_ecool
 
 section_scratch
-#	save vl_rate_ecool_x
-#	save vl_rate_ecool_y
-#	save vl_rate_ecool_s
+	savestr test savestr command
+	appendstr test appendstr command
+	append vl_rate_ecool_x
+	append vl_rate_ecool_y
+	append vl_rate_ecool_s
 
 =========
 Anything from this line should be ignored.
-You shouldn't see any error. 
+You shouldn't see any error.
+
+=========
+2020-09-06 03:34:31
+TEST APPENDSTR COMMAND
+VL_RATE_ECOOL_X = -0.00750338
+VL_RATE_ECOOL_Y = -0.00800856
+VL_RATE_ECOOL_S = -0.00266499
