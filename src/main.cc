@@ -53,7 +53,9 @@ int main(int argc, char** argv) {
                 line = remove_comments(line);
                 line = trim_whitespace(line);
                 std::regex e("===\\s*END\\s*===");
+                std::regex ee("^\\s*(\\=)(\\=)(\\=)(\\=)(\\=)(\\=)(\\=)(\\=)\\1+\\s*$");
                 if(std::regex_match(upper_str(line),e)) break;
+                if(std::regex_match(upper_str(line),ee)) break;
                 while(line.size()>2 && line.substr(line.size()-2)=="&&"){
                     string line_cont;
                     std::getline(input_file,line_cont);
