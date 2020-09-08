@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
             }
         }
         ui_quit();
-        std::cout<<std::endl<<"============================================="<<std::endl
+        std::cout<<std::endl<<"============================================="<<std::endl;
         std::cout<<"END: "<<time_to_string()<<std::endl;
         std::cout<<"INPUT: "<<input_script_name<<std::endl;
         input_file.close();
