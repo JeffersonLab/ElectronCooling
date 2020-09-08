@@ -217,7 +217,7 @@ void define_ion_beam(std::string &str, Set_ion *ion_args);
 void run(std::string &str, Set_ptrs &ptrs);
 void define_ring(std::string &str, Set_ring *ring_args);
 void set_ibs(std::string &str, Set_ibs *ibs_args);
-void parse(std::string &str, muParserHandle_t &math_parser);
+void parse(std::fstream &input_file, int line_count, std::string &str, muParserHandle_t &math_parser);
 void define_cooler(std::string &str, Set_cooler *cooler_args);
 void create_cooler(Set_ptrs &ptrs);
 void define_e_beam(std::string &str, Set_e_beam *e_beam_args);

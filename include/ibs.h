@@ -116,5 +116,4 @@ class IBSSolver_BM : public IBSSolver {
      virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
 
 };
-
 #endif

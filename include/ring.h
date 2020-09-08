@@ -83,6 +83,7 @@ class Ring{
     Ring(double circ, Beam &beam_defined);
     Ring(Lattice &lattice_defined, Beam &beam_defined);
     void set_rf();
+    void update_bet_s(){beta_s_ = beam_->sigma_s()/beam_->dp_p();}
 };
 
 struct Twiss{

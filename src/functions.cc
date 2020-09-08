@@ -32,6 +32,7 @@ std::string time_to_string() {
     char filename[25];
     struct tm *timenow;
     time_t now = time(NULL);
+//    timenow = gmtime(&now);
     timenow = localtime(&now);
     strftime(filename, sizeof(filename), "%Y-%m-%d %H:%M:%S", timenow);
     std::string s(filename);
@@ -42,6 +43,7 @@ std::string time_to_filename() {
     char filename[25];
     struct tm *timenow;
     time_t now = time(NULL);
+//    timenow = gmtime(&now);
     timenow = localtime(&now);
     strftime(filename, sizeof(filename), "%Y-%m-%d-%H-%M-%S", timenow);
     std::string s(filename);

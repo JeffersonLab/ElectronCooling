@@ -20,6 +20,7 @@ void RMSModel::update_ibeam(Beam& ion, Ions& ion_sample, Ring& ring, EBeam& ebea
     if(ion.bunched()) {
         if(fixed_bunch_length) {
             ring.rf.v = ring.calc_rf_voltage();
+            ring.update_bet_s();
         }
         else {
             ion.set_sigma_s(ring.beta_s()*dp);

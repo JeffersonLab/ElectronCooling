@@ -25,6 +25,7 @@ Record uircd;
 std::ofstream save_to_file;
 std::string input_script_name;
 
+
 muParserHandle_t math_parser = NULL;
 std::vector<string> ION_ARGS = {"CHARGE_NUMBER", "MASS", "KINETIC_ENERGY", "NORM_EMIT_X", "NORM_EMIT_Y",
     "MOMENTUM_SPREAD", "PARTICLE_NUMBER", "RMS_BUNCH_LENGTH"};
@@ -43,7 +44,8 @@ std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS"
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF", "SMOOTH_RHO_MAX", "USE_GSL",
     "N_TR", "N_L", "N_PHI", "USE_MEAN_RHO_MIN",  "MODEL", "SAMPLE_NUMBER_TR", "SAMPLE_NUMBER_L","N_STEP", "SMOOTH_FACTOR",
     "MAGNETIC_ONLY", "DUAL_FORCE", "FORCE_FORMULA_L"};
-std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK", "NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D", "NONMAG_NUM3D",  "MESHKOV"};
+std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK", "NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D",
+    "NONMAG_NUM3D", "MESHKOV", "DSM"};
 std::vector<string> SIMULATION_ARGS = {"TIME", "STEP_NUMBER", "SAMPLE_NUMBER", "IBS", "E_COOL", "OUTPUT_INTERVAL",
     "SAVE_PARTICLE_INTERVAL", "OUTPUT_FILE", "MODEL", "REF_BET_X", "REF_BET_Y", "REF_ALF_X", "REF_ALF_Y",
     "REF_DISP_X", "REF_DISP_Y", "REF_DISP_DX", "REF_DISP_DY", "FIXED_BUNCH_LENGTH", "RESET_TIME", "OVERWRITE",
@@ -943,7 +945,7 @@ void run_simulation(Set_ptrs &ptrs) {
     bool fixed_bunch_length = ptrs.dynamic_ptr->fixed_bunch_length;
 
     if(fixed_bunch_length) {
-        assert(ptrs.dynamic_ptr->model==DynamicModel::RMS&&"ERROR: THE PARAMETER FIXED_BUNCH_LENGTH WORKS ONLY FOR RMS MODEL");
+//        assert(ptrs.dynamic_ptr->model==DynamicModel::RMS&&"ERROR: THE PARAMETER FIXED_BUNCH_LENGTH WORKS ONLY FOR RMS MODEL");
         assert(ptrs.ring->rf.gamma_tr>0&&"ERROR: DEFINE THE TRANSITION GAMMA OF THE RING WHEN THE PARAMETER FIXED_BUNCH_LENGTH IS CHOSEN");
     }
     double t = ptrs.dynamic_ptr->time;
@@ -1759,8 +1761,16 @@ void set_ecool(string &str, Set_ecool *ecool_args){
     }
 }
 
-void parse(std::string &str, muParserHandle_t &math_parser){
+std::fstream& go_to_line(std::fstream& file, int num){
+    file.seekg(std::ios::beg);
+    for(int i=0; i < num - 1; ++i){
+        file.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+    }
+    return file;
+}
 
+void parse(std::fstream &input_file, int line_count, std::string &str, muParserHandle_t &math_parser){
+    static int append_count = 0; //Check if the APPEND and APPENDSTR command are called for the first time.
     if (str == "LIST_VAR") {
         ListVar(math_parser);
     }
@@ -1783,6 +1793,24 @@ void parse(std::string &str, muParserHandle_t &math_parser){
             std::cout<<subvar<<" = "<<mupEval(math_parser)<<std::endl;
         }
     }
+    else if (str.substr(0,7) == "SAVESTR") {
+        string var = str.substr(8);
+        var = trim_whitespace(var);
+        if(!save_to_file.is_open()) {
+            string filename = time_to_filename();
+            filename = "JSPEC_SAVE_" + filename + ".txt";
+            save_to_file.open (filename,std::ofstream::out | std::ofstream::app);
+            if(save_to_file.is_open()){
+                std::cout<<"File opened: "<<filename<<" !"<<std::endl;
+                save_to_file<<"INPUT: "<<input_script_name<<std::endl;
+            }
+            else {
+                std::cout<<"Failed to open file: "<<filename<<" !"<<std::endl;
+            }
+
+        }
+        save_to_file<<var<<std::endl;
+    }
     else if (str.substr(0,4) == "SAVE") {
         string var = str.substr(5);
         var = trim_whitespace(var);
@@ -1801,6 +1829,29 @@ void parse(std::string &str, muParserHandle_t &math_parser){
 
         }
         save_to_file<<var<<" = "<<mupEval(math_parser)<<std::endl;
+    }
+    else if(str.substr(0,9) == "APPENDSTR") {
+        string var = str.substr(10);
+        var = trim_whitespace(var);
+        if(append_count<1) {
+            ++append_count;
+            input_file<<std::endl<<"========="<<std::endl;
+            input_file<<time_to_string()<<std::endl;
+        }
+        input_file<<var<<std::endl;
+        go_to_line(input_file, line_count+1);
+    }
+    else if (str.substr(0,6) == "APPEND") {
+        string var = str.substr(7);
+        var = trim_whitespace(var);
+        mupSetExpr(math_parser, var.c_str());
+        if(append_count<1) {
+            ++append_count;
+            input_file<<std::endl<<"========="<<std::endl;
+            input_file<<time_to_string()<<std::endl;
+        }
+        input_file<<var<<" = "<<mupEval(math_parser)<<std::endl;
+        go_to_line(input_file, line_count+1);
     }
     else {
         mupSetExpr(math_parser, str.c_str());

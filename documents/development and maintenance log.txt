@@ -1,3 +1,11 @@
+09/06/2020
+1. A line that is consist of nine or more consecutive "=" is considered the end of the script. 
+2. New command: append, appendstr, savestr
+3. Use local time for record and file name.
+
+09/04/2020
+1. Add the fixed-bunch-length feature to the particle model. 
+
 05/21/2020
 1. Define the angles of the Gaussian electron bunch.
 

@@ -22,6 +22,11 @@ void ParticleModel::update_ibeam(Beam& ion, Ions& ion_sample, Ring& ring, EBeam&
 
     move_particles(ion, ion_sample, ring);
     update_beam_parameters(ion, ion_sample);
+
+    if(fixed_bunch_length && ion.bunched()) {
+        ring.update_bet_s();
+        ring.rf.v = ring.calc_rf_voltage();
+    }
 }
 
 void ParticleModel::apply_cooling_kick(double freq, Beam& ion, Ions& ion_sample, ECoolRate* ecool_solver) {
@@ -103,8 +108,10 @@ void ParticleModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
     }
 
     if(ion.bunched()){
+
         uniform_random(n_sample, rdn, -1, 1);
         double beta_s = ring.beta_s();
+        if(fixed_bunch_length) beta_s =  ion.sigma_s()/rms(n_sample, dp_p);
         double beta_s2_inv = 1/(beta_s*beta_s);
         vector<double>& ds = ion_sample.cdnt(Phase::DS);
         for(int i=0; i<n_sample; ++i){
@@ -113,6 +120,10 @@ void ParticleModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
             double phi = k_pi*rdn[i];
             dp_p[i] = I*sin(phi);
             ds[i] = I*beta_s*cos(phi);
+        }
+        if(fixed_bunch_length) {
+//            gaussian_random(n_sample, ds, ion.sigma_s());
+            gaussian_random_adjust(n_sample, ds, ion.sigma_s());
         }
     }
     ion_sample.adjust_disp();
@@ -124,11 +135,22 @@ void ParticleModel::update_beam_parameters(Beam &ion, Ions& ion_sample) {
     ion_sample.emit(emit_x, emit_y, emit_z);
     ion.set_emit_x(emit_x);
     ion.set_emit_y(emit_y);
-    ion.set_dp_p(sqrt(emit_z));
+
 
     if(ion.bunched()) {
-        double sigma_s = rms(ion_sample.n_sample(), ion_sample.cdnt(Phase::DS));
-        ion.set_sigma_s(sigma_s);
+        if(fixed_bunch_length) {
+            ion.set_dp_p(rms(ion_sample.n_sample(), ion_sample.cdnt(Phase::DP_P)));
+            ion_sample.update_bet_s(ion);
+        }
+        else {
+            double sigma_s = rms(ion_sample.n_sample(), ion_sample.cdnt(Phase::DS));
+            ion.set_sigma_s(sigma_s);
+            double beta_s = ion_sample.beta_s();
+            ion.set_dp_p(sqrt(emit_z-sigma_s*sigma_s/(beta_s*beta_s)));
+        }
+    }
+    else {
+        ion.set_dp_p(sqrt(emit_z));
     }
 }
 

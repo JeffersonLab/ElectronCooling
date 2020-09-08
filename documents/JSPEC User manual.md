@@ -43,6 +43,7 @@ The input file is organized by various sections. All the sections fall into four
 | section_luminosity | definition      | Set parameters for luminosity calculation                    |
 | section_run        | operation       | Create the objectives (ion beam, ion ring, electron beam, cooler) and perform the calculation and/or the simulation. |
 | ===end===          | special keyword | Anything below this line will be ignored.                    |
+| =========          | special keyword | Any line of nine or more consecutive "=" is considered then end of the script. Anything below this line will be ignored. |
 
 The input file starts with a section by calling the section name. Once a section name is called, the respective section is created, and this section ends when another section name is called or when the input file ends. Sections can be repeated called and the latter one overwrite the previous ones. But if a parameters is not set again in the latter one, its value remains. 
 
@@ -218,6 +219,9 @@ section_run
 | print      | Use this command in format "print x" and it will print the value of the variable x in the screen. |
 | printstr   | Use this command in format "printstr string" and it will print the "string" in the screen. |
 | save       | Use this command in format "save var" and it will save the value of "var" in a file named as JSPEC_SAVE_YYYY_MM_DD_HH_MM_SS.txt as "var = the value of var". For each run, only one file will be created bye the first save command even if multiple save commands are used. All the following save commands write to the file. If the file already exists, results will be appended to it. |
+| savestr    | Use this command in format "savestr str" and it will write the "str" to the file. If the output file does not exist, it will create it in the same way as the "save" command does. |
+| append     | Use this command in format "append var" and it will save the value of "var" to the end of the input script file. If it is the first time to call it or "appendstr", it will write "=========" and the date and time to the end of the input script file. |
+| appendstr  | Use this command in format "appendstr str" and it will write the "str" to the end of the input script file. If it is the first time to call it or "append", it will write "=========" and the date and time to the end of the input script file. |
 
 The following keywords records the results from the previous computation. They can be used to set up the value for the following computation or to display the results onto the screen. 
 
