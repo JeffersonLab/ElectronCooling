@@ -270,19 +270,20 @@ The following keywords records the results from the previous computation. They c
 
 **section_cooler**
 
-| Keywords       | Meaning                                  |
-| -------------- | ---------------------------------------- |
-| length         | Length of the cooler in [m]              |
-| section_number | Number of the coolers                    |
-| magnetic_field | Magnetic field in [T]                    |
-| bet_x          | Beta function in horizontal direction in [m] |
-| bet_y          | Beta function in vertical direction in [m] |
-| disp_x         | Dispersion in horizontal direction in [m] |
-| disp_y         | Dispersion in vertical direction in [m]  |
-| alpha_x        | Alpha in horizontal direction            |
-| alpha_y        | Alpha in in vertical direction           |
-| disp_dx        | Derivative of the dispersion in horizontal direction |
-| disp_dy        | Derivative of the dispersion in vertical direction |
+| Keywords       | Meaning                                                      |
+| -------------- | ------------------------------------------------------------ |
+| length         | Length of the cooler in [m]                                  |
+| section_number | Number of the coolers                                        |
+| magnetic_field | Magnetic field in [T]                                        |
+| bet_x          | Beta function in horizontal direction in [m]                 |
+| bet_y          | Beta function in vertical direction in [m]                   |
+| disp_x         | Dispersion in horizontal direction in [m]                    |
+| disp_y         | Dispersion in vertical direction in [m]                      |
+| alpha_x        | Alpha in horizontal direction                                |
+| alpha_y        | Alpha in in vertical direction                               |
+| disp_dx        | Derivative of the dispersion in horizontal direction         |
+| disp_dy        | Derivative of the dispersion in vertical direction           |
+| pipe_radius    | radius of the cooler vacumn chamber in [m]. Set it if electron edge effect needs to be considered. |
 
 **section_e_beam**
 
@@ -319,6 +320,8 @@ The following keywords records the results from the previous computation. They c
 | p_shift               | True: centers of the electron beam and the ion beam do not overlap. |
 | v_shift               | True: velocities of the electron beam and the ion beam do not equal. |
 | cv_l                  | An additional longitudinal velocity of the electron bunch.   |
+| rise_time             | rising time of the electron bunch, in [s], use it when considering longitudinal kick due to the electron bunch edge effect |
+| fall_time             | falling time of the electron bunch, in [s], use it when considering longitudinal kick due to the electron bunch edge effect |
 
 **section_ibs**
 
@@ -394,6 +397,7 @@ The following keywords records the results from the previous computation. They c
 | reset_time             | Whether to reset the starting time to zero (value: true) or use the final time from the previous simulation (value: false). |
 | overwrite              | Whether overwrite the output file is it exists. The default value is true. If the value is false, a new output file will be generated. The name of the new file is created by adding a number before the specific file name. |
 | calc_luminosity        | Whether to calculate the luminosity during the simulation: yes (true) or no (false). The default value is false. |
+| edge_effect            | Considering the longitudinal kick due to the electron bunch edge effect is the value is true. |
 
 
 

@@ -1,3 +1,6 @@
+09/08/2020
+1.Merge electron beam edge effect into master. 
+
 09/06/2020
 1. A line that is consist of nine or more consecutive "=" is considered the end of the script. 
 2. New command: append, appendstr, savestr
