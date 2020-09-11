@@ -8,7 +8,7 @@
 class Lattice;
 class Beam;
 
-enum class IBSModel {MARTINI, BM};
+enum class IBSModel {MARTINI, BM, BMZ};
 
 class IBSSolver {
 protected:
@@ -115,5 +115,54 @@ class IBSSolver_BM : public IBSSolver {
      IBSSolver_BM(double log_c, double k);
      virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
 
+};
+
+class IBSSolver_BMZ : public IBSSolver {
+private:
+    int nt_;     //Number of steps for integration.
+    struct itgrl{
+        double lambda;
+//        double lambda_2;
+//        double lambda_3;
+        double lambda_sqrt;
+        double ct;   // ct = 1/(1-t)^2
+    };
+    double gamma_2;
+    double gamma_2_inv;
+    double gamma_4;
+    double emit_x_inv;
+    double emit_y_inv;
+    double emit_x2_inv;
+    double emit_y2_inv;
+
+    struct optcl{
+        double phi_x2;
+        double phi_y2;
+        double hx;
+        double hy;
+        double dx_2_over_beta_x;
+        double dy_2_over_beta_y;
+        double beta_xy;
+        double beta_x_over_hx;
+        double hy_beta_x_over_hx;
+        double beta_phi_x2;
+        double beta_phi_y2;
+        double hy_over_beta_y;
+        double hx_hy_over_beta_y;
+        double beta_x_hy_over_beta_y;
+    };
+    std::vector<itgrl> integral;
+    std::vector<optcl> optical;
+    void init_integral(int n);
+    void init_optical(const Lattice &lattice);
+    double calc_abc(const Lattice &lattice, const Beam& beam, int i, double& a, double& b, double& c,
+                               double& ax, double& bx, double& ay, double& by,double& al, double& bl);
+    double coef(const Lattice &lattice, const Beam &beam) const;
+    void calc_integral(double a, double b, double c, double ax, double bx, double ay, double by, double al,
+                                  double bl, double ix, double iy, double is, int nt, std::vector<itgrl>& g);
+public:
+    IBSSolver_BMZ(int nt, double log_c, double k);
+    set_nt(int n){assert(n>0&&"Wrong value of nt in IBS parameters!"); nt_ = n; invalidate_cache();}
+    virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
 };
 #endif

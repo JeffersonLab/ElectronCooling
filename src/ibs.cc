@@ -440,3 +440,216 @@ void IBSSolver_BM::rate(const Lattice &lattice, const Beam &beam, double &rx, do
         ibs_coupling(rx, ry, k_, beam.emit_nx(), beam.emit_ny());
 }
 
+IBSSolver_BMZ::IBSSolver_BMZ(int nt, double log_c, double k) : IBSSolver(log_c, k), nt_(nt) {
+}
+
+void IBSSolver_BMZ::init_integral(int n) {
+    integral.resize(n);
+    double dt = 1.0/n;
+    double t = dt/2;
+    for(int i=0; i<n; ++i) {
+        double it = 1-t;
+        itgrl o;
+        o.lambda = t/it;
+//        o.lambda_2 = o.lambda*o.lambda;
+//        o.lambda_3 = o.lambda_2*o.lambda;
+        o.lambda_sqrt = sqrt(o.lambda);
+        o.ct = 1/(it*it);
+        integral.at(i) = o;
+        t += dt;
+    }
+}
+
+void IBSSolver_BMZ::init_optical(const Lattice &lattice) {
+    int n = lattice.n_element();
+    optical.resize(n);
+    for(int i=0; i<n; ++i) {
+        optcl o;
+        double alfx = lattice.alfx(i);
+        double betx = lattice.betx(i);
+        double dx = lattice.dx(i);
+        double dpx = lattice.dpx(i);
+        double alfy = lattice.alfy(i);
+        double bety = lattice.bety(i);
+        double dy = lattice.dy(i);
+        double dpy = lattice.dpy(i);
+        o.phi_x2 = dpx+alfx*dx/betx;
+        o.phi_x2 *= o.phi_x2;
+        o.phi_y2 = dpy+alfy*dy/bety;
+        o.phi_y2 *= o.phi_y2;
+        o.beta_phi_x2 = betx*betx*o.phi_x2;
+        o.beta_phi_y2 = bety*bety*o.phi_y2;
+        o.hx = (dx*dx + o.beta_phi_x2)/betx;
+        o.hy = (dy*dy + o.beta_phi_y2)/bety;
+        o.dx_2_over_beta_x = dx*dx/betx;
+        o.dy_2_over_beta_y = dy*dy/bety;
+        o.beta_xy = betx*bety;
+        o.beta_x_over_hx = betx/o.hx;
+        o.hy_beta_x_over_hx = o.hy*o.beta_x_over_hx;
+        o.hy_over_beta_y = o.hy/bety;
+        o.hx_hy_over_beta_y = o.hx*o.hy_over_beta_y;
+        o.beta_x_hy_over_beta_y = betx*o.hy/bety;
+        optical.at(i) = o;
+    }
+}
+
+double IBSSolver_BMZ::calc_abc(const Lattice &lattice, const Beam& beam, int i, double& a, double& b, double& c,
+                               double& ax, double& bx, double& ay, double& by,double& al, double& bl) {
+    double emit_x = beam.emit_x();
+    double emit_y = beam.emit_y();
+    double gamma = beam.gamma();
+    double gamma_2 = gamma*gamma;
+    double gamma_2_inv = 1/gamma_2;
+    double emit_x_inv = 1/emit_x;
+    double emit_y_inv = 1/emit_y;
+    double emit_x2_inv = emit_x_inv*emit_x_inv;
+    double emit_y2_inv = emit_y_inv*emit_y_inv;
+    double dp_2_inv = 1/(beam.dp_p()*beam.dp_p());
+
+    optcl& o = optical.at(i);
+
+    double v1 = (o.hx*emit_x_inv + o.hy*emit_y_inv + dp_2_inv)*gamma_2;
+    double v2 = lattice.betx(i)*emit_x_inv + lattice.bety(i)*emit_y_inv;
+    a = v1 + v2;
+    double v3 = (o.dx_2_over_beta_x*emit_x_inv + o.dy_2_over_beta_y*emit_y_inv + dp_2_inv) * gamma_2;
+    double beta_x_over_emit_x = lattice.betx(i)*emit_x_inv;
+    double beta_y_over_emit_y = lattice.bety(i)*emit_y_inv;
+    double v4 = beta_x_over_emit_x*beta_y_over_emit_y;
+//    double v4 = o.beta_xy*emit_x_inv*emit_y_inv;
+    c = v3*v4;
+    b = v2*v3 + v4 + v4*(o.phi_x2+o.phi_y2)*gamma_2;
+    double v5 = o.hy_beta_x_over_hx*emit_y_inv;
+
+    ax = 2*v1 - v5 + o.beta_x_over_hx*gamma_2_inv*(2*beta_x_over_emit_x - beta_y_over_emit_y - gamma_2*dp_2_inv);
+    double v6 = (o.beta_phi_x2*emit_x2_inv + o.beta_phi_y2*emit_y2_inv)*gamma_2;
+
+    double v7 = beta_x_over_emit_x - 2*beta_y_over_emit_y;
+    double v8 = (2*o.beta_phi_y2*emit_y2_inv - o.beta_phi_x2*emit_x2_inv)*gamma_2;
+    double v9 = v1*v2 - v6;
+    bx = v9 + (beta_x_over_emit_x - 4*beta_y_over_emit_y)*beta_x_over_emit_x +
+        o.dx_2_over_beta_x*(v7*dp_2_inv + v4*gamma_2_inv + v8) +v7*o.hy_beta_x_over_hx*emit_y_inv;
+
+    al = 2*v1 - v2;
+    bl = v9-2*v4;
+
+    double hy_over_emit_y = o.hy*emit_y_inv;
+    double hy_over_beta_y = o.hy/lattice.bety(i);
+
+    ay = -v1-(hy_over_emit_y+beta_x_over_emit_x*hy_over_beta_y)*gamma_2 + 2*gamma_2*hy_over_beta_y*v1 - beta_x_over_emit_x
+        + 2*beta_y_over_emit_y;
+    by = (beta_y_over_emit_y - 2*beta_x_over_emit_x)*v1-2*beta_x_over_emit_x*hy_over_emit_y*gamma_2 + v4
+        + (2*o.beta_phi_x2*emit_x2_inv-o.beta_phi_y2*emit_y2_inv)*gamma_2 + v9*hy_over_beta_y*gamma_2;
+}
+
+void IBSSolver_BMZ::calc_integral(double a, double b, double c, double ax, double bx, double ay, double by, double al,
+                                  double bl, double ix, double iy, double is, int nt, std::vector<itgrl>& g) {
+    double dt = 1.0/nt;
+    ix = 0;
+    iy = 0;
+    is = 0;
+    for(int i=0; i<nt; ++i) {
+        double l = g.at(i).lambda;
+        double ls = g.at(i).lambda_sqrt;
+        double ct = g.at(i).ct;
+        double tx = ls*(ax*l+bx);
+        double ty = ls*(ay*l+by);
+        double ts = ls*(al*l+bl);
+        double d = l*(l*(l+a)+b)+c;
+        d *= ct*sqrt(d);
+        ix += tx/d;
+        iy += ty/d;
+        is += ts/d;
+    }
+    ix *= dt;
+    iy *= dt;
+    is *= dt;
+}
+
+double IBSSolver_BMZ::coef(const Lattice &lattice, const Beam &beam) const {
+    double lambda = 2*sqrt(k_pi)*beam.particle_number()/lattice.circ();
+    if(beam.bunched()) lambda = beam.particle_number()/beam.sigma_s();
+     double beta3 = beam.beta();
+    beta3 = beta3*beta3*beta3;
+    double gamma4 = beam.gamma();
+    gamma4 *= gamma4;
+    gamma4 *= gamma4;
+    return k_c*beam.r()*beam.r()*lambda/(8*k_pi*beam.dp_p()*beta3*gamma4*beam.emit_x()*beam.emit_y());
+
+}
+
+void IBSSolver_BMZ::rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs) {
+    int n_element = lattice.n_element();
+
+    if (cache_invalid) {
+        init_integral(nt_);
+        init_optical(lattice);
+        cache_invalid = false;
+    }
+
+    double c_bmz = coef(lattice, beam);
+    const double lc = log_c();
+    c_bmz *= lc;
+
+    rx = 0;
+    ry = 0;
+    rs = 0;
+    int n=2;
+    if (beam.bunched()) n=1;
+
+    if(ibs_by_element) {
+        std::ofstream out;
+        out.open("ibs_by_element.txt");
+        out<<"s bet_x bet_y alf_x alf_y disp_x disp_y rx_i ry_i rs_i rx_int ry_int rs_int"<<std::endl;
+        out.precision(10);
+        out<<std::showpos;
+        out<<std::scientific;
+        double s = 0;
+        for(int i=0; i<n_element-1; ++i){
+            double l_element = lattice.l_element(i);
+            c_bmz /= lattice.circ();
+            double gamma_2 = beam.gamma()*beam.gamma();
+            double a, b, c, ax, bx, ay, by, as, bs;
+            calc_abc(lattice, beam, i, a, b, c, ax, bx, ay, by, as, bs);
+            double ix, iy, is;
+            calc_integral(a, b, c, ax, bx, ay, by, as, bs, ix, iy, is, nt_, integral);
+
+            double rxi = optical.at(i).hx*ix*l_element*c_bmz*gamma_2/beam.emit_x();
+            double ryi =  lattice.bety(i)*iy*l_element*c_bmz/beam.emit_y();
+            double rsi = is*l_element*n*c_bmz*gamma_2/(beam.dp_p()*beam.dp_p());
+
+            rx += rxi;
+            ry += ryi;
+            rs += rsi;
+            out<<s<<' '<<lattice.betx(i)<<' '<<lattice.bety(i)<<' '<<lattice.alfx(i)<<' '
+                <<lattice.alfy(i)<<' '<<lattice.dx(i)<<' '<<lattice.dy(i)<<' '
+                <<rxi<<' '<<ryi<<' '<<rsi<<' '<<rx<<' '<<ry<<' '<<rs<<std::endl;
+            s += l_element;
+        }
+        out.close();
+    }
+    else {
+        for(int i=0; i<n_element-1; ++i){
+            double l_element = lattice.l_element(i);
+            double a, b, c, ax, bx, ay, by, as, bs;
+            calc_abc(lattice, beam, i, a, b, c, ax, bx, ay, by, as, bs);
+            double ix, iy, is;
+            calc_integral(a, b, c, ax, bx, ay, by, as, bs, ix, iy, is, nt_, integral);
+            rx += optical.at(i).hx*ix*l_element;
+            rs += is*l_element;
+            ry += lattice.bety(i)*iy*l_element;
+        }
+
+        double gamma_2 = beam.gamma()*beam.gamma();
+        c_bmz /= lattice.circ();
+        rs *= n*c_bmz*gamma_2;
+        rx *= c_bmz*gamma_2;
+        ry *= c_bmz;
+
+        rs /= beam.dp_p()*beam.dp_p();
+        rx /= beam.emit_x();
+        ry /= beam.emit_y();
+    }
+
+    if(k_>0)
+        ibs_coupling(rx, ry, k_, beam.emit_nx(), beam.emit_ny());
+}

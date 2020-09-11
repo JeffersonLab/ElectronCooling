@@ -661,6 +661,11 @@ void calculate_ibs(Set_ptrs &ptrs, bool calc = true) {
         ibs_solver.reset(new IBSSolver_BM(log_c, k));
         ibs_solver->set_ibs_by_element(ibs_by_element);
     }
+    else if (model == IBSModel::BMZ) {
+        assert(log_c>0 && nz>0 && "WRONG VALUE FOR COULOMB LOGARITHM IN IBS CALCULATION WITH BM MODEL!");
+        ibs_solver.reset(new IBSSolver_BMZ(nz, log_c, k));
+        ibs_solver->set_ibs_by_element(ibs_by_element);
+    }
     if(calc) {
         ibs_solver->rate(ptrs.ring->lattice(), *ptrs.ion_beam, rx, ry, rz);
 
@@ -1257,6 +1262,9 @@ void set_ibs(string &str, Set_ibs *ibs_args) {
     if (var== "MODEL") {
         if (val == "MARTINI") {
             ibs_args->model = IBSModel::MARTINI;
+        }
+        else if(val == "BMZ") {
+            ibs_args->model = IBSModel::BMZ;
         }
         else if(val == "BM") {
             ibs_args->model = IBSModel::BM;
