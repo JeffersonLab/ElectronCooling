@@ -301,7 +301,7 @@ void EllipticUniformBunch::density(vector<double>& x, vector<double>& y, vector<
 
 void GaussianBunch::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n_particle) {
     double amp = n_electron_/(sqrt(8*k_pi*k_pi*k_pi)*sigma_x_*sigma_y_*sigma_s_);
-    double sigma_x2 = -1/(2*sigma_x_*sigma_y_);
+    double sigma_x2 = -1/(2*sigma_x_*sigma_x_);
     double sigma_y2 = -1/(2*sigma_y_*sigma_y_);
     double sigma_s2 = -1/(2*sigma_s_*sigma_s_);
     for(int i=0; i<n_particle; ++i){
@@ -312,7 +312,7 @@ void GaussianBunch::density(vector<double>& x, vector<double>& y, vector<double>
 void GaussianBunch::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n_particle,
                 double cx, double cy, double cz) {
     double amp = n_electron_/(sqrt(8*k_pi*k_pi*k_pi)*sigma_x_*sigma_y_*sigma_s_);
-    double sigma_x2 = -1/(2*sigma_x_*sigma_y_);
+    double sigma_x2 = -1/(2*sigma_x_*sigma_x_);
     double sigma_y2 = -1/(2*sigma_y_*sigma_y_);
     double sigma_s2 = -1/(2*sigma_s_*sigma_s_);
     //ion_center - electron_center
