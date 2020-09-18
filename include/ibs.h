@@ -142,24 +142,28 @@ private:
         double hy;
         double dx_2_over_beta_x;
         double dy_2_over_beta_y;
-        double beta_xy;
+//        double beta_xy;
         double beta_x_over_hx;
         double hy_beta_x_over_hx;
         double beta_phi_x2;
         double beta_phi_y2;
         double hy_over_beta_y;
-        double hx_hy_over_beta_y;
-        double beta_x_hy_over_beta_y;
+//        double hx_hy_over_beta_y;
+//        double beta_x_hy_over_beta_y;
     };
     std::vector<itgrl> integral;
     std::vector<optcl> optical;
+    struct debug {
+        double  a, b, c, ax, bx, ay, by, al, bl, ix, iy, is;
+    };
+    std::vector<debug> my_debug;
     void init_integral(int n);
     void init_optical(const Lattice &lattice);
     double calc_abc(const Lattice &lattice, const Beam& beam, int i, double& a, double& b, double& c,
                                double& ax, double& bx, double& ay, double& by,double& al, double& bl);
     double coef(const Lattice &lattice, const Beam &beam) const;
     void calc_integral(double a, double b, double c, double ax, double bx, double ay, double by, double al,
-                                  double bl, double ix, double iy, double is, int nt, std::vector<itgrl>& g);
+                                  double bl, double& ix, double& iy, double& is, int nt, std::vector<itgrl>& g);
 public:
     IBSSolver_BMZ(int nt, double log_c, double k);
     set_nt(int n){assert(n>0&&"Wrong value of nt in IBS parameters!"); nt_ = n; invalidate_cache();}
