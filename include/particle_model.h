@@ -17,7 +17,7 @@ class ParticleModel: public Simulator {
     virtual void apply_edge_kick(Cooler& cooler, EBeam& ebeam, Beam& ion, Ions& ion_sample, ECoolRate* ecool_solver){};
     void update_beam_parameters(Beam &ion, Ions& ion_sample);
     void adjust_rf_voltage(Ring& ring){};
-    void save_ions(int i, Ions& ion_sample){if (ion_save_itvl>0 && i%ion_save_itvl==0) ion_sample.save_ions_sdds("ions"+std::to_string(i)+".txt");}
+    void save_ions(int i, Ions& ion_sample);
     vector<double> rdn;
     void precondition(Ions& ion_sample){resize_rdn(ion_sample.n_sample());};
  public:
