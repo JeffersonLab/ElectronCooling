@@ -662,6 +662,16 @@ void calculate_ibs(Set_ptrs &ptrs, bool calc = true) {
         ibs_solver.reset(new IBSSolver_BM(log_c, k));
         ibs_solver->set_ibs_by_element(ibs_by_element);
     }
+    else if (model == IBSModel::BMZ) {
+        assert(log_c>0 && nz>0 && "WRONG VALUE FOR COULOMB LOGARITHM IN IBS CALCULATION WITH BM MODEL!");
+        ibs_solver.reset(new IBSSolver_BMZ(nz, log_c, k));
+        ibs_solver->set_ibs_by_element(ibs_by_element);
+        if(!iszero(factor-3)) {
+            assert(factor>0 && "PARAMETER FACTOR SHOULD BE GREATER THAN ZERO IN THE BMC MODEL FOR IBS!");
+            IBSSolver_BMZ* ptr = dynamic_cast<IBSSolver_BMZ*>(ibs_solver.get());
+            ptr->set_factor(factor);
+        }
+    }
     else if (model == IBSModel::BMC) {
         assert(log_c>0 && nz>0 && "WRONG VALUE FOR COULOMB LOGARITHM IN IBS CALCULATION WITH BM MODEL!");
         ibs_solver.reset(new IBSSolver_BM_Complete(nz, log_c, k));
@@ -1272,6 +1282,9 @@ void set_ibs(string &str, Set_ibs *ibs_args) {
         }
         else if(val == "BMC") {
             ibs_args->model = IBSModel::BMC;
+        }
+        else if(val == "BMZ") {
+            ibs_args->model = IBSModel::BMZ;
         }
         else if(val == "BM") {
             ibs_args->model = IBSModel::BM;

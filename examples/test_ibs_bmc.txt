@@ -12,9 +12,9 @@ section_ring #define the ring
 	lattice = test2.tfs
 	
 section_ibs #define the arguments for IBS calculation
-	model = bmz
+	model = bmc
 	factor = 3
-#	ibs_by_element = true
+	ibs_by_element = true
 	nz = 1000
 	log_c = 20	#Optional, default is 20. 
 	coupling = 0

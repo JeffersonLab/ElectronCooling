@@ -329,11 +329,11 @@ The following keywords records the results from the previous computation. They c
 | -------- | ------------------------------------------------------------ |
 | nu       | Set the grid number in horizontal direction for the 3D integrationin Martinit model. |
 | nv       | Set the grid number in vertical direction for the 3D integrationin Martinit model. |
-| nz       | Set the grid number in longitudinal direction for the 3D integration in Martinit model. Set the integration step number in BMC model. |
+| nz       | Set the grid number in longitudinal direction for the 3D integration in Martinit model. Set the integration step number in BMC/BMZ model. |
 | log_c    | Coulomb logarithm. If log_c is set, then the integration in the longitudinal direction is replaced by the Coulomb logarithm. Thus the parameter nz is ignored. |
 | coupling | Transverse coupling rate, ranging from 0 to 1.               |
-| factor   | Scale factor for the upper bound of the integration in BMC model. |
-| model    | Model for IBS expansion rate calculation: Martini, BM (Bjorken-Mtingwa model ignoring vertical dispersion and some small terms), BMC (Bjorken-Mtingwa model including all terms). |
+| factor   | Scale factor for the upper bound of the integration in BMC/BMZ model. |
+| model    | Model for IBS expansion rate calculation: Martini, BM (Bjorken-Mtingwa model ignoring vertical dispersion and some small terms), BMC/BMZ (Bjorken-Mtingwa model including all terms). BMC and BMZ use different ways to calculate the integrations, but they are the same model. |
 
 **section_ecool**
 
