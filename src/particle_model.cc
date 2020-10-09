@@ -122,7 +122,6 @@ void ParticleModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
             ds[i] = I*beta_s*cos(phi);
         }
         if(fixed_bunch_length) {
-//            gaussian_random(n_sample, ds, ion.sigma_s());
             gaussian_random_adjust(n_sample, ds, ion.sigma_s());
         }
     }
@@ -136,21 +135,28 @@ void ParticleModel::update_beam_parameters(Beam &ion, Ions& ion_sample) {
     ion.set_emit_x(emit_x);
     ion.set_emit_y(emit_y);
 
-
     if(ion.bunched()) {
         if(fixed_bunch_length) {
             ion.set_dp_p(rms(ion_sample.n_sample(), ion_sample.cdnt(Phase::DP_P)));
             ion_sample.update_bet_s(ion);
         }
         else {
-            double sigma_s = rms(ion_sample.n_sample(), ion_sample.cdnt(Phase::DS));
-            ion.set_sigma_s(sigma_s);
-            double beta_s = ion_sample.beta_s();
-            ion.set_dp_p(sqrt(emit_z-sigma_s*sigma_s/(beta_s*beta_s)));
+            ion.set_sigma_s(rms(ion_sample.n_sample(), ion_sample.cdnt(Phase::DS)));
+            ion.set_dp_p(rms(ion_sample.n_sample(), ion_sample.cdnt(Phase::DP_P)));
         }
     }
     else {
         ion.set_dp_p(sqrt(emit_z));
+    }
+}
+
+void ParticleModel::save_ions(int i, Ions& ion_sample) {
+    if (ion_save_itvl>0 && i%ion_save_itvl==0) {
+            std::size_t found = outfilename.find_last_of(".");
+            if (found == string::npos)
+                ion_sample.save_ions_sdds(outfilename+"_ions"+std::to_string(i)+".txt");
+            else
+                ion_sample.save_ions_sdds(outfilename.substr(0,found)+"_ions_"+std::to_string(i)+".txt");
     }
 }
 
