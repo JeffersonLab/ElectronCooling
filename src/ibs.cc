@@ -20,6 +20,28 @@ void IBSSolver::ibs_coupling(double &rx, double &ry, double k, double emit_x, do
     ry = ryc;
 }
 
+void IBSSolver::ibs_by_element_sddshead(std::ofstream& outfile, int n_element) {
+    using std::endl;
+    outfile<<"SDDS1"<<endl;
+    outfile<<"! Define colums:"<<endl
+        <<"&column name=s, type=double, units=m, description=\"element position\", &end"<<endl
+        <<"&column name=beta_x, type=double, units=m, description=\"TWISS parameter beta x\", &end"<<endl
+        <<"&column name=beta_y, type=double, units=m, description=\"TWISS parameter beta y\", &end"<<endl
+        <<"&column name=alfa_x, type=double, units=NULL, description=\"TWISS parameter alfa x\", &end"<<endl
+        <<"&column name=alfa_y, type=double, units=NULL, description=\"TWISS parameter alfa y\", &end"<<endl
+        <<"&column name=dx, type=double, units=m, description=\"horizontal dispersion function\", &end"<<endl
+        <<"&column name=dy, type=double, units=m, description=\"vertical dispersion function\", &end"<<endl
+        <<"&column name=rx_i, type=double, units=1/s, description=\"horizontal IBS expansion rate contribution by the element\", &end"<<endl
+        <<"&column name=ry_i, type=double, units=1/s, description=\"vertical IBS expansion rate contribution by the element\", &end"<<endl
+        <<"&column name=rs_i, type=double, units=1/s, description=\"longitudinal IBS expansion rate contribution by the element\", &end"<<endl
+        <<"&column name=rx, type=double, units=1/s, description=\"accumulated horizontal IBS expansion rate\", &end"<<endl
+        <<"&column name=ry, type=double, units=1/s, description=\"accumulated vertical IBS expansion rate\", &end"<<endl
+        <<"&column name=rs, type=double, units=1/s, description=\"accumulated longitudinal IBS expansion rate\", &end"<<endl
+        <<"!Declare ASCII data and end the header"<<endl
+        <<"&data mode=ascii, &end"<<endl
+        <<n_element-1<<endl;
+}
+
 
 IBSSolver_Martini::IBSSolver_Martini(int nu, int nv, int nz, double log_c, double k)
     : IBSSolver(log_c, k), nu_(nu), nv_(nv), nz_(nz)
@@ -241,7 +263,7 @@ void IBSSolver_Martini::rate(const Lattice &lattice, const Beam &beam, double &r
     if(ibs_by_element) {
         std::ofstream out;
         out.open("ibs_by_element.txt");
-        out<<"s bet_x bet_y alf_x alf_y disp_x disp_y rx_i ry_i rs_i rx_int ry_int rs_int"<<std::endl;
+        ibs_by_element_sddshead(out, n_element);
         out.precision(10);
         out<<std::showpos;
         out<<std::scientific;
@@ -393,7 +415,7 @@ void IBSSolver_BM::rate(const Lattice &lattice, const Beam &beam, double &rx, do
 
         std::ofstream out;
         out.open("ibs_by_element.txt");
-        out<<"s bet_x bet_y alf_x alf_y disp_x disp_y rx_i ry_i rs_i rx_int ry_int rs_int"<<std::endl;
+        ibs_by_element_sddshead(out, n_element);
         out.precision(10);
         out<<std::showpos;
         out<<std::scientific;
@@ -874,9 +896,6 @@ void IBSSolver_BM_Complete::rate(const Lattice &lattice, const Beam &beam, doubl
     }
 
     double c_bmc = coef(lattice, beam)*log_c()/lattice.circ();
-//    const double lc = log_c();
-//    c_bmc *= lc;
-//    c_bmc /= lattice.circ();
 
     rx = 0;
     ry = 0;
@@ -888,7 +907,7 @@ void IBSSolver_BM_Complete::rate(const Lattice &lattice, const Beam &beam, doubl
     if(ibs_by_element) {
         std::ofstream out;
         out.open("ibs_by_element.txt");
-        out<<"s bet_x bet_y alf_x alf_y disp_x disp_y rx_i ry_i rs_i rx_int ry_int rs_int"<<std::endl;
+        ibs_by_element_sddshead(out, n_element);
         out.precision(10);
         out<<std::showpos;
         out<<std::scientific;
@@ -932,7 +951,6 @@ void IBSSolver_BM_Complete::rate(const Lattice &lattice, const Beam &beam, doubl
                 }
             }
         }
-
 
         rs *= n*c_bmc;
         rx *= c_bmc;

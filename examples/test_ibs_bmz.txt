@@ -4,15 +4,17 @@ section_ion #define the ion beam
    	kinetic_energy = 100000
 	norm_emit_x = 1.200612578e-6
 	norm_emit_y = 0.600306289e-6
-	momentum_spread = 0.0012
+	momentum_spread = 0.0004
 	particle_number = 6.56E9
-	rms_bunch_length = 0.02499289768
+	rms_bunch_length =0.008330965894
 	
 section_ring #define the ring
-	lattice = test.tfs
+	lattice = test2.tfs
 	
 section_ibs #define the arguments for IBS calculation
-	model = bmz
+	model = bmc
+	factor = 3
+	ibs_by_element = true
 	nu = 100
 	nv = 40
 	nz = 1000

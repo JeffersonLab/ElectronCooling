@@ -23,6 +23,7 @@ protected:
     bool ibs_by_element = false; //Calculate and output the ibs rate contribution element by element.
 
     void ibs_coupling(double &rx, double &ry, double k, double emit_x, double emit_y);
+    void ibs_by_element_sddshead(std::ofstream& outfile, int n_element);
 public:
     double log_c() const { return log_c_; }
     double k() const { return k_; }
