@@ -1,3 +1,7 @@
+10/09/2020
+1. Add BMZ and BMC model for ibs calculation. (Bjorken-Mtingwa model with all terms.)
+2. Change ibs_by_element output into sdds format. 
+
 09/08/2020
 1.Merge electron beam edge effect into master. 
 
