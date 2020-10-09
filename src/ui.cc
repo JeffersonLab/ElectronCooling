@@ -32,7 +32,7 @@ std::vector<string> ION_ARGS = {"CHARGE_NUMBER", "MASS", "KINETIC_ENERGY", "NORM
 std::vector<string> RUN_COMMANDS = {"CREATE_ION_BEAM", "CREATE_RING", "CREATE_E_BEAM", "CREATE_COOLER",
     "CALCULATE_IBS", "CALCULATE_ECOOL", "TOTAL_EXPANSION_RATE", "RUN_SIMULATION", "CALCULATE_LUMINOSITY", "SRAND"};
 std::vector<string> RING_ARGS = {"LATTICE", "QX", "QY", "QS", "GAMMA_TR", "RF_V", "RF_H", "RF_PHI"};
-std::vector<string> IBS_ARGS = {"NU","NV","NZ","LOG_C","COUPLING","MODEL","IBS_BY_ELEMENT"};
+std::vector<string> IBS_ARGS = {"NU","NV","NZ","LOG_C","COUPLING","MODEL","IBS_BY_ELEMENT","FACTOR"};
 std::vector<string> COOLER_ARGS = {"LENGTH", "SECTION_NUMBER", "MAGNETIC_FIELD", "BET_X", "BET_Y", "DISP_X", "DISP_Y",
     "ALPHA_X", "ALPHA_Y", "DISP_DX", "DISP_DY","PIPE_RADIUS"};
 std::vector<string> E_BEAM_SHAPE_TYPES = {"DC_UNIFORM", "BUNCHED_GAUSSIAN", "BUNCHED_UNIFORM", "BUNCHED_UNIFORM_ELLIPTIC",
@@ -650,6 +650,7 @@ void calculate_ibs(Set_ptrs &ptrs, bool calc = true) {
     double rx, ry, rz;
     IBSModel model = ptrs.ibs_ptr->model;
     bool ibs_by_element = ptrs.ibs_ptr->ibs_by_element;
+    double factor = ptrs.ibs_ptr->factor;
 
 
     if(model == IBSModel::MARTINI) {
@@ -661,10 +662,16 @@ void calculate_ibs(Set_ptrs &ptrs, bool calc = true) {
         ibs_solver.reset(new IBSSolver_BM(log_c, k));
         ibs_solver->set_ibs_by_element(ibs_by_element);
     }
-    else if (model == IBSModel::BMZ) {
+    else if (model == IBSModel::BMC) {
         assert(log_c>0 && nz>0 && "WRONG VALUE FOR COULOMB LOGARITHM IN IBS CALCULATION WITH BM MODEL!");
         ibs_solver.reset(new IBSSolver_BM_Complete(nz, log_c, k));
         ibs_solver->set_ibs_by_element(ibs_by_element);
+        if(!iszero(factor-3)) {
+            assert(factor>0 && "PARAMETER FACTOR SHOULD BE GREATER THAN ZERO IN THE BMC MODEL FOR IBS!");
+            IBSSolver_BM_Complete* ptr = dynamic_cast<IBSSolver_BM_Complete*>(ibs_solver.get());
+            ptr->set_factor(factor);
+        }
+
     }
     if(calc) {
         ibs_solver->rate(ptrs.ring->lattice(), *ptrs.ion_beam, rx, ry, rz);
@@ -1263,8 +1270,8 @@ void set_ibs(string &str, Set_ibs *ibs_args) {
         if (val == "MARTINI") {
             ibs_args->model = IBSModel::MARTINI;
         }
-        else if(val == "BMZ") {
-            ibs_args->model = IBSModel::BMZ;
+        else if(val == "BMC") {
+            ibs_args->model = IBSModel::BMC;
         }
         else if(val == "BM") {
             ibs_args->model = IBSModel::BM;
@@ -1294,6 +1301,9 @@ void set_ibs(string &str, Set_ibs *ibs_args) {
         else if(var == "COUPLING") {
             ibs_args->coupling = std::stod(val);
         }
+        else if(var == "FACTOR") {
+            ibs_args->factor = std::stod(val);
+        }
         else {
             assert(false&&"Wrong arguments in section_ibs!");
         }
@@ -1314,6 +1324,9 @@ void set_ibs(string &str, Set_ibs *ibs_args) {
         }
         else if(var == "COUPLING") {
             ibs_args->coupling = mupEval(math_parser);
+        }
+        else if(var == "FACTOR") {
+            ibs_args->factor = mupEval(math_parser);
         }
         else {
             assert(false&&"Wrong arguments in section_ibs!");

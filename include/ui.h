@@ -65,6 +65,7 @@ struct Set_ibs{
      double coupling = -1;
      bool ibs_by_element = false;
      IBSModel model = IBSModel::MARTINI;
+     double factor = 3;
 };
 
 struct Set_ecool{

@@ -790,21 +790,6 @@ double IBSSolver_BM_Complete::inv(std::array<std::array<double, 3>,3>& l, std::a
     return l_det;
 }
 
-void IBSSolver_BM_Complete::init_itgrl(int n) {
-    itgrl.resize(n);
-    double dt = 1.0/n;
-    double t = dt/2;
-    for(int i=0; i<n; ++i) {
-        double it = 1-t;
-        Itgrl o;
-        o.lambda = t/it;
-        o.lambda_sqrt = sqrt(o.lambda);
-        o.ct = 1/(it*it);
-        itgrl.at(i) = o;
-        t += dt;
-    }
-}
-
 void IBSSolver_BM_Complete::calc_beam_const(const Beam& beam) {
     gamma = beam.gamma();
     gamma2 = gamma*gamma;
@@ -847,35 +832,6 @@ double IBSSolver_BM_Complete::coef(const Lattice &lattice, const Beam &beam) con
 }
 
 void IBSSolver_BM_Complete::calc_itgl(int i) {
-    double dt = 1.0/nt_;
-    ii = {};
-    for(int i=0; i<nt_; ++i) {
-        Itgrl& o = itgrl.at(i);
-
-        for(int j=0; j<3; ++j)
-            for(int k=0; k<3; ++k)
-                l[j][k] = lh[j][k] + lv[j][k] + ls[j][k];
-
-        for(int j=0; j<3; ++j)
-            l[j][j] += o.lambda;
-
-        double det = inv(l, ll);
-        double tr= trace(ll);
-        double c = o.ct*o.lambda_sqrt/sqrt(det);
-
-        for(int j=0; j<3; ++j)
-            for(int k=0; k<3; ++k)
-                ii[j][k] += c*((j==k?1:0)*tr - 3*ll[j][k]);
-    }
-    for(int j=0; j<3; ++j)
-        for(int k=0; k<3; ++k)
-            ii[j][k] *= dt;
-}
-
-
-void IBSSolver_BM_Complete::calc_itgl2(int i) {
-    int factor = 3;
-
     ii = {};
     double u = 0;
     for(int j=0; j<3; ++j) {
@@ -908,101 +864,65 @@ void IBSSolver_BM_Complete::calc_itgl2(int i) {
         for(int k=0; k<3; ++k)
             ii[j][k] *= d;
 }
-
-void IBSSolver_BM_Complete::gsl_itgl(int i) {
-    int factor = 3;
-
-    ii = {};
-    double u = 0;
-    for(int j=0; j<3; ++j) {
-        for(int k=0; k<3; ++k) {
-            l[j][k] = lh[j][k] + lv[j][k] + ls[j][k];
-            if(u<fabs(l[j][k])) u = fabs(l[j][k]);
-        }
-    }
-
-    u *= factor;
-    double d = u/nt_;
-
-    for(int j=0; j<3; ++j)
-            l[j][j] -= d/2;
-
-    for(int i=0; i<nt_; ++i) {
-        double lambda = (i+0.5)*d;
-        for(int j=0; j<3; ++j)
-            l[j][j] += d;
-
-        double det = inv(l, ll);
-        double tr= trace(ll);
-        double c = sqrt(lambda)/sqrt(det);
-
-        for(int j=0; j<3; ++j)
-            for(int k=0; k<3; ++k)
-                ii[j][k] += c*((j==k?1:0)*tr - 3*ll[j][k]);
-    }
-    for(int j=0; j<3; ++j)
-        for(int k=0; k<3; ++k)
-            ii[j][k] *= d;
-}
-
-
 
 void IBSSolver_BM_Complete::rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs) {
     int n_element = lattice.n_element();
 
     if (cache_invalid) {
-        init_itgrl(nt_);
         init_optc(lattice);
         cache_invalid = false;
     }
 
-    double c_bmc = coef(lattice, beam);
-    const double lc = log_c();
-    c_bmc *= lc;
+    double c_bmc = coef(lattice, beam)*log_c()/lattice.circ();
+//    const double lc = log_c();
+//    c_bmc *= lc;
+//    c_bmc /= lattice.circ();
 
     rx = 0;
     ry = 0;
     rs = 0;
     int n=2;
     if (beam.bunched()) n=1;
+    calc_beam_const(beam);
 
     if(ibs_by_element) {
-//        std::ofstream out;
-//        out.open("ibs_by_element.txt");
-//        out<<"s bet_x bet_y alf_x alf_y disp_x disp_y rx_i ry_i rs_i rx_int ry_int rs_int"<<std::endl;
-//        out.precision(10);
-//        out<<std::showpos;
-//        out<<std::scientific;
-//        double s = 0;
-//        for(int i=0; i<n_element-1; ++i){
-//            double l_element = lattice.l_element(i);
-//            c_bmz /= lattice.circ();
-//            double gamma_2 = beam.gamma()*beam.gamma();
-//            double a, b, c, ax, bx, ay, by, as, bs;
-//            calc_abc(lattice, beam, i, a, b, c, ax, bx, ay, by, as, bs);
-//            double ix, iy, is;
-//            calc_integral(a, b, c, ax, bx, ay, by, as, bs, ix, iy, is, nt_, integral);
-//
-//            double rxi = optical.at(i).hx*ix*l_element*c_bmz*gamma_2/beam.emit_x();
-//            double ryi =  lattice.bety(i)*iy*l_element*c_bmz/beam.emit_y();
-//            double rsi = is*l_element*n*c_bmz*gamma_2/(beam.dp_p()*beam.dp_p());
-//
-//            rx += rxi;
-//            ry += ryi;
-//            rs += rsi;
-//            out<<s<<' '<<lattice.betx(i)<<' '<<lattice.bety(i)<<' '<<lattice.alfx(i)<<' '
-//                <<lattice.alfy(i)<<' '<<lattice.dx(i)<<' '<<lattice.dy(i)<<' '
-//                <<rxi<<' '<<ryi<<' '<<rsi<<' '<<rx<<' '<<ry<<' '<<rs<<std::endl;
-//            s += l_element;
-//        }
-//        out.close();
-    }
-    else {
-        calc_beam_const(beam);
+        std::ofstream out;
+        out.open("ibs_by_element.txt");
+        out<<"s bet_x bet_y alf_x alf_y disp_x disp_y rx_i ry_i rs_i rx_int ry_int rs_int"<<std::endl;
+        out.precision(10);
+        out<<std::showpos;
+        out<<std::scientific;
+        double s = 0;
+
+
         for(int i=0; i<n_element-1; ++i){
             double l_element = lattice.l_element(i);
             calc_l(lattice, i);
-            calc_itgl2(i);
+            calc_itgl(i);
+            double rxi{}, ryi{}, rsi{};
+            for(int i=0; i<3; ++i) {
+                for(int j=0; j<3; ++j) {
+                    rxi += lh[i][j]*ii[i][j]*c_bmc;
+                    ryi += lv[i][j]*ii[i][j]*c_bmc;
+                    rsi += ls[i][j]*ii[i][j]*c_bmc*n;
+                }
+            }
+
+            rx += rxi;
+            ry += ryi;
+            rs += rsi;
+            out<<s<<' '<<lattice.betx(i)<<' '<<lattice.bety(i)<<' '<<lattice.alfx(i)<<' '
+                <<lattice.alfy(i)<<' '<<lattice.dx(i)<<' '<<lattice.dy(i)<<' '
+                <<rxi<<' '<<ryi<<' '<<rsi<<' '<<rx<<' '<<ry<<' '<<rs<<std::endl;
+            s += l_element;
+        }
+        out.close();
+    }
+    else {
+        for(int i=0; i<n_element-1; ++i){
+            double l_element = lattice.l_element(i);
+            calc_l(lattice, i);
+            calc_itgl(i);
 
             for(int i=0; i<3; ++i) {
                 for(int j=0; j<3; ++j) {
@@ -1013,16 +933,10 @@ void IBSSolver_BM_Complete::rate(const Lattice &lattice, const Beam &beam, doubl
             }
         }
 
-        c_bmc /= lattice.circ();
+
         rs *= n*c_bmc;
         rx *= c_bmc;
         ry *= c_bmc;
-
-
-//
-//        rs /= beam.dp_p()*beam.dp_p();
-//        rx /= beam.emit_x();
-//        ry /= beam.emit_y();
     }
 
     if(k_>0)

@@ -13,7 +13,7 @@
 class Lattice;
 class Beam;
 
-enum class IBSModel {MARTINI, BM, BMZ};
+enum class IBSModel {MARTINI, BM, BMC};
 
 class IBSSolver {
 protected:
@@ -227,10 +227,8 @@ private:
     double det(std::array<std::array<double, 3>,3>& l);
     double inv(std::array<std::array<double, 3>,3>& l, std::array<std::array<double, 3>,3>& v);
     double trace(std::array<std::array<double, 3>,3>& l){return l[0][0]+l[1][1]+l[2][2];}
-    void init_itgrl(int n);
     void calc_l(const Lattice& lattice, int i);
     void calc_itgl(int i);
-    void calc_itgl2(int i);
     void calc_beam_const(const Beam& beam);
     double coef(const Lattice &lattice, const Beam &beam) const;
 public:
