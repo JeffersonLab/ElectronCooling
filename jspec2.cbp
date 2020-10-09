@@ -12,7 +12,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_51_x64_compiler" />
-				<Option parameters="..\run\imp_test.txt" />
+				<Option parameters="..\examples\test_ibs_bmz.txt" />
 				<Compiler>
 					<Add option="-std=c++11" />
 					<Add option="-g" />
@@ -31,7 +31,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_51_x64_compiler" />
-				<Option parameters="..\run\imp_test.txt" />
+				<Option parameters="..\examples\test_ibs_bmz.txt" />
 				<Compiler>
 					<Add option="-O2" />
 					<Add option="-std=c++11" />

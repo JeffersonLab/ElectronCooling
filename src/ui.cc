@@ -663,7 +663,7 @@ void calculate_ibs(Set_ptrs &ptrs, bool calc = true) {
     }
     else if (model == IBSModel::BMZ) {
         assert(log_c>0 && nz>0 && "WRONG VALUE FOR COULOMB LOGARITHM IN IBS CALCULATION WITH BM MODEL!");
-        ibs_solver.reset(new IBSSolver_BMZ(nz, log_c, k));
+        ibs_solver.reset(new IBSSolver_BM_Complete(nz, log_c, k));
         ibs_solver->set_ibs_by_element(ibs_by_element);
     }
     if(calc) {

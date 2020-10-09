@@ -441,6 +441,21 @@ void IBSSolver_BM::rate(const Lattice &lattice, const Beam &beam, double &rx, do
 }
 
 IBSSolver_BMZ::IBSSolver_BMZ(int nt, double log_c, double k) : IBSSolver(log_c, k), nt_(nt) {
+    gw = gsl_integration_workspace_alloc(limit);
+}
+
+double IBSSolver_BMZ::core(double q, void* params){
+     double a = ((P*)params)->a;
+     double b = ((P*)params)->b;
+     double c = ((P*)params)->c;
+     double ai = ((P*)params)->ai;
+     double bi = ((P*)params)->bi;
+
+     double d = q*(q*(q+a)+b)+c;
+     d *= sqrt(d);
+
+     return sqrt(q)*(ai*q+bi)/d;
+
 }
 
 void IBSSolver_BMZ::init_integral(int n) {
@@ -529,7 +544,7 @@ double IBSSolver_BMZ::calc_abc(const Lattice &lattice, const Beam& beam, int i, 
     double v8 = (2*o.beta_phi_y2*emit_y2_inv - o.beta_phi_x2*emit_x2_inv)*gamma_2;
     double v9 = v1*v2 - v6;
     bx = v9 + (beta_x_over_emit_x - 4*beta_y_over_emit_y)*beta_x_over_emit_x +
-        o.dx_2_over_beta_x*(v7*dp_2_inv + v4*gamma_2_inv + v8) +v7*o.hy_beta_x_over_hx*emit_y_inv;
+        o.beta_x_over_hx*(v7*dp_2_inv + v4*gamma_2_inv + v8*gamma_2_inv) +v7*o.hy_beta_x_over_hx*emit_y_inv;
 
     al = 2*v1 - v2;
     bl = v9-2*v4;
@@ -542,30 +557,74 @@ double IBSSolver_BMZ::calc_abc(const Lattice &lattice, const Beam& beam, int i, 
     by = (beta_y_over_emit_y - 2*beta_x_over_emit_x)*v1-2*beta_x_over_emit_x*hy_over_emit_y*gamma_2 + v4
         + (2*o.beta_phi_x2*emit_x2_inv-o.beta_phi_y2*emit_y2_inv)*gamma_2 + v9*hy_over_beta_y*gamma_2;
 }
+//
+//void IBSSolver_BMZ::calc_integral(double a, double b, double c, double ax, double bx, double ay, double by, double al,
+//                                  double bl, double& ix, double& iy, double& is, int nt, std::vector<itgrl>& g) {
+//    double dt = 1.0/nt;
+//    ix = 0;
+//    iy = 0;
+//    is = 0;
+//    for(int i=0; i<nt; ++i) {
+//        double l = g.at(i).lambda;
+//        double ls = g.at(i).lambda_sqrt;
+//        double ct = g.at(i).ct;
+//        double tx = ls*(ax*l+bx);
+//        double ty = ls*(ay*l+by);
+//        double ts = ls*(al*l+bl);
+//        double d = l*(l*(l+a)+b)+c;
+//        d *= ct*sqrt(d);
+//        ix += tx/d;
+//        iy += ty/d;
+//        is += ts/d;
+//    }
+//    ix *= dt;
+//    iy *= dt;
+//    is *= dt;
+//}
 
 void IBSSolver_BMZ::calc_integral(double a, double b, double c, double ax, double bx, double ay, double by, double al,
                                   double bl, double& ix, double& iy, double& is, int nt, std::vector<itgrl>& g) {
-    double dt = 1.0/nt;
+
+    p.a = a;
+    p.b = b;
+    p.c = c;
+    p.ai = ax;
+    p.bi = bx;
+
+    IBSSolver_BMZ* ptr2 = this;
+    auto ptr = [=](double x)->double{return ptr2->core(x,&p);};
+    gsl_function_pp<decltype(ptr)> fp(ptr);
+    gsl_function *f = static_cast<gsl_function*>(&fp);
+
     ix = 0;
-    iy = 0;
-    is = 0;
-    for(int i=0; i<nt; ++i) {
-        double l = g.at(i).lambda;
-        double ls = g.at(i).lambda_sqrt;
-        double ct = g.at(i).ct;
-        double tx = ls*(ax*l+bx);
-        double ty = ls*(ay*l+by);
-        double ts = ls*(al*l+bl);
-        double d = l*(l*(l+a)+b)+c;
-        d *= ct*sqrt(d);
-        ix += tx/d;
-        iy += ty/d;
-        is += ts/d;
+    double error = 0;
+    int status =  gsl_integration_qagiu(f, 0, espabs, esprel, limit, gw, &ix, &error);
+    if(status == GSL_EDIVERGE){
+        status = gsl_integration_qagiu(f, 0, espabs*1e-2, esprel*1e-2, 100*limit, gw, &ix, &error);
+        if(status == GSL_EDIVERGE) std::cout<<"GSL integration qagui error for transverse friction force!"<<std::endl;
     }
-    ix *= dt;
-    iy *= dt;
-    is *= dt;
+
+    p.ai = ay;
+    p.bi = by;
+    iy = 0;
+    error = 0;
+    status =  gsl_integration_qagiu(f, 0, espabs, esprel, limit, gw, &iy, &error);
+    if(status == GSL_EDIVERGE){
+        status = gsl_integration_qagiu(f, 0, 1e-10, 1e-10, 10*limit, gw, &iy, &error);
+        if(status == GSL_EDIVERGE) std::cout<<"GSL integration qagui error for transverse friction force!"<<std::endl;
+    }
+
+    p.ai = al;
+    p.bi = bl;
+    is = 0;
+    error = 0;
+    status =  gsl_integration_qagiu(f, 0, espabs, esprel, limit, gw, &is, &error);
+    if(status == GSL_EDIVERGE){
+        status = gsl_integration_qagiu(f, 0, 1e-10, 1e-10, 10*limit, gw, &is, &error);
+        if(status == GSL_EDIVERGE) std::cout<<"GSL integration qagui error for transverse friction force!"<<std::endl;
+    }
 }
+
 
 double IBSSolver_BMZ::coef(const Lattice &lattice, const Beam &beam) const {
     double lambda = 2*sqrt(k_pi)*beam.particle_number()/lattice.circ();
@@ -576,8 +635,20 @@ double IBSSolver_BMZ::coef(const Lattice &lattice, const Beam &beam) const {
     gamma4 *= gamma4;
     gamma4 *= gamma4;
     return k_c*beam.r()*beam.r()*lambda/(8*k_pi*beam.dp_p()*beta3*gamma4*beam.emit_x()*beam.emit_y());
-
 }
+
+//double IBSSolver_BMZ::coef(const Lattice &lattice, const Beam &beam) const {
+//    double lambda = 1;
+//    if (beam.bunched())
+//        lambda /= 2*sqrt(k_pi)*beam.sigma_s();
+//    else
+//        lambda /= lattice.circ();
+//
+//    double beta3 = beam.beta()*beam.beta()*beam.beta();
+//    double gamma5 = beam.gamma()*beam.gamma()*beam.gamma()*beam.gamma()*beam.gamma();
+//    return lambda*beam.particle_number()*beam.r()*beam.r()*k_c/(lattice.circ()*6*sqrt(k_pi)*beta3*gamma5);
+//}
+//
 
 void IBSSolver_BMZ::rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs) {
     int n_element = lattice.n_element();
@@ -630,8 +701,6 @@ void IBSSolver_BMZ::rate(const Lattice &lattice, const Beam &beam, double &rx, d
         out.close();
     }
     else {
-        my_debug.resize(n_element);
-        debug o;
         for(int i=0; i<n_element-1; ++i){
             double l_element = lattice.l_element(i);
             double a, b, c, ax, bx, ay, by, as, bs;
@@ -641,20 +710,6 @@ void IBSSolver_BMZ::rate(const Lattice &lattice, const Beam &beam, double &rx, d
             rx += optical.at(i).hx*ix*l_element;
             rs += is*l_element;
             ry += lattice.bety(i)*iy*l_element;
-
-            o.a = a;
-            o.b = b;
-            o.c = c;
-            o.ax = ax;
-            o.ay = ay;
-            o.al = as;
-            o.bx = bx;
-            o.by = by;
-            o.bl = bs;
-            o.ix = ix;
-            o.iy = iy;
-            o.is = is;
-            my_debug.at(i) = o;
         }
 
         double gamma_2 = beam.gamma()*beam.gamma();
@@ -667,20 +722,312 @@ void IBSSolver_BMZ::rate(const Lattice &lattice, const Beam &beam, double &rx, d
         rx /= beam.emit_x();
         ry /= beam.emit_y();
 
-        std::ofstream out;
-        out.open("ibs_bmz_debug.txt");
-        out<<"a, b, c, ax, bx, ay, by, al, bl, ix, iy, is"<<std::endl;
-        out.precision(10);
-        out<<std::showpos;
-        out<<std::scientific;
-        for(int i=0; i<n_element-1; ++i) {
-            out<<my_debug.at(i).a<<' '<<my_debug.at(i).b<<' '<<my_debug.at(i).c<<' '<<my_debug.at(i).ax<<' '
-            <<my_debug.at(i).bx<<' '<<my_debug.at(i).ay<<' '<<my_debug.at(i).by<<' '<<my_debug.at(i).al<<' '
-            <<my_debug.at(i).bl<<' '<<my_debug.at(i).ix<<' '<<my_debug.at(i).iy<<' '<<my_debug.at(i).is<<std::endl;
-        }
-        out.close();
+//        std::ofstream out;
+//        out.open("ibs_bmz_debug.txt");
+//        out<<"a, b, c, ax, bx, ay, by, al, bl, ix, iy, is"<<std::endl;
+//        out.precision(10);
+//        out<<std::showpos;
+//        out<<std::scientific;
+//        for(int i=0; i<n_element-1; ++i) {
+//            out<<my_debug.at(i).a<<' '<<my_debug.at(i).b<<' '<<my_debug.at(i).c<<' '<<my_debug.at(i).ax<<' '
+//            <<my_debug.at(i).bx<<' '<<my_debug.at(i).ay<<' '<<my_debug.at(i).by<<' '<<my_debug.at(i).al<<' '
+//            <<my_debug.at(i).bl<<' '<<my_debug.at(i).ix<<' '<<my_debug.at(i).iy<<' '<<my_debug.at(i).is<<std::endl;
+//        }
+//        out.close();
     }
 
     if(k_>0)
         ibs_coupling(rx, ry, k_, beam.emit_nx(), beam.emit_ny());
+}
+
+
+
+void IBSSolver_BM_Complete::init_optc(const Lattice &lattice) {
+    int n = lattice.n_element();
+    optc.resize(n);
+    for(int i=0; i<n; ++i) {
+        Optc o;
+        double alfx = lattice.alfx(i);
+        double betx = lattice.betx(i);
+        double dx = lattice.dx(i);
+        double dpx = lattice.dpx(i);
+        double alfy = lattice.alfy(i);
+        double bety = lattice.bety(i);
+        double dy = lattice.dy(i);
+        double dpy = lattice.dpy(i);
+        o.phix = dpx+alfx*dx/betx;
+        o.phiy = dpy+alfy*dy/bety;
+        o.hx = (dx*dx + betx*betx*o.phix*o.phix)/betx;
+        o.hy = (dy*dy + bety*bety*o.phiy*o.phiy)/bety;
+
+        optc.at(i) = o;
+    }
+}
+
+double IBSSolver_BM_Complete::det(std::array<std::array<double, 3>,3>& l) {
+    double d = (l[0][0]*l[1][1]*l[2][2]) + (l[0][1]*l[1][2]*l[2][0]) + (l[0][2]*l[1][0]*l[2][1]) -
+      (l[0][2]*l[1][1]*l[2][0]) - (l[0][0]*l[1][2]*l[2][1]) - (l[0][1]*l[1][0]*l[2][2]);
+    return d;
+}
+
+double IBSSolver_BM_Complete::inv(std::array<std::array<double, 3>,3>& l, std::array<std::array<double, 3>,3>& v) {
+    double l_det = det(l);
+
+    v[0][0] = l[1][1]*l[2][2]-l[1][2]*l[2][1];
+    v[0][1] = l[2][0]*l[1][2]-l[1][0]*l[2][2];
+    v[0][2] = 0;
+    v[1][0] = v[0][1];
+    v[1][1] = l[0][0]*l[2][2]-l[0][2]*l[2][0];
+    v[1][2] = l[2][0]*l[0][1]-l[0][0]*l[2][1];
+    v[2][0] = 0;
+    v[2][1] = v[1][2];
+    v[2][2] = l[0][0]*l[1][1]-l[0][1]*l[1][0];
+
+    for(auto& aa: v)
+        for(auto& a: aa)
+            a /= l_det;
+
+    return l_det;
+}
+
+void IBSSolver_BM_Complete::init_itgrl(int n) {
+    itgrl.resize(n);
+    double dt = 1.0/n;
+    double t = dt/2;
+    for(int i=0; i<n; ++i) {
+        double it = 1-t;
+        Itgrl o;
+        o.lambda = t/it;
+        o.lambda_sqrt = sqrt(o.lambda);
+        o.ct = 1/(it*it);
+        itgrl.at(i) = o;
+        t += dt;
+    }
+}
+
+void IBSSolver_BM_Complete::calc_beam_const(const Beam& beam) {
+    gamma = beam.gamma();
+    gamma2 = gamma*gamma;
+    inv_ex = 1/beam.emit_x();
+    inv_ey = 1/beam.emit_y();
+    inv_dp2 = 1/(beam.dp_p()*beam.dp_p());
+}
+
+void IBSSolver_BM_Complete::calc_l(const Lattice& lattice, int i) {
+    double betx = lattice.betx(i);
+    double bety = lattice.bety(i);
+    double phix = optc.at(i).phix;
+    double phiy = optc.at(i).phiy;
+    double hx = optc.at(i).hx;
+    double hy = optc.at(i).hy;
+
+    lh[0][0] = betx*inv_ex;
+    lh[0][1] = -gamma*betx*phix*inv_ex;
+    lh[1][0] = lh[0][1];
+    lh[1][1] = gamma2*hx*inv_ex;
+
+    lv[1][1] = gamma2*hy*inv_ey;
+    lv[1][2] = -gamma*bety*phiy/inv_ey;
+    lv[2][1] = lv[1][2];
+    lv[2][2] = bety*inv_ey;
+
+    ls[1][1] = gamma2*inv_dp2;
+}
+
+double IBSSolver_BM_Complete::coef(const Lattice &lattice, const Beam &beam) const {
+    double lambda;
+    if(beam.bunched()) lambda = beam.particle_number()/beam.sigma_s();
+    else lambda = 2*sqrt(k_pi)*beam.particle_number()/lattice.circ();
+     double beta3 = beam.beta();
+    beta3 = beta3*beta3*beta3;
+    double gamma4 = beam.gamma();
+    gamma4 *= gamma4;
+    gamma4 *= gamma4;
+    return k_c*beam.r()*beam.r()*lambda/(8*k_pi*beam.dp_p()*beta3*gamma4*beam.emit_x()*beam.emit_y());
+}
+
+void IBSSolver_BM_Complete::calc_itgl(int i) {
+    double dt = 1.0/nt_;
+    ii = {};
+    for(int i=0; i<nt_; ++i) {
+        Itgrl& o = itgrl.at(i);
+
+        for(int j=0; j<3; ++j)
+            for(int k=0; k<3; ++k)
+                l[j][k] = lh[j][k] + lv[j][k] + ls[j][k];
+
+        for(int j=0; j<3; ++j)
+            l[j][j] += o.lambda;
+
+        double det = inv(l, ll);
+        double tr= trace(ll);
+        double c = o.ct*o.lambda_sqrt/sqrt(det);
+
+        for(int j=0; j<3; ++j)
+            for(int k=0; k<3; ++k)
+                ii[j][k] += c*((j==k?1:0)*tr - 3*ll[j][k]);
+    }
+    for(int j=0; j<3; ++j)
+        for(int k=0; k<3; ++k)
+            ii[j][k] *= dt;
+}
+
+
+void IBSSolver_BM_Complete::calc_itgl2(int i) {
+    int factor = 3;
+
+    ii = {};
+    double u = 0;
+    for(int j=0; j<3; ++j) {
+        for(int k=0; k<3; ++k) {
+            l[j][k] = lh[j][k] + lv[j][k] + ls[j][k];
+            if(u<fabs(l[j][k])) u = fabs(l[j][k]);
+        }
+    }
+
+    u *= factor;
+    double d = u/nt_;
+
+    for(int j=0; j<3; ++j)
+            l[j][j] -= d/2;
+
+    for(int i=0; i<nt_; ++i) {
+        double lambda = (i+0.5)*d;
+        for(int j=0; j<3; ++j)
+            l[j][j] += d;
+
+        double det = inv(l, ll);
+        double tr= trace(ll);
+        double c = sqrt(lambda)/sqrt(det);
+
+        for(int j=0; j<3; ++j)
+            for(int k=0; k<3; ++k)
+                ii[j][k] += c*((j==k?1:0)*tr - 3*ll[j][k]);
+    }
+    for(int j=0; j<3; ++j)
+        for(int k=0; k<3; ++k)
+            ii[j][k] *= d;
+}
+
+void IBSSolver_BM_Complete::gsl_itgl(int i) {
+    int factor = 3;
+
+    ii = {};
+    double u = 0;
+    for(int j=0; j<3; ++j) {
+        for(int k=0; k<3; ++k) {
+            l[j][k] = lh[j][k] + lv[j][k] + ls[j][k];
+            if(u<fabs(l[j][k])) u = fabs(l[j][k]);
+        }
+    }
+
+    u *= factor;
+    double d = u/nt_;
+
+    for(int j=0; j<3; ++j)
+            l[j][j] -= d/2;
+
+    for(int i=0; i<nt_; ++i) {
+        double lambda = (i+0.5)*d;
+        for(int j=0; j<3; ++j)
+            l[j][j] += d;
+
+        double det = inv(l, ll);
+        double tr= trace(ll);
+        double c = sqrt(lambda)/sqrt(det);
+
+        for(int j=0; j<3; ++j)
+            for(int k=0; k<3; ++k)
+                ii[j][k] += c*((j==k?1:0)*tr - 3*ll[j][k]);
+    }
+    for(int j=0; j<3; ++j)
+        for(int k=0; k<3; ++k)
+            ii[j][k] *= d;
+}
+
+
+
+void IBSSolver_BM_Complete::rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs) {
+    int n_element = lattice.n_element();
+
+    if (cache_invalid) {
+        init_itgrl(nt_);
+        init_optc(lattice);
+        cache_invalid = false;
+    }
+
+    double c_bmc = coef(lattice, beam);
+    const double lc = log_c();
+    c_bmc *= lc;
+
+    rx = 0;
+    ry = 0;
+    rs = 0;
+    int n=2;
+    if (beam.bunched()) n=1;
+
+    if(ibs_by_element) {
+//        std::ofstream out;
+//        out.open("ibs_by_element.txt");
+//        out<<"s bet_x bet_y alf_x alf_y disp_x disp_y rx_i ry_i rs_i rx_int ry_int rs_int"<<std::endl;
+//        out.precision(10);
+//        out<<std::showpos;
+//        out<<std::scientific;
+//        double s = 0;
+//        for(int i=0; i<n_element-1; ++i){
+//            double l_element = lattice.l_element(i);
+//            c_bmz /= lattice.circ();
+//            double gamma_2 = beam.gamma()*beam.gamma();
+//            double a, b, c, ax, bx, ay, by, as, bs;
+//            calc_abc(lattice, beam, i, a, b, c, ax, bx, ay, by, as, bs);
+//            double ix, iy, is;
+//            calc_integral(a, b, c, ax, bx, ay, by, as, bs, ix, iy, is, nt_, integral);
+//
+//            double rxi = optical.at(i).hx*ix*l_element*c_bmz*gamma_2/beam.emit_x();
+//            double ryi =  lattice.bety(i)*iy*l_element*c_bmz/beam.emit_y();
+//            double rsi = is*l_element*n*c_bmz*gamma_2/(beam.dp_p()*beam.dp_p());
+//
+//            rx += rxi;
+//            ry += ryi;
+//            rs += rsi;
+//            out<<s<<' '<<lattice.betx(i)<<' '<<lattice.bety(i)<<' '<<lattice.alfx(i)<<' '
+//                <<lattice.alfy(i)<<' '<<lattice.dx(i)<<' '<<lattice.dy(i)<<' '
+//                <<rxi<<' '<<ryi<<' '<<rsi<<' '<<rx<<' '<<ry<<' '<<rs<<std::endl;
+//            s += l_element;
+//        }
+//        out.close();
+    }
+    else {
+        calc_beam_const(beam);
+        for(int i=0; i<n_element-1; ++i){
+            double l_element = lattice.l_element(i);
+            calc_l(lattice, i);
+            calc_itgl2(i);
+
+            for(int i=0; i<3; ++i) {
+                for(int j=0; j<3; ++j) {
+                    rx += lh[i][j]*ii[i][j];
+                    ry += lv[i][j]*ii[i][j];
+                    rs += ls[i][j]*ii[i][j];
+                }
+            }
+        }
+
+        c_bmc /= lattice.circ();
+        rs *= n*c_bmc;
+        rx *= c_bmc;
+        ry *= c_bmc;
+
+
+//
+//        rs /= beam.dp_p()*beam.dp_p();
+//        rx /= beam.emit_x();
+//        ry /= beam.emit_y();
+    }
+
+    if(k_>0)
+        ibs_coupling(rx, ry, k_, beam.emit_nx(), beam.emit_ny());
+}
+
+IBSSolver_BM_Complete::IBSSolver_BM_Complete(int nt, double log_c, double k) : IBSSolver(log_c, k), nt_(nt) {
 }
