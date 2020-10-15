@@ -75,8 +75,6 @@ void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
         }
     }
 
-
-
     double bet_x = twiss.bet_x;
     double bet_y = twiss.bet_y;
     double alf_x = twiss.alf_x;

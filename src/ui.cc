@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <omp.h>
 #include <sstream>
 
 #include "constants.h"
@@ -1059,6 +1060,21 @@ void run(std::string &str, Set_ptrs &ptrs) {
         var = trim_whitespace(var);
         mupSetExpr(math_parser, var.c_str());
         srand(mupEval(math_parser));
+        return;
+    }
+    else if(str.substr(0,12)== "SET_N_THREAD") {
+        string var = str.substr(13);
+        var = trim_whitespace(var);
+        mupSetExpr(math_parser, var.c_str());
+        int n = mupEval(math_parser);
+        omp_set_num_threads(n);
+
+        #pragma omp parallel
+        {
+            if(omp_get_thread_num() == 0) {
+                std::cout<<"OPENMP thread number set to be: "<<omp_get_num_threads()<<std::endl;
+            }
+        }
         return;
     }
     assert(std::find(RUN_COMMANDS.begin(),RUN_COMMANDS.end(),str)!=RUN_COMMANDS.end() && "WRONG COMMANDS IN SECTION_RUN!");

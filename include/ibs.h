@@ -149,7 +149,7 @@ private:
                                   double bl, double& ix, double& iy, double& is, int nt, double u);
 public:
     IBSSolver_BMZ(int nt, double log_c, double k);
-    set_nt(int n){assert(n>0&&"Wrong value of nt in IBS parameters!"); nt_ = n; invalidate_cache();}
+    void set_nt(int n){assert(n>0&&"Wrong value of nt in IBS parameters!"); nt_ = n; invalidate_cache();}
     virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
     void set_factor(double x){factor = x;}
 };
@@ -169,12 +169,6 @@ private:
         double lambda_sqrt;
         double ct;   // ct = 1/(1-t)^2
     };
-    std::array<std::array<double, 3>,3> lh = {};
-    std::array<std::array<double, 3>,3> lv = {};
-    std::array<std::array<double, 3>,3> ls = {};
-    std::array<std::array<double, 3>,3> l = {};
-    std::array<std::array<double, 3>,3> ll = {};    //inverse of l.
-    std::array<std::array<double, 3>,3> ii = {};    //diffusion coefficient.
     struct Optc {
         double phix;
         double phiy;
@@ -188,8 +182,11 @@ private:
     double det(std::array<std::array<double, 3>,3>& l);
     double inv(std::array<std::array<double, 3>,3>& l, std::array<std::array<double, 3>,3>& v);
     double trace(std::array<std::array<double, 3>,3>& l){return l[0][0]+l[1][1]+l[2][2];}
-    void calc_l(const Lattice& lattice, int i);
-    void calc_itgl(int i);
+    void calc_l(const Lattice& lattice, int i, std::array<std::array<double, 3>,3>& lh,
+                std::array<std::array<double, 3>,3>& lv, std::array<std::array<double, 3>,3>& ls);
+    void calc_itgl(int i, std::array<std::array<double, 3>,3>& ii, std::array<std::array<double, 3>,3>& l,
+                  std::array<std::array<double, 3>,3>& ll, std::array<std::array<double, 3>,3>& lh,
+                  std::array<std::array<double, 3>,3>& lv, std::array<std::array<double, 3>,3>& ls);
     void calc_beam_const(const Beam& beam);
     double coef(const Lattice &lattice, const Beam &beam) const;
 public:

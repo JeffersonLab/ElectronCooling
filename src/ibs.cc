@@ -6,6 +6,9 @@
 #include "ibs.h"
 #include "ring.h"
 #include "beam.h"
+#include "omp.h"
+
+#include <chrono>
 
 IBSSolver::IBSSolver(double log_c, double k)
     : log_c_(log_c), k_(k)
@@ -60,6 +63,8 @@ void IBSSolver_Martini::bunch_size(const Lattice &lattice, const Beam &beam)
 
     double emit_x = beam.emit_x();
     double emit_y = beam.emit_y();
+
+    #pragma omp parallel for
     for(int i=0; i<n; ++i) {
         sigma_xbet[i] = sqrt(lattice.betx(i)*emit_x);
         sigma_y[i] = sqrt(lattice.bety(i)*emit_y);
@@ -76,7 +81,7 @@ void IBSSolver_Martini::bunch_size(const Lattice &lattice, const Beam &beam)
 //Call bunch_size() before calling this one
 void IBSSolver_Martini::abcdk(const Lattice &lattice, const Beam &beam)
 {
-    double d_tld, q, sigma_x, sigma_tmp;
+
     const int n = lattice.n_element();
     storage_opt.resize(n);
 
@@ -84,6 +89,7 @@ void IBSSolver_Martini::abcdk(const Lattice &lattice, const Beam &beam)
     const double beta = beam.beta();
     const double gamma = beam.gamma();
     const double r = beam.r();
+    #pragma omp parallel for
     for(int i=0; i<n; ++i){
         const double betx = lattice.betx(i);
         const double alfx = lattice.alfx(i);
@@ -91,10 +97,10 @@ void IBSSolver_Martini::abcdk(const Lattice &lattice, const Beam &beam)
         const double dpx = lattice.dpx(i);
         const double alfy = lattice.alfy(i);
 
-        d_tld = alfx*dx+betx*dpx;
-        sigma_x = sqrt(sigma_xbet[i]*sigma_xbet[i]+dx*dx*dp_p*dp_p);
-        sigma_tmp = dp_p*sigma_xbet[i]/(gamma*sigma_x);
-        q = 2*beta*gamma*sqrt(sigma_y[i]/r);
+        double d_tld = alfx*dx+betx*dpx;
+        double sigma_x = sqrt(sigma_xbet[i]*sigma_xbet[i]+dx*dx*dp_p*dp_p);
+        double sigma_tmp = dp_p*sigma_xbet[i]/(gamma*sigma_x);
+        double q = 2*beta*gamma*sqrt(sigma_y[i]/r);
 
         OpticalStorage os;
         os.a = sigma_tmp*sqrt(1+alfx*alfx)/sigma_xbetp[i];
@@ -116,7 +122,7 @@ void IBSSolver_Martini::abcdk(const Lattice &lattice, const Beam &beam)
 
 void IBSSolver_Martini::coef_f()
 {
-    storage_u.resize(nu_);
+
     storage_v.resize(nv_);
 
     double dv = 2*k_pi/nv_;
@@ -126,6 +132,9 @@ void IBSSolver_Martini::coef_f()
         storage_v[i] = TrigonometryStorageV({sin(v), cos(v)});
     }
 
+    storage_u.resize(nu_);
+    std::vector<TrigonometryStorageUV> uv(nv_);
+
     double du = k_pi/nu_;
     double u = -0.5*du;
     for(int i=0; i<nu_; ++i){
@@ -134,8 +143,8 @@ void IBSSolver_Martini::coef_f()
         double sin_u2 = sin_u * sin_u;
         double cos_u2 = 1 - sin_u2;
         double g3 = 1 - 3 * cos_u2;
-	std::vector<TrigonometryStorageUV> uv;
-	uv.resize(nv_);
+        std::vector<TrigonometryStorageUV> uv;
+        uv.resize(nv_);
         for(int j=0; j<nv_; ++j){
             const double sin_u2_cos_v2 = sin_u2 * storage_v[j].cos_v * storage_v[j].cos_v;
             const double g1 = 1 - 3 * sin_u2_cos_v2;
@@ -154,13 +163,10 @@ void IBSSolver_Martini::f()
     f1.resize(n_element);
     f2.resize(n_element);
     f3.resize(n_element);
-
     if (log_c_ > 0) {
         const double duvTimes2Logc = 2*k_pi*k_pi/(nu_*nv_) * 2 * log_c_;
-#ifdef _OPENMP
-        // Maybe make this runtime-adjustable. SMT gives no benefit here, so choose n = physical cores
-        #pragma omp parallel for num_threads(6)
-#endif
+
+        #pragma omp parallel for
         for(int ie=0; ie < n_element; ie++) {
             const OpticalStorage &os = storage_opt[ie];
             double tempf1 = 0, tempf2 = 0, tempf3 = 0;
@@ -186,12 +192,11 @@ void IBSSolver_Martini::f()
             f2[ie] = tempf2 * os.k2 * duvTimes2Logc;
             f3[ie] = tempf3 * os.k3 * duvTimes2Logc;
         }
-    } else {
+    }
+    else {
         const double duv = 2*k_pi*k_pi/(nv_*nu_);
-#ifdef _OPENMP
-        // Maybe make this runtime-adjustable. SMT gives no benefit here, so choose n = physical cores
-        #pragma omp parallel for num_threads(6)
-#endif
+
+        #pragma omp parallel for
         for(int ie=0; ie<n_element; ++ie){
             const OpticalStorage &os = storage_opt[ie];
             double tempf1 = 0, tempf2 = 0, tempf3 = 0;
@@ -207,7 +212,7 @@ void IBSSolver_Martini::f()
                     const double d_uv = (tuv.sin_u2_cos_v2 + tu.sin_u2 * tmp + os.b2 * tu.cos_u2) * os.k1;
                     double int_z = 0;
                     const double dz = 20/(d_uv*nz_);
-                    double z = -0.5*dz;
+                    double z = -dz/2;
                     for(int iz=0; iz<nz_; ++iz){
                         z += dz;
                         int_z += exp(-d_uv*z)*log(1+z*z)*dz;
@@ -335,6 +340,7 @@ void IBSSolver_BM::calc_kernels(const Lattice& lattice, const Beam& beam) {
 
     kernels.resize(n);
 
+    #pragma omp parallel for
     for(int i=0; i<n; ++i) {
         Kernels knl;
         auto betx = lattice.betx(i);
@@ -637,6 +643,7 @@ void IBSSolver_BMZ::rate(const Lattice &lattice, const Beam &beam, double &rx, d
         out.close();
     }
     else {
+        #pragma omp parallel for reduction(+:rx,rs,ry)
         for(int i=0; i<n_element-1; ++i){
             double l_element = lattice.l_element(i);
             double a, b, c, ax, bx, ay, by, as, bs;
@@ -647,7 +654,6 @@ void IBSSolver_BMZ::rate(const Lattice &lattice, const Beam &beam, double &rx, d
             rs += is*l_element;
             ry += lattice.bety(i)*iy*l_element;
         }
-
         rs *= n*c_bmz*gamma_2;
         rx *= c_bmz*gamma_2;
         ry *= c_bmz;
@@ -719,7 +725,8 @@ void IBSSolver_BM_Complete::calc_beam_const(const Beam& beam) {
     inv_dp2 = 1/(beam.dp_p()*beam.dp_p());
 }
 
-void IBSSolver_BM_Complete::calc_l(const Lattice& lattice, int i) {
+void IBSSolver_BM_Complete::calc_l(const Lattice& lattice, int i, std::array<std::array<double, 3>,3>& lh,
+                                   std::array<std::array<double, 3>,3>& lv, std::array<std::array<double, 3>,3>& ls) {
     double betx = lattice.betx(i);
     double bety = lattice.bety(i);
     double phix = optc.at(i).phix;
@@ -752,7 +759,9 @@ double IBSSolver_BM_Complete::coef(const Lattice &lattice, const Beam &beam) con
     return k_c*beam.r()*beam.r()*lambda/(8*k_pi*beam.dp_p()*beta3*gamma4*beam.emit_x()*beam.emit_y());
 }
 
-void IBSSolver_BM_Complete::calc_itgl(int i) {
+void IBSSolver_BM_Complete::calc_itgl(int i, std::array<std::array<double, 3>,3>& ii, std::array<std::array<double, 3>,3>& l,
+                                      std::array<std::array<double, 3>,3>& ll, std::array<std::array<double, 3>,3>& lh,
+                                      std::array<std::array<double, 3>,3>& lv, std::array<std::array<double, 3>,3>& ls) {
     ii = {};
     double u = 0;
     for(int j=0; j<3; ++j) {
@@ -815,9 +824,12 @@ void IBSSolver_BM_Complete::rate(const Lattice &lattice, const Beam &beam, doubl
 
         for(int i=0; i<n_element-1; ++i){
             double l_element = lattice.l_element(i);
-            calc_l(lattice, i);
-            calc_itgl(i);
+            //ll - inverse of l; ii - diffusion coefficients.
+            std::array<std::array<double, 3>,3> lh{}, lv{}, ls{}, l{}, ll{}, ii{};
+            calc_l(lattice, i,  lh, lv, ls);
+            calc_itgl(i, ii, l, ll, lh, lv, ls);
             double rxi{}, ryi{}, rsi{};
+
             for(int i=0; i<3; ++i) {
                 for(int j=0; j<3; ++j) {
                     rxi += lh[i][j]*ii[i][j]*c_bmc;
@@ -837,10 +849,13 @@ void IBSSolver_BM_Complete::rate(const Lattice &lattice, const Beam &beam, doubl
         out.close();
     }
     else {
+        #pragma omp parallel for reduction(+:rx,ry,rs)
         for(int i=0; i<n_element-1; ++i){
             double l_element = lattice.l_element(i);
-            calc_l(lattice, i);
-            calc_itgl(i);
+            //ll - inverse of l; ii - diffusion coefficients.
+            std::array<std::array<double, 3>,3> lh{}, lv{}, ls{}, l{}, ll{}, ii{};
+            calc_l(lattice, i, lh, lv, ls);
+            calc_itgl(i, ii, l, ll, lh, lv, ls);
 
             for(int i=0; i<3; ++i) {
                 for(int j=0; j<3; ++j) {
