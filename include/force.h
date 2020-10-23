@@ -8,6 +8,7 @@
 #include "beam.h"
 #include "constants.h"
 
+
 using std::vector;
 enum class ForceFormula {PARKHOMCHUK, NONMAG_DERBENEV, NONMAG_MESHKOV, NONMAG_NUM1D, NONMAG_NUM3D, MESHKOV, DSM};
 
@@ -90,6 +91,7 @@ private:
     double f_const(int charge_number){return 0.28209479177387814*charge_number*charge_number*k_f;} //Coef - 1/sqrt(4*pi)
     const double k_f = 2*sqrt(2*k_pi)*k_pi*k_c*k_c*k_ke*k_ke*k_e*k_e*k_e/(k_me*1e6);
     gsl_integration_workspace *gw = nullptr;
+
     size_t limit = 100;
     double espabs = 1e-6;
     double esprel = 1e-6;
@@ -137,14 +139,19 @@ private:
     bool use_mean_rho_min = false;
     double mean_rho_min = 0;
     double mean_lc = 0;
+    #pragma omp shared(mean_rho_min,mean_lc)
 
-    bool first_run = true;
-    bool const_tmpr = true;
-    int n_tr = 20;
-    int n_l = 10;
-    int n_phi = 10;
-    double d;
-    double f_inv_norm;
+    #ifdef _OPENMP
+    static bool first_run;
+    static vector<vector<double>> exp_vtr;
+    static vector<double> hlf_v2tr;
+    static vector<double> hlf_v2l;
+    static vector<vector<double>> vtr_cos;
+    static vector<double> vl;
+    static vector<double> vtr;
+    static vector<vector<double>> v2tr_sin2;
+    #pragma omp threadprivate(exp_vtr, hlf_v2tr, hlf_v2l, vtr_cos, vl, vtr, v2tr_sin2, first_run)
+    #else
     vector<vector<double>> exp_vtr;
     vector<double> hlf_v2tr;
     vector<double> hlf_v2l;
@@ -152,6 +159,15 @@ private:
     vector<double> vl;
     vector<double> vtr;
     vector<vector<double>> v2tr_sin2;
+    bool first_run = true;
+    #endif // _OPENMP
+    bool const_tmpr = true;
+    int n_tr = 20;
+    int n_l = 10;
+    int n_phi = 10;
+    double d;
+    double f_inv_norm;
+
 
     void pre_int(double sgm_vtr, double sgm_vl);
     void calc_exp_vtr(double sgm_vtr, double sgm_vl);

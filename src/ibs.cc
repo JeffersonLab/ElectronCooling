@@ -6,7 +6,9 @@
 #include "ibs.h"
 #include "ring.h"
 #include "beam.h"
-#include "omp.h"
+#ifdef _OPENMP
+    #include <omp.h>
+#endif // _OPENMP
 
 #include <chrono>
 
@@ -64,7 +66,9 @@ void IBSSolver_Martini::bunch_size(const Lattice &lattice, const Beam &beam)
     double emit_x = beam.emit_x();
     double emit_y = beam.emit_y();
 
-    #pragma omp parallel for
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(int i=0; i<n; ++i) {
         sigma_xbet[i] = sqrt(lattice.betx(i)*emit_x);
         sigma_y[i] = sqrt(lattice.bety(i)*emit_y);
@@ -89,7 +93,9 @@ void IBSSolver_Martini::abcdk(const Lattice &lattice, const Beam &beam)
     const double beta = beam.beta();
     const double gamma = beam.gamma();
     const double r = beam.r();
-    #pragma omp parallel for
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(int i=0; i<n; ++i){
         const double betx = lattice.betx(i);
         const double alfx = lattice.alfx(i);
@@ -166,7 +172,9 @@ void IBSSolver_Martini::f()
     if (log_c_ > 0) {
         const double duvTimes2Logc = 2*k_pi*k_pi/(nu_*nv_) * 2 * log_c_;
 
-        #pragma omp parallel for
+        #ifdef _OPENMP
+            #pragma omp parallel for
+        #endif // _OPENMP
         for(int ie=0; ie < n_element; ie++) {
             const OpticalStorage &os = storage_opt[ie];
             double tempf1 = 0, tempf2 = 0, tempf3 = 0;
@@ -196,7 +204,9 @@ void IBSSolver_Martini::f()
     else {
         const double duv = 2*k_pi*k_pi/(nv_*nu_);
 
-        #pragma omp parallel for
+        #ifdef _OPENMP
+            #pragma omp parallel for
+        #endif // _OPENMP
         for(int ie=0; ie<n_element; ++ie){
             const OpticalStorage &os = storage_opt[ie];
             double tempf1 = 0, tempf2 = 0, tempf3 = 0;
@@ -340,7 +350,9 @@ void IBSSolver_BM::calc_kernels(const Lattice& lattice, const Beam& beam) {
 
     kernels.resize(n);
 
-    #pragma omp parallel for
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(int i=0; i<n; ++i) {
         Kernels knl;
         auto betx = lattice.betx(i);
@@ -643,7 +655,9 @@ void IBSSolver_BMZ::rate(const Lattice &lattice, const Beam &beam, double &rx, d
         out.close();
     }
     else {
-        #pragma omp parallel for reduction(+:rx,rs,ry)
+        #ifdef _OPENMP
+            #pragma omp parallel for reduction(+:rx,rs,ry)
+        #endif // _OPENMP
         for(int i=0; i<n_element-1; ++i){
             double l_element = lattice.l_element(i);
             double a, b, c, ax, bx, ay, by, as, bs;
@@ -849,7 +863,9 @@ void IBSSolver_BM_Complete::rate(const Lattice &lattice, const Beam &beam, doubl
         out.close();
     }
     else {
-        #pragma omp parallel for reduction(+:rx,ry,rs)
+        #ifdef _OPENMP
+            #pragma omp parallel for reduction(+:rx,ry,rs)
+        #endif // _OPENMP
         for(int i=0; i<n_element-1; ++i){
             double l_element = lattice.l_element(i);
             //ll - inverse of l; ii - diffusion coefficients.

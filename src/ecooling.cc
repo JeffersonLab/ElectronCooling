@@ -3,6 +3,9 @@
 #include <chrono>
 #include <cmath>
 #include <cstring>
+#ifdef _OPENMP
+    #include <omp.h>
+#endif // _OPENMP
 #include "constants.h"
 #include "cooler.h"
 #include "force.h"
@@ -145,6 +148,9 @@ void ECoolRate::force_distribute(int n_sample, Beam &ion, Ions &ion_sample) {
     double v0 = ion.beta()*k_c;
     vector<double>& xp = ion_sample.cdnt(Phase::XP);
     vector<double>& yp = ion_sample.cdnt(Phase::YP);
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(int i=0; i<n_sample; ++i){
         force_y[i] = yp[i]!=0?force_x[i]*yp[i]*v0/v_tr[i]:0;
         force_x[i] = xp[i]!=0?force_x[i]*xp[i]*v0/v_tr[i]:0;
@@ -156,6 +162,9 @@ void ECoolRate::apply_kick(int n_sample, Beam &ion, Ions& ion_sample) {
     vector<double>& ixp = ion_sample.cdnt(Phase::XP);
     vector<double>& iyp = ion_sample.cdnt(Phase::YP);
     vector<double>& idp_p = ion_sample.cdnt(Phase::DP_P);
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(int i=0; i<n_sample; ++i){
         xp[i] = !iszero(ixp[i])?ixp[i]*exp(force_x[i]*t_cooler_/(p0*ixp[i])):ixp[i];
         yp[i] = !iszero(iyp[i])?iyp[i]*exp(force_y[i]*t_cooler_/(p0*iyp[i])):iyp[i];
@@ -214,6 +223,7 @@ void ECoolRate::ecool_rate(FrictionForceSolver &force_solver, Beam &ion,
 
     //Distribute the friction force into x,y direction.
     force_distribute(n_sample,ion, ion_sample);
+
     //Original emittance
     double emit_x0, emit_y0, emit_z0;
     ion_sample.emit(emit_x0, emit_y0, emit_z0);
@@ -224,6 +234,7 @@ void ECoolRate::ecool_rate(FrictionForceSolver &force_solver, Beam &ion,
     //New emittance
     double emit_x, emit_y, emit_z;
     auto t = ion_sample.get_twiss();
+
     adjust_disp_inv(t.disp_x, x_bet, dp_p, ion_sample.cdnt(Phase::X), n_sample);
     adjust_disp_inv(t.disp_dx, xp_bet, dp_p, xp, n_sample);
     adjust_disp_inv(t.disp_y, y_bet, dp_p, ion_sample.cdnt(Phase::Y), n_sample);

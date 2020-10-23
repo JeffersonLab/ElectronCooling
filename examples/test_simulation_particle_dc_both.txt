@@ -9,9 +9,7 @@ section_ion #define the ion beam
 section_ring #define the ring
 	lattice = test.tfs
 section_ibs #define the arguments for IBS calculation
-	nu = 200
-	nv = 200
-	nz = 40
+	model = bm
 	log_c = 22.4
 	coupling = 0
 section_cooler

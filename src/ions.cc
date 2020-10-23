@@ -5,6 +5,7 @@
 
 #include "arbitrary_electron_beam.h"
 #include "functions.h"
+#include <chrono>
 
 
 
@@ -134,6 +135,10 @@ double emit(vector<double>& x, vector<double>&xp, int n) {
     double emit, x_mean, xp_mean, dlt2_x, dlt2_xp, dlt_xxp;
     x_mean = 0;
     xp_mean = 0;
+
+    #ifdef _OPENMP
+        #pragma omp parallel for reduction(+:x_mean,xp_mean)
+    #endif // _OPENMP
     for(int i=0; i<n; ++i){
         x_mean += x[i];
        xp_mean += xp[i];
@@ -144,6 +149,9 @@ double emit(vector<double>& x, vector<double>&xp, int n) {
     dlt2_x = 0;
     dlt2_xp = 0;
     dlt_xxp = 0;
+    #ifdef _OPENMP
+        #pragma omp parallel for reduction(+:dlt2_x,dlt2_xp,dlt_xxp)
+    #endif // _OPENMP
     for(int i=0; i<n; ++i){
         double x_adj = x[i]-x_mean;
         double xp_adj = xp[i]-xp_mean;
@@ -159,11 +167,16 @@ double emit(vector<double>& x, vector<double>&xp, int n) {
 double emit_p(vector<double>& dp_p, int n){
     double emit_p = 0;
     double dp_p_mean = 0;
+    #ifdef _OPENMP
+        #pragma omp parallel for reduction(+:dp_p_mean)
+    #endif // _OPENMP
     for(int i=0; i<n; ++i){
         dp_p_mean += dp_p[i];
     }
     dp_p_mean /= n;
-
+    #ifdef _OPENMP
+        #pragma omp parallel for reduction(+:emit_p)
+    #endif // _OPENMP
     for(int i=0; i<n; ++i){
         double dp_p_adj = dp_p[i] - dp_p_mean;
         emit_p += dp_p_adj*dp_p_adj;
@@ -173,10 +186,16 @@ double emit_p(vector<double>& dp_p, int n){
 }
 
 void adjust_disp_inv(double dx, vector<double>& x_bet, vector<double>& dp_p, vector<double>& x, int n) {
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif
     for(int i=0; i<n; ++i) x_bet[i] = x[i]-dx*dp_p[i];
 }
 
 void adjust_disp(double dx, vector<double>& x_bet, vector<double>& dp_p, vector<double>& x, int n){
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(int i=0; i<n; ++i) x[i] = x_bet[i]+dx*dp_p[i];
 }
 

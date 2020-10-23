@@ -34,6 +34,9 @@ void TurnByTurnModel::apply_edge_kick(Cooler& cooler, EBeam& ebeam, Beam& ion, I
     ebeam.edge_field(cooler, x, y, ds, rdn, n);
     double q = ion.charge_number()*k_e;
     double coef = q*ecool_solver->t_cooler()*cooler.section_number()/p0;
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(int i=0; i<n; ++i) {
         dp_p[i] *= (1+rdn.at(i)*coef/dp_p.at(i));
 //        dp_p.at(i) = dp_p.at(i)*exp(rdn.at(i)*coef/dp_p.at(i));
@@ -81,6 +84,9 @@ void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
     double alf_y = twiss.alf_y;
     double gamma_x = (1+alf_x*alf_x)/bet_x;
     double gamma_y = (1+alf_y*alf_y)/bet_y;
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for (int i=0; i<n_sample; ++i) {
         double phi = 2*k_pi*Qx;
         double x_bet_0 = x_bet[i];
@@ -123,6 +129,9 @@ void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
 //            double sin_phi_s = sin(phi_s+phi_0);
             double eta = 1/(ring.rf.gamma_tr*ring.rf.gamma_tr) - 1/(ion.gamma()*ion.gamma()); //phase slip factor
             double adj_dE2dphi = total_phase*eta*beta2_inv*total_energy_inv;
+            #ifdef _OPENMP
+                #pragma omp parallel for
+            #endif // _OPENMP
             for(int i = 0; i < n_sample; ++i) {
                 dp_p[i] *= adj_dp2dE; //dp/p -> dE/E -> dE in [MeV/c^2]
 //                ds[i] += s_s;  //s = ds + s_s: adjust ds to be measured from the start of the ring
@@ -143,6 +152,9 @@ void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
             double phi = 2*k_pi*ring.tunes.qs;
             double inv_beta_s = 1/ring.beta_s();
             double beta_s = ring.beta_s();
+            #ifdef _OPENMP
+                #pragma omp parallel for
+            #endif // _OPENMP
             for (int i=0; i<n_sample; ++i) {
                 double dp_p_0 = dp_p[i];
                 double ds_0 = ds[i];
@@ -155,6 +167,9 @@ void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
         double gamma_0 = ion.gamma();
         double beta_0 = ion.beta();
         double half_length = 0.5*ring.circ();
+        #ifdef _OPENMP
+            #pragma omp parallel for
+        #endif // _OPENMP
         for(int i=0; i<n_sample; ++i) {
             double gamma2 = 1+(1+dp_p[i])*(1+dp_p[i])*(gamma_0*gamma_0-1);
             double beta = sqrt(1-1/gamma2);
