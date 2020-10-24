@@ -90,7 +90,7 @@ class ForceNonMagNumeric1D: public ForceNonMag {
 private:
     double f_const(int charge_number){return 0.28209479177387814*charge_number*charge_number*k_f;} //Coef - 1/sqrt(4*pi)
     const double k_f = 2*sqrt(2*k_pi)*k_pi*k_c*k_c*k_ke*k_ke*k_e*k_e*k_e/(k_me*1e6);
-    gsl_integration_workspace *gw = nullptr;
+
 
     size_t limit = 100;
     double espabs = 1e-6;
@@ -101,7 +101,15 @@ private:
         double ve_tr;
         double ve_l;
         int flag;   //0: calculate B_tr; else: calculate B_l;
-    }p;
+    };
+
+    #ifdef _OPENMP
+    vector<gsl_integration_workspace*> gw;
+    vector<P> p;
+    #else
+    gsl_integration_workspace *gw = nullptr;
+    P p;
+    #endif // _OPENMP
     double b(double q, void* params);
     void force(double v, double v_tr, double v_l, double v2, double ve_tr, double ve_l, double ve2,
                                double f_const, double rho_min_const, int charge_number, double ne,
@@ -109,17 +117,13 @@ private:
 public:
     void set_espabs(double x){espabs = x;}
     void set_esprel(double x){esprel = x;}
-    ForceNonMagNumeric1D(int n=100):limit(n){gsl_set_error_handler_off();gw = gsl_integration_workspace_alloc(limit);}
-    ~ForceNonMagNumeric1D(){gsl_integration_workspace_free(gw);}
+    ForceNonMagNumeric1D(int n=100);
+    ~ForceNonMagNumeric1D();
 };
 
 //
 class ForceNonMagNumeric3D: public ForceNonMag {
 private:
-//    gsl_integration_workspace *giw = nullptr;
-//    gsl_integration_workspace *gmw = nullptr;
-//    gsl_integration_workspace *gow = nullptr;
-
     size_t limit = 100;
     double espabs = 1e-5;
     double esprel = 1e-3;
@@ -134,7 +138,6 @@ private:
         int charge_number;
         int flag;   //0: calculate B_tr; else: calculate B_l;
     };
-//    P p;
 
     bool use_gsl = false;
     bool use_mean_rho_min = false;
@@ -210,15 +213,6 @@ public:
     void set_grid(int ntr, int nl, int nphi){n_tr = ntr; n_l = nl; n_phi = nphi; first_run = true;}
     ForceNonMagNumeric3D(int n=100);
     ~ForceNonMagNumeric3D();
-//    ForceNonMagNumeric3D(int n=100):limit(n){giw = gsl_integration_workspace_alloc(limit); gmw = gsl_integration_workspace_alloc(limit);
-//        gow = gsl_integration_workspace_alloc(limit);}
-//    ~ForceNonMagNumeric3D(){
-//        if(use_gsl) {
-//            gsl_integration_workspace_free(giw);
-//            gsl_integration_workspace_free(gmw);
-//            gsl_integration_workspace_free(gow);
-//        }
-//    }
 };
 
 //gsl function wrapper for member functions in class.

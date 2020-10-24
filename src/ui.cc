@@ -1078,7 +1078,7 @@ void run(std::string &str, Set_ptrs &ptrs) {
             }
         }
         #else
-        std::cout<<"OPENMP not supported! Please recompile."<<std::endl;
+        std::cout<<std::endl<<"<<< WARNING: OPENMP NOT SUPPORTED! PLEASE RECOMPILE! >>>"<<std::endl<<std::endl;
         #endif // _OPENMP
 
         return;
