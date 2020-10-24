@@ -116,9 +116,9 @@ public:
 //
 class ForceNonMagNumeric3D: public ForceNonMag {
 private:
-    gsl_integration_workspace *giw;
-    gsl_integration_workspace *gmw;
-    gsl_integration_workspace *gow;
+//    gsl_integration_workspace *giw = nullptr;
+//    gsl_integration_workspace *gmw = nullptr;
+//    gsl_integration_workspace *gow = nullptr;
 
     size_t limit = 100;
     double espabs = 1e-5;
@@ -133,15 +133,28 @@ private:
         double rho_max;
         int charge_number;
         int flag;   //0: calculate B_tr; else: calculate B_l;
-    }p;
+    };
+//    P p;
 
     bool use_gsl = false;
     bool use_mean_rho_min = false;
-    double mean_rho_min = 0;
-    double mean_lc = 0;
-    #pragma omp shared(mean_rho_min,mean_lc)
 
     #ifdef _OPENMP
+    vector<gsl_integration_workspace*> giw;
+    vector<gsl_integration_workspace*> gmw;
+    vector<gsl_integration_workspace*> gow;
+    vector<P> p;
+    #else
+    gsl_integration_workspace *giw = nullptr;
+    gsl_integration_workspace *gmw = nullptr;
+    gsl_integration_workspace *gow = nullptr;
+    P p;
+    #endif // _OPENMP
+
+    #ifdef _OPENMP
+    static double mean_rho_min;
+    static double mean_lc;
+    #pragma omp threadprivate(mean_rho_min, mean_lc)
     static bool first_run;
     static vector<vector<double>> exp_vtr;
     static vector<double> hlf_v2tr;
@@ -152,6 +165,8 @@ private:
     static vector<vector<double>> v2tr_sin2;
     #pragma omp threadprivate(exp_vtr, hlf_v2tr, hlf_v2l, vtr_cos, vl, vtr, v2tr_sin2, first_run)
     #else
+    double mean_rho_min = 0;
+    double mean_lc = 0;
     vector<vector<double>> exp_vtr;
     vector<double> hlf_v2tr;
     vector<double> hlf_v2l;
@@ -171,8 +186,6 @@ private:
 
     void pre_int(double sgm_vtr, double sgm_vl);
     void calc_exp_vtr(double sgm_vtr, double sgm_vl);
-
-
 
     void init(EBeam& ebeam);
     double inner_integrand(double phi, void* params);
@@ -195,15 +208,17 @@ public:
     void set_gsl(bool b) {use_gsl = b;}
     void set_mean_rho_min(bool b) {use_mean_rho_min = b;}
     void set_grid(int ntr, int nl, int nphi){n_tr = ntr; n_l = nl; n_phi = nphi; first_run = true;}
-    ForceNonMagNumeric3D(int n=100):limit(n){giw = gsl_integration_workspace_alloc(limit); gmw = gsl_integration_workspace_alloc(limit);
-        gow = gsl_integration_workspace_alloc(limit);}
-    ~ForceNonMagNumeric3D(){
-        if(use_gsl) {
-            gsl_integration_workspace_free(giw);
-            gsl_integration_workspace_free(gmw);
-            gsl_integration_workspace_free(gow);
-        }
-    }
+    ForceNonMagNumeric3D(int n=100);
+    ~ForceNonMagNumeric3D();
+//    ForceNonMagNumeric3D(int n=100):limit(n){giw = gsl_integration_workspace_alloc(limit); gmw = gsl_integration_workspace_alloc(limit);
+//        gow = gsl_integration_workspace_alloc(limit);}
+//    ~ForceNonMagNumeric3D(){
+//        if(use_gsl) {
+//            gsl_integration_workspace_free(giw);
+//            gsl_integration_workspace_free(gmw);
+//            gsl_integration_workspace_free(gow);
+//        }
+//    }
 };
 
 //gsl function wrapper for member functions in class.

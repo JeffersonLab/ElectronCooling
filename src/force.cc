@@ -221,6 +221,9 @@ void ForceNonMag::friction_force(int charge_number, int ion_number, vector<doubl
         break;
     }
     case Temperature::VARY: {
+        #ifdef _OPENMP
+            #pragma omp parallel for
+        #endif // _OPENMP
         for(int i=0; i<ion_number; ++i) {
             if(iszero(density_e.at(i))) {
                 force_tr[i] = 0;
@@ -402,13 +405,54 @@ void ForceNonMagNumeric1D::force(double v, double v_tr, double v_l, double v2, d
     force_l = ff*v_l*b_l;
 }
 
+ForceNonMagNumeric3D::ForceNonMagNumeric3D(int n):limit(n){
+    #ifdef _OPENMP
+    #pragma omp parallel
+    {
+    int n = omp_get_num_threads();
+    }
+    giw.resize(n);
+    gmw.resize(n);
+    gow.resize(n);
+    p.resize(n);
+//    #pragma omp parallel for
+    for(int i=0; i<n; ++i) {
+        giw.at(i) = gsl_integration_workspace_alloc(limit);
+        gmw.at(i) = gsl_integration_workspace_alloc(limit);
+        gow.at(i) = gsl_integration_workspace_alloc(limit);
+    }
+
+    #else
+    giw = gsl_integration_workspace_alloc(limit);
+    gmw = gsl_integration_workspace_alloc(limit);
+    gow = gsl_integration_workspace_alloc(limit);
+    #endif // _OPENMP
+}
+ForceNonMagNumeric3D::~ForceNonMagNumeric3D(){
+    #ifdef _OPENMP
+    if(use_gsl) {
+        #pragma omp parallel for
+        for(int i=0; i<omp_get_num_threads(); ++i) {
+            gsl_integration_workspace_free(giw.at(i));
+            gsl_integration_workspace_free(gmw.at(i));
+            gsl_integration_workspace_free(gow.at(i));
+        }
+    }
+    #else
+    if(use_gsl) {
+        gsl_integration_workspace_free(giw);
+        gsl_integration_workspace_free(gmw);
+        gsl_integration_workspace_free(gow);
+    }
+    #endif // _OPENMP
+}
+
 double ForceNonMagNumeric3D::inner_norm_integrand(double vl, void*params) {
     double vtr = ((P*)params)->vtr;
     double ve_tr = ((P*)params)->ve_tr;
     double ve_l = ((P*)params)->ve_l;
     return exp(-vtr*vtr/(2*ve_tr*ve_tr)-vl*vl/(2*ve_l*ve_l))*vtr;
 }
-
 double ForceNonMagNumeric3D::outter_norm_integrand(double vtr, void*params) {
     double result;
     double error;
@@ -420,17 +464,13 @@ double ForceNonMagNumeric3D::outter_norm_integrand(double vtr, void*params) {
     auto ptr = [=](double x)->double{return ptr2->inner_norm_integrand(x,params);};
     gsl_function_pp<decltype(ptr)> fp(ptr);
     gsl_function *f = static_cast<gsl_function*>(&fp);
-
     #ifdef _OPENMP
-    if(omp_get_num_threads()>1) {
-        gsl_integration_workspace *giw = gsl_integration_workspace_alloc(limit);
-        gsl_integration_qagi(f, espabs, esprel, limit, giw, &result, &error);
-        gsl_integration_workspace_free(giw);
-        return result;
-    }
+    int i = omp_get_thread_num();
+    gsl_integration_qagi(f, espabs, esprel, limit, giw.at(i), &result, &error);
+    #else
+    gsl_integration_qagi(f, espabs, esprel, limit, giw, &result, &error);
     #endif // _OPENMP
 
-    gsl_integration_qagi(f, espabs, esprel, limit, giw, &result, &error);
     return result;
 }
 
@@ -477,19 +517,15 @@ double ForceNonMagNumeric3D::middle_integrand(double vl, void* params) {
     double result;
     double error;
     #ifdef _OPENMP
-    if(omp_get_num_threads()>1) {
-        gsl_integration_workspace *giw = gsl_integration_workspace_alloc(limit);
-        gsl_integration_qag(f, 0, k_pi, espabs, esprel, limit, key, giw, &result, &error);
-        gsl_integration_workspace_free(giw);
-        return result;
-    }
-    #endif // _OPENMP
+    int i = omp_get_thread_num();
+    gsl_integration_qag(f, 0, k_pi, espabs, esprel, limit, key, giw.at(i), &result, &error);
+    #else
     gsl_integration_qag(f, 0, k_pi, espabs, esprel, limit, key, giw, &result, &error);
+    #endif // _OPENMP
     return result;
 }
 
 double ForceNonMagNumeric3D::outter_integrand(double vtr, void* params) {
-
     P* p = (P*)params;
     p->vtr = vtr;
 
@@ -501,14 +537,11 @@ double ForceNonMagNumeric3D::outter_integrand(double vtr, void* params) {
     double result;
     double error;
     #ifdef _OPENMP
-    if(omp_get_num_threads()>1) {
-        gsl_integration_workspace *gmw = gsl_integration_workspace_alloc(limit);
-        gsl_integration_qagi(f, espabs, esprel, limit, gmw, &result, &error);
-        gsl_integration_workspace_free(gmw);
-        return result;
-    }
-    #endif // _OPENMP
+    int i = omp_get_thread_num();
+    gsl_integration_qagi(f, espabs, esprel, limit, gmw.at(i), &result, &error);
+    #else
     gsl_integration_qagi(f, espabs, esprel, limit, gmw, &result, &error);
+    #endif // _OPENMP
     return result;
 }
 
@@ -631,67 +664,50 @@ void ForceNonMagNumeric3D::force_grid(double v, double v_tr, double v_l, double 
     force_l = ff*f_l;
 }
 
+
+#ifdef _OPENMP
+double ForceNonMagNumeric3D::mean_rho_min = 0;
+double ForceNonMagNumeric3D::mean_lc = 0;
+#endif // _OPENMP
 void ForceNonMagNumeric3D::force_gsl(double v, double v_tr, double v_l, double v2, double ve_tr, double ve_l, double ve2,
                                double f_const, double rho_min_const, int charge_number, double ne,
                                double& force_tr, double& force_l) {
     double rho_max = this->rho_max(charge_number, v2, ve2, ne);
-
-    #ifdef _OPENMP
-    if(omp_get_num_threads()>1) {
-        if(omp_get_thread_num()==0) {
-            if(use_mean_rho_min) {
-                mean_rho_min = this->rho_min_const(charge_number)/(v2+ve2);
-                mean_lc = rho_max>mean_rho_min?log(rho_max/mean_rho_min):0;
-            }
-        }
-        #pragma omp barrier
-
-        P p;
-
-        p.ve_tr = ve_tr;
-        p.ve_l = ve_l;
-
-        ForceNonMagNumeric3D* class_ptr = this;
-
-        double error;
-        double inv_norm = 0.35917424443382906;  //1/norm with norm = 0.886226925*k_pi
-
-        p.v_tr = v_tr;
-        p.v_l = v_l;
-        p.charge_number = charge_number;
-        p.rho_max = rho_max;
-        p.flag = 0;
-        auto ptr = [=](double x)->double{return class_ptr->outter_integrand(x,const_cast<ForceNonMagNumeric3D::P*>(&p));};
-        gsl_function_pp<decltype(ptr)> fp(ptr);
-        gsl_function *f = static_cast<gsl_function*>(&fp);
-
-        double f_tr;
-        gsl_integration_workspace *gow = gsl_integration_workspace_alloc(limit);
-        gsl_integration_qagiu(f, 0, espabs, esprel, limit, gow, &f_tr, &error);
-
-        double f_l = 0;
-        p.flag = 1;
-        auto lptr = [=](double x)->double{return class_ptr->outter_integrand(x,const_cast<ForceNonMagNumeric3D::P*>(&p));};
-        gsl_function_pp<decltype(lptr)> lfp(lptr);
-        gsl_function *lf = static_cast<gsl_function*>(&lfp);
-
-        gsl_integration_qagiu(lf, 0, espabs, esprel, limit, gow, &f_l, &error);
-        gsl_integration_workspace_free(gow);
-
-        double ff = f_const*ne*inv_norm;
-        force_tr = ff*f_tr;
-        force_l = ff*f_l;
-
-        return;
-    }
-
-    #endif // _OPENMP
-
     if(use_mean_rho_min) {
         mean_rho_min = this->rho_min_const(charge_number)/(v2+ve2);
         mean_lc = rho_max>mean_rho_min?log(rho_max/mean_rho_min):0;
     }
 
+    #ifdef _OPENMP
+    int i = omp_get_thread_num();
+    p.at(i).ve_tr = ve_tr;
+    p.at(i).ve_l = ve_l;
+
+    ForceNonMagNumeric3D* class_ptr = this;
+
+    double error;
+    double inv_norm = 0.35917424443382906;  //1/norm with norm = 0.886226925*k_pi
+
+    p.at(i).v_tr = v_tr;
+    p.at(i).v_l = v_l;
+    p.at(i).charge_number = charge_number;
+    p.at(i).rho_max = rho_max;
+
+    auto ptr = [=](double x)->double{return class_ptr->outter_integrand(x,&p.at(i));};
+    gsl_function_pp<decltype(ptr)> fp(ptr);
+    gsl_function *f = static_cast<gsl_function*>(&fp);
+
+    double f_tr = 0;
+    p.at(i).flag = 0;
+    gsl_integration_qagiu(f, 0, espabs, esprel, limit, gow.at(i), &f_tr, &error);
+    double f_l = 0;
+    p.at(i).flag = 1;
+    gsl_integration_qagiu(f, 0, espabs, esprel, limit, gow.at(i), &f_l, &error);
+
+    double ff = f_const*ne*inv_norm;
+    force_tr = ff*f_tr;
+    force_l = ff*f_l;
+    #else
     p.ve_tr = ve_tr;
     p.ve_l = ve_l;
 
@@ -709,7 +725,7 @@ void ForceNonMagNumeric3D::force_gsl(double v, double v_tr, double v_l, double v
     gsl_function_pp<decltype(ptr)> fp(ptr);
     gsl_function *f = static_cast<gsl_function*>(&fp);
 
-    double f_tr;
+    double f_tr = 0;
     p.flag = 0;
     gsl_integration_qagiu(f, 0, espabs, esprel, limit, gow, &f_tr, &error);
     double f_l = 0;
@@ -719,7 +735,140 @@ void ForceNonMagNumeric3D::force_gsl(double v, double v_tr, double v_l, double v
     double ff = f_const*ne*inv_norm;
     force_tr = ff*f_tr;
     force_l = ff*f_l;
+    #endif
 }
+
+
+//void ForceNonMagNumeric3D::force_gsl(double v, double v_tr, double v_l, double v2, double ve_tr, double ve_l, double ve2,
+//                               double f_const, double rho_min_const, int charge_number, double ne,
+//                               double& force_tr, double& force_l) {
+//    double rho_max = this->rho_max(charge_number, v2, ve2, ne);
+//    if(use_mean_rho_min) {
+//        mean_rho_min = this->rho_min_const(charge_number)/(v2+ve2);
+//        mean_lc = rho_max>mean_rho_min?log(rho_max/mean_rho_min):0;
+//    }
+//
+//    #ifdef _OPENMP
+//    int i = omp_get_thread_num();
+//    P& p = this->p.at(i);
+//    gsl_integration_workspace* gow = this->gow.at(i);
+//    #endif // _OPENMP
+//
+//    p.ve_tr = ve_tr;
+//    p.ve_l = ve_l;
+//
+//    ForceNonMagNumeric3D* class_ptr = this;
+//
+//    double error;
+//    double inv_norm = 0.35917424443382906;  //1/norm with norm = 0.886226925*k_pi
+//
+//    p.v_tr = v_tr;
+//    p.v_l = v_l;
+//    p.charge_number = charge_number;
+//    p.rho_max = rho_max;
+//
+//    auto ptr = [=](double x)->double{return class_ptr->outter_integrand(x,const_cast<ForceNonMagNumeric3D::P*>(&p));};
+//    gsl_function_pp<decltype(ptr)> fp(ptr);
+//    gsl_function *f = static_cast<gsl_function*>(&fp);
+//
+//    double f_tr = 0;
+//    p.flag = 0;
+//    gsl_integration_qagiu(f, 0, espabs, esprel, limit, gow, &f_tr, &error);
+//    double f_l = 0;
+//    p.flag = 1;
+//    gsl_integration_qagiu(f, 0, espabs, esprel, limit, gow, &f_l, &error);
+//
+//    double ff = f_const*ne*inv_norm;
+//    force_tr = ff*f_tr;
+//    force_l = ff*f_l;
+//}
+
+//
+//void ForceNonMagNumeric3D::force_gsl(double v, double v_tr, double v_l, double v2, double ve_tr, double ve_l, double ve2,
+//                               double f_const, double rho_min_const, int charge_number, double ne,
+//                               double& force_tr, double& force_l) {
+//    double rho_max = this->rho_max(charge_number, v2, ve2, ne);
+//
+//    #ifdef _OPENMP
+//    if(omp_get_num_threads()>1) {
+//        if(use_mean_rho_min) {
+//            mean_rho_min = this->rho_min_const(charge_number)/(v2+ve2);
+//            mean_lc = rho_max>mean_rho_min?log(rho_max/mean_rho_min):0;
+//        }
+//
+//        P p;
+//        p.ve_tr = ve_tr;
+//        p.ve_l = ve_l;
+//
+//        ForceNonMagNumeric3D* class_ptr = this;
+//
+//        double error;
+//        double inv_norm = 0.35917424443382906;  //1/norm with norm = 0.886226925*k_pi
+//
+//        p.v_tr = v_tr;
+//        p.v_l = v_l;
+//        p.charge_number = charge_number;
+//        p.rho_max = rho_max;
+//        p.flag = 0;
+//        auto ptr = [=](double x)->double{return class_ptr->outter_integrand(x,const_cast<ForceNonMagNumeric3D::P*>(&p));};
+//        gsl_function_pp<decltype(ptr)> fp(ptr);
+//        gsl_function *f = static_cast<gsl_function*>(&fp);
+//
+//        double f_tr;
+//        gsl_integration_workspace *gow = gsl_integration_workspace_alloc(limit);
+//        gsl_integration_qagiu(f, 0, espabs, esprel, limit, gow, &f_tr, &error);
+//
+//        double f_l = 0;
+//        p.flag = 1;
+//        auto lptr = [=](double x)->double{return class_ptr->outter_integrand(x,const_cast<ForceNonMagNumeric3D::P*>(&p));};
+//        gsl_function_pp<decltype(lptr)> lfp(lptr);
+//        gsl_function *lf = static_cast<gsl_function*>(&lfp);
+//
+//        gsl_integration_qagiu(lf, 0, espabs, esprel, limit, gow, &f_l, &error);
+//        gsl_integration_workspace_free(gow);
+//
+//        double ff = f_const*ne*inv_norm;
+//        force_tr = ff*f_tr;
+//        force_l = ff*f_l;
+//
+//        return;
+//    }
+//
+//    #endif // _OPENMP
+//
+//    if(use_mean_rho_min) {
+//        mean_rho_min = this->rho_min_const(charge_number)/(v2+ve2);
+//        mean_lc = rho_max>mean_rho_min?log(rho_max/mean_rho_min):0;
+//    }
+//
+//    p.ve_tr = ve_tr;
+//    p.ve_l = ve_l;
+//
+//    ForceNonMagNumeric3D* class_ptr = this;
+//
+//    double error;
+//    double inv_norm = 0.35917424443382906;  //1/norm with norm = 0.886226925*k_pi
+//
+//    p.v_tr = v_tr;
+//    p.v_l = v_l;
+//    p.charge_number = charge_number;
+//    p.rho_max = rho_max;
+//
+//    auto ptr = [=](double x)->double{return class_ptr->outter_integrand(x,&p);};
+//    gsl_function_pp<decltype(ptr)> fp(ptr);
+//    gsl_function *f = static_cast<gsl_function*>(&fp);
+//
+//    double f_tr;
+//    p.flag = 0;
+//    gsl_integration_qagiu(f, 0, espabs, esprel, limit, gow, &f_tr, &error);
+//    double f_l = 0;
+//    p.flag = 1;
+//    gsl_integration_qagiu(f, 0, espabs, esprel, limit, gow, &f_l, &error);
+//
+//    double ff = f_const*ne*inv_norm;
+//    force_tr = ff*f_tr;
+//    force_l = ff*f_l;
+//}
 
 void ForceNonMagNumeric3D::force(double v, double v_tr, double v_l, double v2, double ve_tr, double ve_l, double ve2,
                                double f_const, double rho_min_const, int charge_number, double ne,
