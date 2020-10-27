@@ -839,6 +839,24 @@ void ForceMeshkov::friction_force(int charge_number, int ion_number,
     }
 }
 
+
+bool ForceDSM::first_run = true;
+vector<double> ForceDSM::a;
+vector<double> ForceDSM::cos_a;
+vector<double> ForceDSM::tan_a;
+vector<double> ForceDSM::t2;
+vector<double> ForceDSM::ve;
+vector<double> ForceDSM::exp_ve2;
+bool ForceDSM::first_run_fa = true;
+double ForceDSM::f_inv_norm;
+vector<vector<double>> ForceDSM::exp_vtr;
+vector<double> ForceDSM::hlf_v2tr;
+vector<double> ForceDSM::hlf_v2l;
+vector<vector<double>> ForceDSM::vtr_cos;
+vector<double> ForceDSM::vl;
+vector<double> ForceDSM::vtr;
+vector<vector<double>> ForceDSM::v2tr_sin2;
+
 void ForceDSM::calc_alpha() {
 //    sin_a.resize(n_a);
     cos_a.resize(n_a);
@@ -906,7 +924,7 @@ void ForceDSM::pre_int(double sgm_vtr, double sgm_vl) {
     vl.at(0) = -3*sgm_vl + d_vl/2;
     for(int i=1; i<n_l; ++i) vl.at(i) = vl.at(i-1) + d_vl;
 
-    d = d_phi*d_vtr*d_vl;
+//    d = d_phi*d_vtr*d_vl;
 
     for(int i=0; i<n_tr; ++i) hlf_v2tr.at(i) = vtr.at(i)*vtr.at(i);
     for(int i=0; i<n_l; ++i) hlf_v2l.at(i) = -vl.at(i)*vl.at(i)/2;
@@ -1095,6 +1113,10 @@ void ForceDSM::friction_force(int charge_number, int ion_number,
         double ve2_tr = ve_tr*ve_tr;
         double ve2_l = ve_l*ve_l;
         double ve2 = ve2_tr + ve2_l;
+        auto start_time = std::chrono::high_resolution_clock::now();
+        #ifdef _OPENMP
+        #pragma omp parallel for
+        #endif // _OPENMP
         for(int i=0; i<ion_number; ++i) {
             if(iszero(density.at(i))) {
                 force_tr[i] = 0;
@@ -1107,6 +1129,10 @@ void ForceDSM::friction_force(int charge_number, int ion_number,
                 force(ve_tr, ve_l, ve2_tr, ve2_l, v_tr[i], v_l[i],v2, rho_min_const, charge_number, density[i], f_const, force_tr[i], force_long[i]);
             }
         }
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto time = end_time - start_time;
+    std::cout << "Force mag DSM took " << time/std::chrono::microseconds(1) << " us to run.\n";
         break;
     }
     case Temperature::VARY: {

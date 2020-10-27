@@ -12,7 +12,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_73_x64_compiler" />
-				<Option parameters="..\debug\test_bunched_cooling_non_mag_01_openmp.txt" />
+				<Option parameters="..\debug\test_bunched_cooling_mag_Meshkov_openmp.txt" />
 				<Compiler>
 					<Add option="-std=c++11" />
 					<Add option="-pg" />
@@ -34,7 +34,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_73_x64_compiler" />
-				<Option parameters="..\debug\test_bunched_cooling_non_mag_01_openmp.txt" />
+				<Option parameters="..\debug\test_bunched_cooling_mag_DSM_openmp.txt" />
 				<Compiler>
 					<Add option="-std=c++11" />
 					<Add option="-fopenmp" />

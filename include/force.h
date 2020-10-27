@@ -253,21 +253,42 @@ class ForceDSM: public FrictionForceSolver {    //Derbenev-Skrinsky-Meshkov form
     double k = 2;
     int n_a = 100;
     int n_ve = 100;
-    bool first_run = true;
     bool const_tpr = true;
+    #ifdef _OPENMP
+    static bool first_run;
+    static vector<double> a;
+    static vector<double> cos_a;
+    static vector<double> tan_a;
+    static vector<double> t2;
+    static vector<double> ve;
+    static vector<double> exp_ve2;
+    #pragma omp threadprivate(a, cos_a, tan_a, t2, ve, exp_ve2, first_run)
+    #else
+    bool first_run = true;
     vector<double> a;
-//    vector<double> sin_a;
     vector<double> cos_a;
     vector<double> tan_a;
     vector<double> t2;
     vector<double> ve;
     vector<double> exp_ve2;
+    #endif // _OPENMP
 
-    bool first_run_fa = true;
     int n_tr = 20;
     int n_l = 10;
     int n_phi = 10;
-    double d;
+    #ifdef _OPENMP
+    static bool first_run_fa;
+    static double f_inv_norm;
+    static vector<vector<double>> exp_vtr;
+    static vector<double> hlf_v2tr;
+    static vector<double> hlf_v2l;
+    static vector<vector<double>> vtr_cos;
+    static vector<double> vl;
+    static vector<double> vtr;
+    static vector<vector<double>> v2tr_sin2;
+    #pragma omp threadprivate(exp_vtr, hlf_v2tr, hlf_v2l, vtr_cos, vl, vtr, v2tr_sin2, first_run_fa, f_inv_norm)
+    #else
+    bool first_run_fa = true;
     double f_inv_norm;
     vector<vector<double>> exp_vtr;
     vector<double> hlf_v2tr;
@@ -276,6 +297,7 @@ class ForceDSM: public FrictionForceSolver {    //Derbenev-Skrinsky-Meshkov form
     vector<double> vl;
     vector<double> vtr;
     vector<vector<double>> v2tr_sin2;
+    #endif // _OPENMP
 
 protected:
     void init(EBeam& ebeam);
