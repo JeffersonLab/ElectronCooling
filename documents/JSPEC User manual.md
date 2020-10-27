@@ -416,6 +416,7 @@ The following keywords records the results from the previous computation. They c
 | total_expansion_rate | Calculate the total expansion rate (summation of the ibs rate and electron cooling rate) and output to the screen. Must create the ion beam, the ring, the electron beam, and the cooler before calling this command. |
 | run_simulation       | Simulate the evolution of the ion beam under IBS and/or electron cooling effect(s). |
 | srand                | Seed the random number. It is used as "srand expression".  The expression will be processed by the math parser and the simplest choice is an integer. Seed  the random number with the same value will generate the same sequence of random numbers. This may be useful in debugging, testing, or verifying some results. |
+| set_n_thread         | Set the  thread number of OPENMP. It is used as "set_n_thread desired_thread_number". With serial version JSEPC, this command will envoke a warning message, but will not prevent JSPEC from running. With parallel versoin JSPEC, if the thread number is not set using this command, OPENMP will use all the available threads. |
 
 
 

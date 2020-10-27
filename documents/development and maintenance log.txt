@@ -1,3 +1,6 @@
+10/27/2020
+1. Parallel version for shared memory system with OPENMP finished. 
+
 10/09/2020
 1. Add BMZ and BMC model for ibs calculation. (Bjorken-Mtingwa model with all terms.)
 2. Change ibs_by_element output into sdds format. 

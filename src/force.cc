@@ -839,7 +839,7 @@ void ForceMeshkov::friction_force(int charge_number, int ion_number,
     }
 }
 
-
+#ifdef _OPENMP
 bool ForceDSM::first_run = true;
 vector<double> ForceDSM::a;
 vector<double> ForceDSM::cos_a;
@@ -856,6 +856,7 @@ vector<vector<double>> ForceDSM::vtr_cos;
 vector<double> ForceDSM::vl;
 vector<double> ForceDSM::vtr;
 vector<vector<double>> ForceDSM::v2tr_sin2;
+#endif // _OPENMP
 
 void ForceDSM::calc_alpha() {
 //    sin_a.resize(n_a);
