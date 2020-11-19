@@ -48,4 +48,19 @@ public:
                   Ring &ring, double &rate_x, double &rate_y, double &rate_s);
 };
 
+class ForceCurve: public ECoolRate {
+    int n_tr = 0;
+    int n_l = 0;
+    double dp_p = 0;    //Longitudinal momentum / reference momentum
+    double angle = 0;   //Angle in [rad]
+    void save_force_sdds_head(ofstream& of, int n);
+public:
+    void set_n_tr(int n){n_tr = n;}
+    void set_n_l(int n){n_l = n;}
+    void set_dp_p(double x) {dp_p = x;}
+    void set_angle(double x) {angle = x;}
+    void save_force(ofstream& of, FrictionForceSolver &force, Beam &ion, Ions &ptcl, Cooler &cooler, EBeam &ebeam,
+                  Ring &ring);
+};
+
 #endif // ECOOLING_H

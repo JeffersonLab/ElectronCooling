@@ -292,3 +292,14 @@ vector<double>& ECoolRate::scratch(ECoolRateScratch s) {
         }
     }
 }
+
+
+void ForceCurve::save_force_sdds_head(ofstream& of, int n) {
+
+}
+void ForceCurve::save_force(ofstream& of, int charge_number, int ion_number,
+            vector<double>& v_tr, vector<double>& v_l, vector<double>& density,
+            EBeam& ebeam, vector<double>& force_tr, vector<double>& force_long) {
+
+}
+

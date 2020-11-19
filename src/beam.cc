@@ -18,6 +18,7 @@ Beam::Beam(int charge_number, double mass_number, double kinetic_energy, double 
     emit_x_ = emit_nx_/(beta_*gamma_);
     emit_y_ = emit_ny_/(beta_*gamma_);
     energy_spread_ = beta_*beta_*dp_p_;
+    dv_v_ = dp_p_/(gamma_*gamma_);
     p0_ = gamma_*mass_*1e6*k_e*beta_/k_c;
 }
 
@@ -33,6 +34,7 @@ Beam::Beam(int charge_number, double mass_number, double kinetic_energy, double 
     emit_x_ = emit_nx_/(beta_*gamma_);
     emit_y_ = emit_ny_/(beta_*gamma_);
     energy_spread_ = beta_*beta_*dp_p_;
+    dv_v_ = dp_p_/(gamma_*gamma_);
     p0_ = gamma_*mass_*1e6*k_e*beta_/k_c;
 }
 
