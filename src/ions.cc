@@ -300,16 +300,16 @@ void Ions::adjust_disp_inv(){
 
 Ions_MonteCarlo::Ions_MonteCarlo(int n_sample){
     n_=n_sample;
-    x_bet.resize(n_sample);
-    y_bet.resize(n_sample);
-    xp_bet.resize(n_sample);
-    yp_bet.resize(n_sample);
-    ds.resize(n_sample);
-    dp_p.resize(n_sample);
-    x.resize(n_sample);
-    y.resize(n_sample);
-    xp.resize(n_sample);
-    yp.resize(n_sample);
+    x_bet.resize(n_sample,0);
+    y_bet.resize(n_sample,0);
+    xp_bet.resize(n_sample,0);
+    yp_bet.resize(n_sample,0);
+    ds.resize(n_sample,0);
+    dp_p.resize(n_sample,0);
+    x.resize(n_sample,0);
+    y.resize(n_sample,0);
+    xp.resize(n_sample,0);
+    yp.resize(n_sample,0);
 }
 
 Ions_MonteCarlo::Ions_MonteCarlo(std::string filename, int n, int skip, bool binary, int n_buffer) {

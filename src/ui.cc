@@ -23,6 +23,7 @@ std::unique_ptr<FrictionForceSolver> force_solver= nullptr;
 std::unique_ptr<FrictionForceSolver> force_solver_l= nullptr;
 std::unique_ptr<LuminositySolver> lum_solver = nullptr;
 std::unique_ptr<Ions> ion_sample = nullptr;
+//std::unique_ptr<ForceCurve> force_output = nullptr;
 
 Record uircd;
 std::ofstream save_to_file;
@@ -33,7 +34,8 @@ muParserHandle_t math_parser = NULL;
 std::vector<string> ION_ARGS = {"CHARGE_NUMBER", "MASS", "KINETIC_ENERGY", "NORM_EMIT_X", "NORM_EMIT_Y",
     "MOMENTUM_SPREAD", "PARTICLE_NUMBER", "RMS_BUNCH_LENGTH"};
 std::vector<string> RUN_COMMANDS = {"CREATE_ION_BEAM", "CREATE_RING", "CREATE_E_BEAM", "CREATE_COOLER",
-    "CALCULATE_IBS", "CALCULATE_ECOOL", "TOTAL_EXPANSION_RATE", "RUN_SIMULATION", "CALCULATE_LUMINOSITY", "SRAND"};
+    "CALCULATE_IBS", "CALCULATE_ECOOL", "TOTAL_EXPANSION_RATE", "RUN_SIMULATION", "CALCULATE_LUMINOSITY", "SRAND",
+    "CALCULATE_FRICTION_FORCE"};
 std::vector<string> RING_ARGS = {"LATTICE", "QX", "QY", "QS", "GAMMA_TR", "RF_V", "RF_H", "RF_PHI"};
 std::vector<string> IBS_ARGS = {"NU","NV","NZ","LOG_C","COUPLING","MODEL","IBS_BY_ELEMENT","FACTOR"};
 std::vector<string> COOLER_ARGS = {"LENGTH", "SECTION_NUMBER", "MAGNETIC_FIELD", "BET_X", "BET_Y", "DISP_X", "DISP_Y",
@@ -46,7 +48,8 @@ std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS"
     "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT", "RISE_TIME", "FALL_TIME", "CV_L", "SIGMA_XP", "SIGMA_YP", "SIGMA_DPP"};
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF", "SMOOTH_RHO_MAX", "USE_GSL",
     "N_TR", "N_L", "N_PHI", "USE_MEAN_RHO_MIN",  "MODEL", "SAMPLE_NUMBER_TR", "SAMPLE_NUMBER_L","N_STEP", "SMOOTH_FACTOR",
-    "MAGNETIC_ONLY", "DUAL_FORCE", "FORCE_FORMULA_L"};
+    "MAGNETIC_ONLY", "DUAL_FORCE", "FORCE_FORMULA_L", "FORCE_OUTPUT", "LIMIT_ANGLE", "LIMIT_MOMENTUM_SPREAD",
+    "ELECTRON_DENSITY"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK", "NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D",
     "NONMAG_NUM3D", "MESHKOV", "DSM"};
 std::vector<string> SIMULATION_ARGS = {"TIME", "STEP_NUMBER", "SAMPLE_NUMBER", "IBS", "E_COOL", "OUTPUT_INTERVAL",
@@ -848,6 +851,7 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
         }
     }
     ecool_solver->set_dual_force_solver(ptrs.ecool_ptr->dual_force_solver);
+    ecool_solver->set_save_force(ptrs.ecool_ptr->force_output);
 
     switch(ptrs.ecool_ptr->model) {
     case IonSampleType::MONTE_CARLO : {
@@ -885,6 +889,44 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
         std::cout<<"Electron cooling rate (1/s): "<<rx<<"  "<<ry<<"  "<<rz<<std::endl;
     }
 }
+
+void calculate_friction_force(Set_ptrs &ptrs) {
+    assert(ptrs.cooler.get()!=nullptr && "MUST CREATE THE COOLER BEFORE CALCULATE ELECTRON COOLING RATE!");
+    assert(ptrs.e_beam.get()!=nullptr && "MUST CREATE THE ELECTRON BEAM BEFORE CALCULATE ELECTRON COOLING RATE!");
+    assert(ptrs.ecool_ptr.get()!=nullptr && "PLEASE SET UP THE PARAMETERS FOR ELECTRON COOLING RATE CALCULATION!");
+
+    int n_tr = ptrs.ecool_ptr->n_tr;
+    int n_l = ptrs.ecool_ptr->n_l;
+    assert(n_tr>=0 && n_l >=0 && "WRONG VALUE FOR THE FRICTION FORCE CALCULATION GRID NUMBER N_TR AND N_L.");
+    double angle = ptrs.ecool_ptr->limit_angle;
+    double dp_p = ptrs.ecool_ptr->limit_dp;
+    double ne = ptrs.ecool_ptr->density_e;
+
+    assert(ptrs.ion_beam.get()!=nullptr && "MUST CREATE THE ION BEAM BEFORE CALCULATE ELECTRON COOLING RATE!");
+
+    ForceCurve force_curve;
+    create_force_solver(ptrs, ptrs.ecool_ptr->force, force_solver);
+    if(ptrs.ecool_ptr->dual_force_solver) {
+        if(ptrs.ecool_ptr->force!=ptrs.ecool_ptr->force_l){
+            create_force_solver(ptrs, ptrs.ecool_ptr->force_l, force_solver_l);
+            force_curve.set_second_force_solver(force_solver_l.get());
+        }
+        else {
+            ptrs.ecool_ptr->dual_force_solver = false;
+        }
+    }
+    force_curve.set_dual_force_solver(ptrs.ecool_ptr->dual_force_solver);
+    force_curve.set_save_force(ptrs.ecool_ptr->force_output);
+
+    force_curve.set_n_tr(n_tr);
+    force_curve.set_n_l(n_l);
+    force_curve.set_angle(angle);
+    force_curve.set_dp_p(dp_p);
+    if(ne>0) force_curve.set_electron_density(ne);
+    force_curve.force_to_file(*force_solver, *ptrs.ion_beam, *ptrs.cooler, *ptrs.e_beam);
+    return;
+}
+
 
 void total_expansion_rate(Set_ptrs &ptrs) {
     if (std::all_of(ptrs.ibs_rate.begin(), ptrs.ibs_rate.end(), [](double i) { return i==0; })) calculate_ibs(ptrs);
@@ -1101,6 +1143,9 @@ void run(std::string &str, Set_ptrs &ptrs) {
     }
     else if(str == "CALCULATE_ECOOL") {
         calculate_ecool(ptrs);
+    }
+    else if(str == "CALCULATE_FRICTION_FORCE") {
+        calculate_friction_force(ptrs);
     }
     else if(str == "CALCULATE_LUMINOSITY") {
         calculate_luminosity(ptrs);
@@ -1717,6 +1762,11 @@ void set_ecool(string &str, Set_ecool *ecool_args){
         else if (val == "OFF" || val == "FALSE") ecool_args->dual_force_solver = false;
         else assert(false&&"WRONG VALUE FOR THE PARAMETER DUAL_FORCE_SOLVER IN SECTION_ECOOL!");
     }
+    else if (var == "FORCE_OUTPUT" ) {
+        if (val == "ON" || val == "TRUE") ecool_args->force_output = true;
+        else if (val == "OFF" || val == "FALSE") ecool_args->force_output = false;
+        else assert(false&&"WRONG VALUE FOR THE PARAMETER FORCE_OUTPUT IN SECTION_ECOOL!");
+    }
     else {
         if (math_parser == NULL) {
             if (var == "SAMPLE_NUMBER") {
@@ -1736,9 +1786,18 @@ void set_ecool(string &str, Set_ecool *ecool_args){
                 ecool_args->tmpr_eff = 0;
                 ecool_args->v_eff = std::stod(val);
             }
+            else if(var == "LIMIT_ANGLE") {
+                ecool_args->limit_angle = std::stod(val);
+            }
+            else if(var == "LIMIT_MOMENTUM_SPREAD") {
+                ecool_args->limit_dp = std::stod(val);
+            }
             else if (var == "LIMIT") {
                 std::stringstream sstream(val);
                 sstream >> ecool_args->limit;
+            }
+            else if(var == "ELECTRON_DENSITY") {
+                ecool_args->density_e = std::stod(val);
             }
             else if (var == "ESPABS") {
                 ecool_args->espabs = std::stod(val);
@@ -1784,10 +1843,19 @@ void set_ecool(string &str, Set_ecool *ecool_args){
                 ecool_args->tmpr_eff = 0;
                 ecool_args->v_eff = static_cast<double>(mupEval(math_parser));
             }
+            else if(var == "LIMIT_ANGLE") {
+                ecool_args->limit_angle = static_cast<double>(mupEval(math_parser));
+            }
+            else if(var == "LIMIT_MOMENTUM_SPREAD") {
+                ecool_args->limit_dp = static_cast<double>(mupEval(math_parser));
+            }
             else if (var == "LIMIT") {
                 int l = static_cast<int>(mupEval(math_parser));
                 assert(l>0&&"Wrong value for  the parameter LIMIT in section_ecool!");
                 ecool_args->limit = static_cast<size_t>(l);
+            }
+            else if(var == "ELECTRON_DENSITY") {
+                ecool_args->density_e = static_cast<double>(mupEval(math_parser));
             }
             else if(var == "ESPABS") {
                 ecool_args->espabs = static_cast<double>(mupEval(math_parser));

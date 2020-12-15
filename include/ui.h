@@ -89,6 +89,10 @@ struct Set_ecool{
     int n_sample_tr = 0;
     int n_sample_l = 0;
     bool dual_force_solver = false;
+    bool force_output = false;
+    double limit_dp = 0;
+    double limit_angle = 0;
+    double density_e = 0;
     ForceFormula force_l = ForceFormula::PARKHOMCHUK;
 };
 

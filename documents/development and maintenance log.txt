@@ -1,3 +1,5 @@
+12/12/2020
+1. Output friction force.
 10/27/2020
 1. Parallel version for shared memory system with OPENMP finished. 
 

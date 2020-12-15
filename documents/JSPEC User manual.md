@@ -128,7 +128,42 @@ section_run
 	calculate_ecool		# Calculate the electron cooling rate
 ```
 
+### Calculate and output the friction force
 
+When calculating the cooling rate, the friction force on all sample ions are calculated. To output the friction force to a file, one can set the paramter "force_output" to be true  in the section_ecool. The results will be saved in a file named as "Friction_force_on_ions_YYYY-MM-DD-HH-MM-SS.sdds". The default value of this parameter is false and it is recommanded to leave the value as false in simulations when the rate is calculated repeatedly. 
+
+
+
+It is possible to calculate and save the friction force in a user-defined paramter (longitudinal momentum spread and transvere angle) range without calculating the cooling rate using the command "calculate_friction_force". 
+
+
+
+```
+section_ion		# Define the ion beam
+	......	
+section_ring	# Define the ring
+	......
+section_e_beam	# Define the electron beam
+	......
+sectoin_cooler	# Define the cooler
+	......
+section_ecool	# Set the parameters for the electron cooling rate calculation
+	force_formula = PARKHOMCHUK	# Choose the force formula
+	limit_momentum_spread = 0.001 # Set the limit of the longitudinal momentum spread
+	limit_angle = 0.0002 # Set the limit of the transverse angle in the lab frame
+	n_l = 10 # Set the grid number (2*n_l+1) for the longitudinal momentum spread
+	n_tr = 10 # Set the grid number (n_tr+1) for the transverse angle
+	n_l = 1
+#	electron_density = 8.0416806140e+14 # The electron density in electron beam frame
+section_run
+	create_ion_beam 	# Create the ion beam
+	create_ring			# Create the ring
+	create_e_beam		# Create the electron beam
+	create_cooler		# Create the cooler
+	calculate_friction_force		# Calculate and save the friction force
+```
+
+In the above exmaple, JSPEC will calculate the friction force on ions with the longitudinal momentum spread from [-0.001, 0.001] with a step size of 0.0001 and the transverse angle from [0, 0.0002] with a step size of 0.00002. If the electron_density is set, the value will be used in friction force calculation on all particles. If not as in the above exmaple, the density will be calculated at the center of the electron beam defined in the section_e_beam. (If a position shift or a velocity shift between the electron beam and the ion beam is defined, it will be included in the friction force calculation. ) This approach means we practically assumes all the ions are in the same position with different momentums and can be used to study how the friction force is affected by the velocity of the ions. 
 
 ### Simulation
 
@@ -337,18 +372,22 @@ The following keywords records the results from the previous computation. They c
 
 **section_ecool**
 
-| Keywords          | Meaning                                                      |
-| ----------------- | ------------------------------------------------------------ |
-| sample_number     | Number of the sample ions.                                   |
-| force_formula     | Choose the formula for friction force calculation. Now support four formulas for non-magnetized cooling force ("NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D", and "NONMAG_NUM3D")  and the Parkhomchuk formula for magnetized cooling force. |
-| tmp_eff           | Set the effective temperature for parkhomchuk formula. The value should NOT be negative. Setting this parameter makes the "v_eff" be zero. |
-| v_eff             | Set the effective velocity for parkhomchuk formula. Setting this parameter make the "tmp_eff" be zero. |
-| smooth_rho_max    | Use the formula that has a smooth dependence on ion velocity to calculate the maximum impact parameter for non-magnetized friction force. |
-| use_mean_rho_mean | Use the mean minimal impact parameter to calculate the Coulomb logrithm in the 3D numerical formula for non-magnetized friction force. |
-| use_gsl           | Use gsl integrator to perform the 3D numerical integration for non-magnetized friction force. If set false, one can perform the 3D integration in a regular grid, which could be faster with a little sacrifice on accuracy. |
-| n_tr              | Set the number of grid for the 3D integration in a regular grid when calculating non-magnetized force, when use_gsl is false. |
-| n_l               | Set the number of grid for the 3D integration in a regular grid when calculating non-magnetized force, when use_gsl is false. |
-| n_phi             | Set the number of grid for the 3D integration in a regular grid when calculating non-magnetized force, when use_gsl is false. |
+| Keywords              | Meaning                                                      |
+| --------------------- | ------------------------------------------------------------ |
+| sample_number         | Number of the sample ions.                                   |
+| force_formula         | Choose the formula for friction force calculation. Now support four formulas for non-magnetized cooling force ("NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D", and "NONMAG_NUM3D")  and the Parkhomchuk formula for magnetized cooling force. |
+| tmp_eff               | Set the effective temperature for parkhomchuk formula. The value should NOT be negative. Setting this parameter makes the "v_eff" be zero. |
+| v_eff                 | Set the effective velocity for parkhomchuk formula. Setting this parameter make the "tmp_eff" be zero. |
+| smooth_rho_max        | Use the formula that has a smooth dependence on ion velocity to calculate the maximum impact parameter for non-magnetized friction force. |
+| use_mean_rho_mean     | Use the mean minimal impact parameter to calculate the Coulomb logrithm in the 3D numerical formula for non-magnetized friction force. |
+| use_gsl               | Use gsl integrator to perform the 3D numerical integration for non-magnetized friction force. If set false, one can perform the 3D integration in a regular grid, which could be faster with a little sacrifice on accuracy. |
+| n_tr                  | Usage scenario 1: Set the number of grid for the 3D integration in a regular grid when calculating non-magnetized force, when use_gsl is false. Usage scenario 2: Use together with the command "calculate_friction_force" and set the grid of transverse angle from 0 to limit_angle with a step size of limit_angle/n_tr. |
+| n_l                   | Usage scenario 1: Set the number of grid for the 3D integration in a regular grid when calculating non-magnetized force, when use_gsl is false. Usage scenario 2: Use together with the command "calculate_friction_force" and set the grid of longitudinal momentum spread from -limit_momentum_spread to limit_momentum_spread with a step size of limit_momentum_spread/(2*n_l). |
+| n_phi                 | Set the number of grid for the 3D integration in a regular grid when calculating non-magnetized force, when use_gsl is false. |
+| force_output          | Set whether to output the friction force on each ion when calculating the electron cooling rate. Default value is false. When set true, the friction force on each ions will be saved in the file named as "Friction_force_on_ions_YYYY-MM-DD-HH-MM-SS.sdds". |
+| limit_angle           | Use together with the command "calculate_friction_force" and set the limit of the transverse angle as [0, limit_angle]. |
+| limit_momentum_spread | Use together with the command "calculate_friction_force" and set the limit of the longitudinal momentum spread as [-limit_momentum_spread, limit_momentum_spread]. |
+| electron_density      | Use together with the command "calculate_friction_force" and set electron density in the electron beam frame in [1/m^3]. Without setting this parameter, the electron density will be calculated at the center of the user-defined electron beam in section_e_beam. (If a position shift between the electron beam and the ion beam is defined, it will be included in the density calculation. ) |
 
 **section_luminosity**
 
@@ -404,19 +443,20 @@ The following keywords records the results from the previous computation. They c
 
 **section_run**
 
-| Keywords             | Meaning                                                      |
-| -------------------- | ------------------------------------------------------------ |
-| create_ion_beam      | Create the ion beam.                                         |
-| create_ring          | Create the ring. Must create the ion beam before calling this command. |
-| create_e_beam        | Create the electron beam                                     |
-| create_cooler        | Create the cooler.                                           |
-| calculate_ibs        | Calculate the IBS rate and output to the screen. Must create the ion beam and the ring before calling this command. |
-| calculate_ecool      | Calculate the electron cooling rate and output to the screen. Must create the ion beam, the ring, the electron beam, and the cooler before calling this command. |
-| calculate_luminosity | Calculate the luminosity, in [1/s * 1/cm^2]                  |
-| total_expansion_rate | Calculate the total expansion rate (summation of the ibs rate and electron cooling rate) and output to the screen. Must create the ion beam, the ring, the electron beam, and the cooler before calling this command. |
-| run_simulation       | Simulate the evolution of the ion beam under IBS and/or electron cooling effect(s). |
-| srand                | Seed the random number. It is used as "srand expression".  The expression will be processed by the math parser and the simplest choice is an integer. Seed  the random number with the same value will generate the same sequence of random numbers. This may be useful in debugging, testing, or verifying some results. |
-| set_n_thread         | Set the  thread number of OPENMP. It is used as "set_n_thread desired_thread_number". With serial version JSEPC, this command will envoke a warning message, but will not prevent JSPEC from running. With parallel versoin JSPEC, if the thread number is not set using this command, OPENMP will use all the available threads. |
+| Keywords                 | Meaning                                                      |
+| ------------------------ | ------------------------------------------------------------ |
+| create_ion_beam          | Create the ion beam.                                         |
+| create_ring              | Create the ring. Must create the ion beam before calling this command. |
+| create_e_beam            | Create the electron beam                                     |
+| create_cooler            | Create the cooler.                                           |
+| calculate_ibs            | Calculate the IBS rate and output to the screen. Must create the ion beam and the ring before calling this command. |
+| calculate_ecool          | Calculate the electron cooling rate and output to the screen. Must create the ion beam, the ring, the electron beam, and the cooler before calling this command. |
+| calculate_luminosity     | Calculate the luminosity, in [1/s * 1/cm^2]                  |
+| calculate_friction_force | Calculte the friction force in the user-defined parameter domain and save the result in the file named as "Friction_force_on_ions_YYYY-MM-DD-HH-MM-SS.sdds". |
+| total_expansion_rate     | Calculate the total expansion rate (summation of the ibs rate and electron cooling rate) and output to the screen. Must create the ion beam, the ring, the electron beam, and the cooler before calling this command. |
+| run_simulation           | Simulate the evolution of the ion beam under IBS and/or electron cooling effect(s). |
+| srand                    | Seed the random number. It is used as "srand expression".  The expression will be processed by the math parser and the simplest choice is an integer. Seed  the random number with the same value will generate the same sequence of random numbers. This may be useful in debugging, testing, or verifying some results. |
+| set_n_thread             | Set the  thread number of OPENMP. It is used as "set_n_thread desired_thread_number". With serial version JSEPC, this command will envoke a warning message, but will not prevent JSPEC from running. With parallel versoin JSPEC, if the thread number is not set using this command, OPENMP will use all the available threads. |
 
 
 
