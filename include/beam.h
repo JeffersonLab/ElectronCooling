@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include "arbitrary_electron_beam.h"
+#include "cooler.h"
 
 class Beam{
     int charge_number_;   //Number of charges
@@ -23,6 +24,7 @@ class Beam{
     double emit_y_;  //geometrical vertical emittance, in m
     double dp_p_;     //momentum spread dp/p
     double energy_spread_;       // dE/E
+    double dv_v_;     // dv/v
     double sigma_s_; //RMS bunch length. set it to -1 for coasting beam, in m
     double particle_number_; //number of particles
     double p0_; //momentum in kg*m/s
@@ -34,7 +36,7 @@ public:
     int set_emit_ny(double x){emit_ny_ = x; emit_y_ = emit_ny_/(beta_*gamma_); return 0;}
     int set_emit_x(double x){emit_x_ = x; emit_nx_ = beta_*gamma_*emit_x_; return 0;}
     int set_emit_y(double x){emit_y_ = x; emit_ny_ = beta_*gamma_*emit_y_; return 0;}
-    int set_dp_p(double x){dp_p_ = x; energy_spread_ = beta_*beta_*dp_p_; return 0;}
+    int set_dp_p(double x){dp_p_ = x; energy_spread_ = beta_*beta_*dp_p_; dv_v_ = dp_p_/(gamma_*gamma_); return 0;}
     int set_sigma_s(double x){sigma_s_ = x; return 0;}
     int set_center(double cx, double cy, double cz){center_[0] = cx; center_[1] = cy; center_[2] = cz; return 0;}
     int set_center(int i, double x);
@@ -49,6 +51,7 @@ public:
     double emit_y() const {return emit_y_;}
     double dp_p() const {return dp_p_;}
     double energy_spread() const {return energy_spread_;}
+    double velocity_spread() const {return dv_v_;}
     double sigma_s() const {return sigma_s_;}
     double r() const {return r_;}
     double particle_number() const {return particle_number_;}
@@ -71,6 +74,7 @@ enum class Shape {UNIFORM_CYLINDER, GAUSSIAN_BUNCH, UNIFORM_BUNCH, GAUSSIAN_CYLI
 enum class Velocity {CONST, USER_DEFINE, SPACE_CHARGE, VARY, VARY_X, VARY_Y, VARY_Z}  ;
 enum class Temperature {CONST, USER_DEFINE, SPACE_CHARGE, VARY, VARY_X, VARY_Y, VARY_Z}  ;
 enum class EBeamV {TPR_TR, TPR_L, V_RMS_TR, V_RMS_L, V_AVG_X, V_AVG_Y, V_AVG_L};
+enum class EdgeEffect {Rising, Falling};
 
 class EBeam {
 protected:
@@ -136,6 +140,10 @@ public:
     vector<double>& cx(){return cx_;}
     vector<double>& cy(){return cy_;}
     vector<double>& cz(){return cz_;}
+    virtual void edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                             vector<double>& field, int n){};
+    virtual void edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                             vector<double>& field, int n, double cx, double cy, double cz){};
     void set_n_bunches(int n){n_ = n; cx_.resize(n); cy_.resize(n), cz_.resize(n);}
     virtual void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n) = 0;
     virtual void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
@@ -143,6 +151,10 @@ public:
     void multi_density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
     void multi_density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
                          double cx, double cy, double cz);
+    void multi_edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                             vector<double>& field, int n);
+    void multi_edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                             vector<double>& field, int n, double cx, double cy, double cz);
 };
 
 class UniformCylinder: public EBeam{
@@ -201,6 +213,8 @@ class UniformBunch: public EBeam{
     double current_;                   //Current of the beam in A, assuming the beam is DC.
     double radius_;              //Radius of the beam in meter
     double length_;
+    double t_rising_ = 0;
+    double t_falling_ = 0;
 public:
     //Calculate the charge density for a given position (x,y,z) in Lab frame.
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
@@ -210,6 +224,12 @@ public:
     double length() const {return length_;}
     double current() const {return current_;}
     double radius() const {return radius_;}
+    void set_rising_time(double x){t_rising_ = x;}
+    void set_falling_time(double x){t_falling_ = x;}
+    void edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                    vector<double>& field, int n);
+    void edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
+                    vector<double>& field, int n, double cx, double cy, double cz);
     UniformBunch(double current, double radius, double length):current_(current),radius_(radius),
             length_(length){};
 

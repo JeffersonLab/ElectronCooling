@@ -1,0 +1,25 @@
+section_ion #define the ion beam
+	charge_number = 1
+	mass = 938.272
+   	kinetic_energy = 100000
+	norm_emit_x = 1.200612578e-6
+	norm_emit_y = 0.600306289e-6
+	momentum_spread = 0.0004
+	particle_number = 6.56E9
+	rms_bunch_length =0.008330965894
+	
+section_ring #define the ring
+	lattice = test2.tfs
+	
+section_ibs #define the arguments for IBS calculation
+	model = bmz
+	factor = 3
+#	ibs_by_element = true
+	nz = 1000
+	log_c = 20	#Optional, default is 20. 
+	coupling = 0
+	
+section_run #start calculation
+ 	create_ion_beam
+	create_ring
+	calculate_ibs

@@ -5,35 +5,88 @@
 #include "constants.h"
 #include "ecooling.h"
 #include "functions.h"
+#include "other_effects.h"
 #include "particle_model.h"
 #include "ring.h"
+
+void TurnByTurnModel::apply_edge_kick(Cooler& cooler, EBeam& ebeam, Beam& ion, Ions& ion_sample, ECoolRate* ecool_solver) {
+//    ::edge_effect(ebeam, ion, ion_sample, cooler, dt);
+    vector<double>& x = ion_sample.cdnt(Phase::X);
+    vector<double>& y = ion_sample.cdnt(Phase::Y);
+    vector<double>& ds = ion_sample.cdnt(Phase::DS);
+    vector<double>& dp_p = ion_sample.cdnt(Phase::DP_P);
+    double p0 = ion.p0_SI();
+    int n = ion_sample.n_sample();
+    rdn.resize(n);
+
+//    if(ecool_solver.p_shift_) {
+//        double cx, cy, cz;
+//        ion_sample.center(cx, cy, cz);
+//        if(ebeam.multi_bunches()) ebeam.multi_edge_field(x, y, ds, rdn, n, cx, cy, cz);
+//        else ebeam.edge_field(x, y, ds, rdn, n, cx, cy, cz);
+//
+//    }
+//    else {
+//        if(ebeam.multi_bunches()) ebeam.multi_edge_field(x, y, ds, rdn, n);
+//        else ebeam.edge_field(cooler, x, y, z, rdn, n);
+//    }
+
+    ebeam.edge_field(cooler, x, y, ds, rdn, n);
+    double q = ion.charge_number()*k_e;
+    double coef = q*ecool_solver->t_cooler()*cooler.section_number()/p0;
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
+    for(int i=0; i<n; ++i) {
+        dp_p[i] *= (1+rdn.at(i)*coef/dp_p.at(i));
+//        dp_p.at(i) = dp_p.at(i)*exp(rdn.at(i)*coef/dp_p.at(i));
+
+//        double dp = rdn.at(i)*coef/dp_p.at(i);
+//        dp_p[i] = dp>0.15?dp_p[i]*(1+dp):dp_p[i]*exp(dp);
+    }
+}
 
 void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
     //Transverse
     //New betatron oscillation coordinates
-    auto twiss = ion_sample.get_twiss();
-//    double dx = twiss.disp_x;
-//    double dpx = twiss.disp_dx;
-//    double dy = twiss.disp_y;
-//    double dpy = twiss.disp_dy;
-
-    int n_sample = ion_sample.n_sample();
-    ion_sample.adjust_disp_inv();
+    Twiss& twiss = ion_sample.get_twiss();
 
     //Transverse motion by tunes
     assert(ring.tunes.qx>0&&ring.tunes.qy>0&&"Transverse tunes are needed for Turn_by_turn model");
     double Qx = ring.tunes.qx;
     double Qy = ring.tunes.qy;
-    auto x_bet = ion_sample.cdnt(Phase::X_BET);
-    auto xp_bet = ion_sample.cdnt(Phase::XP_BET);
-    auto y_bet = ion_sample.cdnt(Phase::Y_BET);
-    auto yp_bet = ion_sample.cdnt(Phase::YP_BET);
+    vector<double>& x_bet = ion_sample.cdnt(Phase::X_BET);
+    vector<double>& xp_bet = ion_sample.cdnt(Phase::XP_BET);
+    vector<double>& y_bet = ion_sample.cdnt(Phase::Y_BET);
+    vector<double>& yp_bet = ion_sample.cdnt(Phase::YP_BET);
+
+    vector<double>& dp_p = ion_sample.cdnt(Phase::DP_P);
+    vector<double>& ds = ion_sample.cdnt(Phase::DS);
+
+    int n_sample = ion_sample.n_sample();
+    ion_sample.adjust_disp_inv();
+
+    if(idx>=0 && idx<n_sample) {
+        if(file_exists(filename_single_particle)) {
+            out_single_particle<<x_bet.at(idx)<<' '<<xp_bet.at(idx)<<' '<<y_bet.at(idx)<<' '<<yp_bet.at(idx)<<' '
+                                <<dp_p.at(idx)<<' '<<ds.at(idx)<<endl;
+        }
+        else {
+            filename_single_particle += time_to_filename()+".txt";
+            out_single_particle.open(filename_single_particle);
+            out_single_particle.precision(10);
+        }
+    }
+
     double bet_x = twiss.bet_x;
     double bet_y = twiss.bet_y;
     double alf_x = twiss.alf_x;
     double alf_y = twiss.alf_y;
     double gamma_x = (1+alf_x*alf_x)/bet_x;
     double gamma_y = (1+alf_y*alf_y)/bet_y;
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for (int i=0; i<n_sample; ++i) {
         double phi = 2*k_pi*Qx;
         double x_bet_0 = x_bet[i];
@@ -48,8 +101,8 @@ void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
     }
 
     //Longitudinal motion.
-    auto dp_p = ion_sample.cdnt(Phase::DP_P);
-    auto ds = ion_sample.cdnt(Phase::DS);
+//    vector<double>& dp_p = ion_sample.cdnt(Phase::DP_P);
+//    vector<double>& ds = ion_sample.cdnt(Phase::DS);
     if (ring.tunes.qs>0||ring.rf.v>0) {    //RF, synchrotron oscillation.
 //        assert(ring.tunes->qs>0||ring.rf->v>0&&"Longitudinal tune or RF cavity needed for Turn_by_turn model");
 
@@ -76,6 +129,9 @@ void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
 //            double sin_phi_s = sin(phi_s+phi_0);
             double eta = 1/(ring.rf.gamma_tr*ring.rf.gamma_tr) - 1/(ion.gamma()*ion.gamma()); //phase slip factor
             double adj_dE2dphi = total_phase*eta*beta2_inv*total_energy_inv;
+            #ifdef _OPENMP
+                #pragma omp parallel for
+            #endif // _OPENMP
             for(int i = 0; i < n_sample; ++i) {
                 dp_p[i] *= adj_dp2dE; //dp/p -> dE/E -> dE in [MeV/c^2]
 //                ds[i] += s_s;  //s = ds + s_s: adjust ds to be measured from the start of the ring
@@ -96,6 +152,9 @@ void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
             double phi = 2*k_pi*ring.tunes.qs;
             double inv_beta_s = 1/ring.beta_s();
             double beta_s = ring.beta_s();
+            #ifdef _OPENMP
+                #pragma omp parallel for
+            #endif // _OPENMP
             for (int i=0; i<n_sample; ++i) {
                 double dp_p_0 = dp_p[i];
                 double ds_0 = ds[i];
@@ -108,6 +167,9 @@ void TurnByTurnModel::move_particles(Beam& ion, Ions& ion_sample, Ring& ring) {
         double gamma_0 = ion.gamma();
         double beta_0 = ion.beta();
         double half_length = 0.5*ring.circ();
+        #ifdef _OPENMP
+            #pragma omp parallel for
+        #endif // _OPENMP
         for(int i=0; i<n_sample; ++i) {
             double gamma2 = 1+(1+dp_p[i])*(1+dp_p[i])*(gamma_0*gamma_0-1);
             double beta = sqrt(1-1/gamma2);

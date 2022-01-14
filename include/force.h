@@ -8,6 +8,7 @@
 #include "beam.h"
 #include "constants.h"
 
+
 using std::vector;
 enum class ForceFormula {PARKHOMCHUK, NONMAG_DERBENEV, NONMAG_MESHKOV, NONMAG_NUM1D, NONMAG_NUM3D, MESHKOV, DSM};
 
@@ -89,7 +90,8 @@ class ForceNonMagNumeric1D: public ForceNonMag {
 private:
     double f_const(int charge_number){return 0.28209479177387814*charge_number*charge_number*k_f;} //Coef - 1/sqrt(4*pi)
     const double k_f = 2*sqrt(2*k_pi)*k_pi*k_c*k_c*k_ke*k_ke*k_e*k_e*k_e/(k_me*1e6);
-    gsl_integration_workspace *gw = nullptr;
+
+
     size_t limit = 100;
     double espabs = 1e-6;
     double esprel = 1e-6;
@@ -99,7 +101,15 @@ private:
         double ve_tr;
         double ve_l;
         int flag;   //0: calculate B_tr; else: calculate B_l;
-    }p;
+    };
+
+    #ifdef _OPENMP
+    vector<gsl_integration_workspace*> gw;
+    vector<P> p;
+    #else
+    gsl_integration_workspace *gw = nullptr;
+    P p;
+    #endif // _OPENMP
     double b(double q, void* params);
     void force(double v, double v_tr, double v_l, double v2, double ve_tr, double ve_l, double ve2,
                                double f_const, double rho_min_const, int charge_number, double ne,
@@ -107,17 +117,13 @@ private:
 public:
     void set_espabs(double x){espabs = x;}
     void set_esprel(double x){esprel = x;}
-    ForceNonMagNumeric1D(int n=100):limit(n){gsl_set_error_handler_off();gw = gsl_integration_workspace_alloc(limit);}
-    ~ForceNonMagNumeric1D(){gsl_integration_workspace_free(gw);}
+    ForceNonMagNumeric1D(int n=100);
+    ~ForceNonMagNumeric1D();
 };
 
 //
 class ForceNonMagNumeric3D: public ForceNonMag {
 private:
-    gsl_integration_workspace *giw;
-    gsl_integration_workspace *gmw;
-    gsl_integration_workspace *gow;
-
     size_t limit = 100;
     double espabs = 1e-5;
     double esprel = 1e-3;
@@ -131,20 +137,39 @@ private:
         double rho_max;
         int charge_number;
         int flag;   //0: calculate B_tr; else: calculate B_l;
-    }p;
+    };
 
     bool use_gsl = false;
     bool use_mean_rho_min = false;
+
+    #ifdef _OPENMP
+    vector<gsl_integration_workspace*> giw;
+    vector<gsl_integration_workspace*> gmw;
+    vector<gsl_integration_workspace*> gow;
+    vector<P> p;
+    #else
+    gsl_integration_workspace *giw = nullptr;
+    gsl_integration_workspace *gmw = nullptr;
+    gsl_integration_workspace *gow = nullptr;
+    P p;
+    #endif // _OPENMP
+
+    #ifdef _OPENMP
+    static double mean_rho_min;
+    static double mean_lc;
+    #pragma omp threadprivate(mean_rho_min, mean_lc)
+    static bool first_run;
+    static vector<vector<double>> exp_vtr;
+    static vector<double> hlf_v2tr;
+    static vector<double> hlf_v2l;
+    static vector<vector<double>> vtr_cos;
+    static vector<double> vl;
+    static vector<double> vtr;
+    static vector<vector<double>> v2tr_sin2;
+    #pragma omp threadprivate(exp_vtr, hlf_v2tr, hlf_v2l, vtr_cos, vl, vtr, v2tr_sin2, first_run)
+    #else
     double mean_rho_min = 0;
     double mean_lc = 0;
-
-    bool first_run = true;
-    bool const_tmpr = true;
-    int n_tr = 20;
-    int n_l = 10;
-    int n_phi = 10;
-    double d;
-    double f_inv_norm;
     vector<vector<double>> exp_vtr;
     vector<double> hlf_v2tr;
     vector<double> hlf_v2l;
@@ -152,11 +177,18 @@ private:
     vector<double> vl;
     vector<double> vtr;
     vector<vector<double>> v2tr_sin2;
+    bool first_run = true;
+    #endif // _OPENMP
+    bool const_tmpr = true;
+    int n_tr = 20;
+    int n_l = 10;
+    int n_phi = 10;
+    double d;
+    double f_inv_norm;
+
 
     void pre_int(double sgm_vtr, double sgm_vl);
     void calc_exp_vtr(double sgm_vtr, double sgm_vl);
-
-
 
     void init(EBeam& ebeam);
     double inner_integrand(double phi, void* params);
@@ -179,15 +211,8 @@ public:
     void set_gsl(bool b) {use_gsl = b;}
     void set_mean_rho_min(bool b) {use_mean_rho_min = b;}
     void set_grid(int ntr, int nl, int nphi){n_tr = ntr; n_l = nl; n_phi = nphi; first_run = true;}
-    ForceNonMagNumeric3D(int n=100):limit(n){giw = gsl_integration_workspace_alloc(limit); gmw = gsl_integration_workspace_alloc(limit);
-        gow = gsl_integration_workspace_alloc(limit);}
-    ~ForceNonMagNumeric3D(){
-        if(use_gsl) {
-            gsl_integration_workspace_free(giw);
-            gsl_integration_workspace_free(gmw);
-            gsl_integration_workspace_free(gow);
-        }
-    }
+    ForceNonMagNumeric3D(int n=100);
+    ~ForceNonMagNumeric3D();
 };
 
 //gsl function wrapper for member functions in class.
@@ -228,21 +253,42 @@ class ForceDSM: public FrictionForceSolver {    //Derbenev-Skrinsky-Meshkov form
     double k = 2;
     int n_a = 100;
     int n_ve = 100;
-    bool first_run = true;
     bool const_tpr = true;
+    #ifdef _OPENMP
+    static bool first_run;
+    static vector<double> a;
+    static vector<double> cos_a;
+    static vector<double> tan_a;
+    static vector<double> t2;
+    static vector<double> ve;
+    static vector<double> exp_ve2;
+    #pragma omp threadprivate(a, cos_a, tan_a, t2, ve, exp_ve2, first_run)
+    #else
+    bool first_run = true;
     vector<double> a;
-//    vector<double> sin_a;
     vector<double> cos_a;
     vector<double> tan_a;
     vector<double> t2;
     vector<double> ve;
     vector<double> exp_ve2;
+    #endif // _OPENMP
 
-    bool first_run_fa = true;
     int n_tr = 20;
     int n_l = 10;
     int n_phi = 10;
-    double d;
+    #ifdef _OPENMP
+    static bool first_run_fa;
+    static double f_inv_norm;
+    static vector<vector<double>> exp_vtr;
+    static vector<double> hlf_v2tr;
+    static vector<double> hlf_v2l;
+    static vector<vector<double>> vtr_cos;
+    static vector<double> vl;
+    static vector<double> vtr;
+    static vector<vector<double>> v2tr_sin2;
+    #pragma omp threadprivate(exp_vtr, hlf_v2tr, hlf_v2l, vtr_cos, vl, vtr, v2tr_sin2, first_run_fa, f_inv_norm)
+    #else
+    bool first_run_fa = true;
     double f_inv_norm;
     vector<vector<double>> exp_vtr;
     vector<double> hlf_v2tr;
@@ -251,6 +297,7 @@ class ForceDSM: public FrictionForceSolver {    //Derbenev-Skrinsky-Meshkov form
     vector<double> vl;
     vector<double> vtr;
     vector<vector<double>> v2tr_sin2;
+    #endif // _OPENMP
 
 protected:
     void init(EBeam& ebeam);

@@ -13,6 +13,7 @@ class Cooler{
     double alpha_v_;
     double der_disp_h_;
     double der_disp_v_;
+    double pipe_radius_ = 0;
  public:
     double length(){return length_;}
     double section_number(){return section_number_;}
@@ -25,6 +26,8 @@ class Cooler{
     double disp_v(){return disp_v_;}
     double der_disp_h(){return der_disp_h_;}
     double der_disp_v(){return der_disp_v_;}
+    double pipe_radius(){return pipe_radius_;}
+    void set_pipe_radius(double x){pipe_radius_ = x;}
     Cooler(double length, double section_number, double magnetic_field, double beta_h, double beta_v, double disp_h=0,
            double disp_v=0, double alpha_h=0, double alpha_v=0, double der_disp_h=0, double der_disp_v=0):length_(length),
            section_number_(section_number), magnetic_field_(magnetic_field), beta_h_(beta_h), beta_v_(beta_v),

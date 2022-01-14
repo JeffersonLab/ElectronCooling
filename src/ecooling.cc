@@ -3,6 +3,12 @@
 #include <chrono>
 #include <cmath>
 #include <cstring>
+
+
+
+#ifdef _OPENMP
+    #include <omp.h>
+#endif // _OPENMP
 #include "constants.h"
 #include "cooler.h"
 #include "force.h"
@@ -94,6 +100,28 @@ void ECoolRate::force(int n_sample, Beam &ion, EBeam &ebeam, Cooler &cooler, Fri
         force_solver_l->set_time_cooler(t_cooler_);
         force_solver_l->friction_force(ion.charge_number(), n_sample, v_tr, v_long, ne, ebeam, force_y, force_z); //force_y will be ignored in the following.
     }
+
+    if(save_force) {
+        string filename = time_to_filename();
+        filename = "Friction_force_on_ions_" + filename + ".sdds";
+        std::ofstream of;
+        of.open (filename);
+        if(of.is_open()){
+            std::cout<<"File opened: "<<filename<<" ."<<std::endl;
+            save_force_sdds_head(of, n_sample);
+            of.precision(10);
+            of<<std::showpos;
+            of<<std::scientific;
+            for(int i=0; i<n_sample; ++i) {
+                of<<ne.at(i)<<' '<<v_tr.at(i)<<' '<<v_long.at(i)<<' '<<force_x.at(i)<<' '<<force_z.at(i);
+                of<<std::endl;
+            }
+            of.close();
+        }
+        else {
+            std::cout<<"Failed to open file: "<<filename<<" !"<<std::endl;
+        }
+    }
 }
 
 void ECoolRate::bunched_to_coasting(Beam &ion, Ions& ion_sample, EBeam &ebeam, Cooler &cooler,
@@ -145,6 +173,9 @@ void ECoolRate::force_distribute(int n_sample, Beam &ion, Ions &ion_sample) {
     double v0 = ion.beta()*k_c;
     vector<double>& xp = ion_sample.cdnt(Phase::XP);
     vector<double>& yp = ion_sample.cdnt(Phase::YP);
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(int i=0; i<n_sample; ++i){
         force_y[i] = yp[i]!=0?force_x[i]*yp[i]*v0/v_tr[i]:0;
         force_x[i] = xp[i]!=0?force_x[i]*xp[i]*v0/v_tr[i]:0;
@@ -156,6 +187,9 @@ void ECoolRate::apply_kick(int n_sample, Beam &ion, Ions& ion_sample) {
     vector<double>& ixp = ion_sample.cdnt(Phase::XP);
     vector<double>& iyp = ion_sample.cdnt(Phase::YP);
     vector<double>& idp_p = ion_sample.cdnt(Phase::DP_P);
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(int i=0; i<n_sample; ++i){
         xp[i] = !iszero(ixp[i])?ixp[i]*exp(force_x[i]*t_cooler_/(p0*ixp[i])):ixp[i];
         yp[i] = !iszero(iyp[i])?iyp[i]*exp(force_y[i]*t_cooler_/(p0*iyp[i])):iyp[i];
@@ -214,6 +248,7 @@ void ECoolRate::ecool_rate(FrictionForceSolver &force_solver, Beam &ion,
 
     //Distribute the friction force into x,y direction.
     force_distribute(n_sample,ion, ion_sample);
+
     //Original emittance
     double emit_x0, emit_y0, emit_z0;
     ion_sample.emit(emit_x0, emit_y0, emit_z0);
@@ -224,6 +259,7 @@ void ECoolRate::ecool_rate(FrictionForceSolver &force_solver, Beam &ion,
     //New emittance
     double emit_x, emit_y, emit_z;
     auto t = ion_sample.get_twiss();
+
     adjust_disp_inv(t.disp_x, x_bet, dp_p, ion_sample.cdnt(Phase::X), n_sample);
     adjust_disp_inv(t.disp_dx, xp_bet, dp_p, xp, n_sample);
     adjust_disp_inv(t.disp_y, y_bet, dp_p, ion_sample.cdnt(Phase::Y), n_sample);
@@ -281,3 +317,53 @@ vector<double>& ECoolRate::scratch(ECoolRateScratch s) {
         }
     }
 }
+
+void ECoolRate::save_force_sdds_head(std::ofstream& of, int n) {
+    using std::endl;
+    of<<"SDDS1"<<endl;
+    of<<"! Define colums:"<<endl
+        <<"&column name=ne, type=double, units=1/m^3, description=\"electron density\", &end"<<endl
+        <<"&column name=v_tr, type=double, units=m/s, description=\"relative transverse velocity\", &end"<<endl
+        <<"&column name=v_long, type=double, units=m/s, description=\"relative longitudinal velocity\", &end"<<endl
+        <<"&column name=force_tr, type=double, units=N, description=\"transverse friction force\", &end"<<endl
+        <<"&column name=force_l, type=double, units=N, description=\"longitudinal friction force\", &end"<<endl
+        <<"!Declare ASCII data and end the header"<<endl
+        <<"&data mode=ascii, &end"<<endl
+        <<n<<endl;
+}
+
+void ForceCurve::force_to_file(FrictionForceSolver &force_solver, Beam &ion, Cooler &cooler, EBeam &ebeam){
+    save_force = true;
+    if(iszero(dp_p, 1e-14)) n_l = 0;
+    if(iszero(angle, 1e-14)) n_tr = 0;
+    int n_sample = (n_tr+1) * (2*n_l+1);
+    if(n_sample>scratch_size) init_scratch(n_sample);
+    Ions_MonteCarlo ion_sample(n_sample);
+    if(density_e>0) ne.assign(n_sample, density_e*ebeam.gamma());
+    else electron_density(ion_sample,ebeam);
+
+    // space to dynamic
+    double v = ion.beta()*k_c;
+    if (dp_p<0) dp_p *= -1;
+    if (angle<0) angle *= -1;
+    double da = angle/n_tr;
+    double dp = v*dp_p/n_l;
+    double dpp = dp_p*v;
+    for(int i=0; i<2*n_l+1; ++i) {
+        double a = angle;
+        for(int j=0; j<n_tr+1; ++j) {
+            v_long[i*(n_tr+1)+j] = dpp;
+            v_tr[i*(n_tr+1)+j] = v*sin(a);
+            a -= da;
+        }
+        dpp -= dp;
+    }
+
+    //Time through the cooler
+    t_cooler_ = cooler.length()/v;
+    // Transfer into e- beam frame
+    beam_frame(n_sample, ebeam.gamma());
+    //Calculate friction force
+    force(n_sample, ion, ebeam, cooler, force_solver);
+}
+

@@ -209,6 +209,12 @@ void AddConst(muParserHandle_t hParser) {
     mupDefineConst(hParser, "K_U", k_u);
     mupDefineConst(hParser, "K_ME", k_me);
     mupDefineConst(hParser, "K_KE", k_ke);
+    mupDefineConst(hParser, "k_c", k_c);
+    mupDefineConst(hParser, "k_e", k_e);
+    mupDefineConst(hParser, "k_pi", k_pi);
+    mupDefineConst(hParser, "k_u", k_u);
+    mupDefineConst(hParser, "k_me", k_me);
+    mupDefineConst(hParser, "k_ke", k_ke);
 }
 
 void AddFun(muParserHandle_t hParser) {
@@ -248,8 +254,9 @@ void initialize_parser(muParserHandle_t &math_parser) {
     math_parser = mupCreate(muBASETYPE_FLOAT);              // initialize the parser
     mupSetErrorHandler(math_parser, OnError);
     mupSetVarFactory(math_parser, AddVariable, NULL);       // Set a variable factory
-    AddConst(math_parser);
-    AddFun(math_parser);                            // Add constants
+    AddConst(math_parser);                                  // Add constants
+    AddFun(math_parser);                                    // Add functions
+
 
     //Set variables to save the calculation/simulation results.
     mupDefineVar(math_parser, "VL_EMIT_NX", &uircd.emit_nx);
@@ -280,7 +287,6 @@ int use_parser(int argc, char* argv[])
     mupSetVarFactory(hParser, AddVariable, NULL);
 
     AddConst(hParser);
-
 
     ListConst(hParser);
 

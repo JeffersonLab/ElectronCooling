@@ -6,6 +6,11 @@
 #include "ibs.h"
 #include "ring.h"
 #include "beam.h"
+#ifdef _OPENMP
+    #include <omp.h>
+#endif // _OPENMP
+
+#include <chrono>
 
 IBSSolver::IBSSolver(double log_c, double k)
     : log_c_(log_c), k_(k)
@@ -18,6 +23,28 @@ void IBSSolver::ibs_coupling(double &rx, double &ry, double k, double emit_x, do
     double ryc = 0.5*(ry*(2-k)+rx*k*emit_x/emit_y);
     rx = rxc;
     ry = ryc;
+}
+
+void IBSSolver::ibs_by_element_sddshead(std::ofstream& outfile, int n_element) {
+    using std::endl;
+    outfile<<"SDDS1"<<endl;
+    outfile<<"! Define colums:"<<endl
+        <<"&column name=s, type=double, units=m, description=\"element position\", &end"<<endl
+        <<"&column name=beta_x, type=double, units=m, description=\"TWISS parameter beta x\", &end"<<endl
+        <<"&column name=beta_y, type=double, units=m, description=\"TWISS parameter beta y\", &end"<<endl
+        <<"&column name=alfa_x, type=double, units=NULL, description=\"TWISS parameter alfa x\", &end"<<endl
+        <<"&column name=alfa_y, type=double, units=NULL, description=\"TWISS parameter alfa y\", &end"<<endl
+        <<"&column name=dx, type=double, units=m, description=\"horizontal dispersion function\", &end"<<endl
+        <<"&column name=dy, type=double, units=m, description=\"vertical dispersion function\", &end"<<endl
+        <<"&column name=rx_i, type=double, units=1/s, description=\"horizontal IBS expansion rate contribution by the element\", &end"<<endl
+        <<"&column name=ry_i, type=double, units=1/s, description=\"vertical IBS expansion rate contribution by the element\", &end"<<endl
+        <<"&column name=rs_i, type=double, units=1/s, description=\"longitudinal IBS expansion rate contribution by the element\", &end"<<endl
+        <<"&column name=rx, type=double, units=1/s, description=\"accumulated horizontal IBS expansion rate\", &end"<<endl
+        <<"&column name=ry, type=double, units=1/s, description=\"accumulated vertical IBS expansion rate\", &end"<<endl
+        <<"&column name=rs, type=double, units=1/s, description=\"accumulated longitudinal IBS expansion rate\", &end"<<endl
+        <<"!Declare ASCII data and end the header"<<endl
+        <<"&data mode=ascii, &end"<<endl
+        <<n_element-1<<endl;
 }
 
 
@@ -38,6 +65,10 @@ void IBSSolver_Martini::bunch_size(const Lattice &lattice, const Beam &beam)
 
     double emit_x = beam.emit_x();
     double emit_y = beam.emit_y();
+
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(int i=0; i<n; ++i) {
         sigma_xbet[i] = sqrt(lattice.betx(i)*emit_x);
         sigma_y[i] = sqrt(lattice.bety(i)*emit_y);
@@ -54,7 +85,7 @@ void IBSSolver_Martini::bunch_size(const Lattice &lattice, const Beam &beam)
 //Call bunch_size() before calling this one
 void IBSSolver_Martini::abcdk(const Lattice &lattice, const Beam &beam)
 {
-    double d_tld, q, sigma_x, sigma_tmp;
+
     const int n = lattice.n_element();
     storage_opt.resize(n);
 
@@ -62,6 +93,9 @@ void IBSSolver_Martini::abcdk(const Lattice &lattice, const Beam &beam)
     const double beta = beam.beta();
     const double gamma = beam.gamma();
     const double r = beam.r();
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(int i=0; i<n; ++i){
         const double betx = lattice.betx(i);
         const double alfx = lattice.alfx(i);
@@ -69,10 +103,10 @@ void IBSSolver_Martini::abcdk(const Lattice &lattice, const Beam &beam)
         const double dpx = lattice.dpx(i);
         const double alfy = lattice.alfy(i);
 
-        d_tld = alfx*dx+betx*dpx;
-        sigma_x = sqrt(sigma_xbet[i]*sigma_xbet[i]+dx*dx*dp_p*dp_p);
-        sigma_tmp = dp_p*sigma_xbet[i]/(gamma*sigma_x);
-        q = 2*beta*gamma*sqrt(sigma_y[i]/r);
+        double d_tld = alfx*dx+betx*dpx;
+        double sigma_x = sqrt(sigma_xbet[i]*sigma_xbet[i]+dx*dx*dp_p*dp_p);
+        double sigma_tmp = dp_p*sigma_xbet[i]/(gamma*sigma_x);
+        double q = 2*beta*gamma*sqrt(sigma_y[i]/r);
 
         OpticalStorage os;
         os.a = sigma_tmp*sqrt(1+alfx*alfx)/sigma_xbetp[i];
@@ -94,7 +128,7 @@ void IBSSolver_Martini::abcdk(const Lattice &lattice, const Beam &beam)
 
 void IBSSolver_Martini::coef_f()
 {
-    storage_u.resize(nu_);
+
     storage_v.resize(nv_);
 
     double dv = 2*k_pi/nv_;
@@ -104,6 +138,9 @@ void IBSSolver_Martini::coef_f()
         storage_v[i] = TrigonometryStorageV({sin(v), cos(v)});
     }
 
+    storage_u.resize(nu_);
+    std::vector<TrigonometryStorageUV> uv(nv_);
+
     double du = k_pi/nu_;
     double u = -0.5*du;
     for(int i=0; i<nu_; ++i){
@@ -112,8 +149,8 @@ void IBSSolver_Martini::coef_f()
         double sin_u2 = sin_u * sin_u;
         double cos_u2 = 1 - sin_u2;
         double g3 = 1 - 3 * cos_u2;
-	std::vector<TrigonometryStorageUV> uv;
-	uv.resize(nv_);
+        std::vector<TrigonometryStorageUV> uv;
+        uv.resize(nv_);
         for(int j=0; j<nv_; ++j){
             const double sin_u2_cos_v2 = sin_u2 * storage_v[j].cos_v * storage_v[j].cos_v;
             const double g1 = 1 - 3 * sin_u2_cos_v2;
@@ -132,13 +169,12 @@ void IBSSolver_Martini::f()
     f1.resize(n_element);
     f2.resize(n_element);
     f3.resize(n_element);
-
     if (log_c_ > 0) {
         const double duvTimes2Logc = 2*k_pi*k_pi/(nu_*nv_) * 2 * log_c_;
-#ifdef _OPENMP
-        // Maybe make this runtime-adjustable. SMT gives no benefit here, so choose n = physical cores
-        #pragma omp parallel for num_threads(6)
-#endif
+
+        #ifdef _OPENMP
+            #pragma omp parallel for
+        #endif // _OPENMP
         for(int ie=0; ie < n_element; ie++) {
             const OpticalStorage &os = storage_opt[ie];
             double tempf1 = 0, tempf2 = 0, tempf3 = 0;
@@ -164,12 +200,13 @@ void IBSSolver_Martini::f()
             f2[ie] = tempf2 * os.k2 * duvTimes2Logc;
             f3[ie] = tempf3 * os.k3 * duvTimes2Logc;
         }
-    } else {
+    }
+    else {
         const double duv = 2*k_pi*k_pi/(nv_*nu_);
-#ifdef _OPENMP
-        // Maybe make this runtime-adjustable. SMT gives no benefit here, so choose n = physical cores
-        #pragma omp parallel for num_threads(6)
-#endif
+
+        #ifdef _OPENMP
+            #pragma omp parallel for
+        #endif // _OPENMP
         for(int ie=0; ie<n_element; ++ie){
             const OpticalStorage &os = storage_opt[ie];
             double tempf1 = 0, tempf2 = 0, tempf3 = 0;
@@ -185,7 +222,7 @@ void IBSSolver_Martini::f()
                     const double d_uv = (tuv.sin_u2_cos_v2 + tu.sin_u2 * tmp + os.b2 * tu.cos_u2) * os.k1;
                     double int_z = 0;
                     const double dz = 20/(d_uv*nz_);
-                    double z = -0.5*dz;
+                    double z = -dz/2;
                     for(int iz=0; iz<nz_; ++iz){
                         z += dz;
                         int_z += exp(-d_uv*z)*log(1+z*z)*dz;
@@ -241,7 +278,7 @@ void IBSSolver_Martini::rate(const Lattice &lattice, const Beam &beam, double &r
     if(ibs_by_element) {
         std::ofstream out;
         out.open("ibs_by_element.txt");
-        out<<"s bet_x bet_y alf_x alf_y disp_x disp_y rx_i ry_i rs_i rx_int ry_int rs_int"<<std::endl;
+        ibs_by_element_sddshead(out, n_element);
         out.precision(10);
         out<<std::showpos;
         out<<std::scientific;
@@ -313,6 +350,9 @@ void IBSSolver_BM::calc_kernels(const Lattice& lattice, const Beam& beam) {
 
     kernels.resize(n);
 
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(int i=0; i<n; ++i) {
         Kernels knl;
         auto betx = lattice.betx(i);
@@ -393,7 +433,7 @@ void IBSSolver_BM::rate(const Lattice &lattice, const Beam &beam, double &rx, do
 
         std::ofstream out;
         out.open("ibs_by_element.txt");
-        out<<"s bet_x bet_y alf_x alf_y disp_x disp_y rx_i ry_i rs_i rx_int ry_int rs_int"<<std::endl;
+        ibs_by_element_sddshead(out, n_element);
         out.precision(10);
         out<<std::showpos;
         out<<std::scientific;
@@ -440,3 +480,418 @@ void IBSSolver_BM::rate(const Lattice &lattice, const Beam &beam, double &rx, do
         ibs_coupling(rx, ry, k_, beam.emit_nx(), beam.emit_ny());
 }
 
+IBSSolver_BMZ::IBSSolver_BMZ(int nt, double log_c, double k) : IBSSolver(log_c, k), nt_(nt) {
+}
+
+void IBSSolver_BMZ::init_optical(const Lattice &lattice) {
+    int n = lattice.n_element();
+    optical.resize(n);
+    for(int i=0; i<n; ++i) {
+        optcl o;
+        double alfx = lattice.alfx(i);
+        double betx = lattice.betx(i);
+        double dx = lattice.dx(i);
+        double dpx = lattice.dpx(i);
+        double alfy = lattice.alfy(i);
+        double bety = lattice.bety(i);
+        double dy = lattice.dy(i);
+        double dpy = lattice.dpy(i);
+        o.phi_x2 = dpx+alfx*dx/betx;
+        o.phi_x2 *= o.phi_x2;
+        o.phi_y2 = dpy+alfy*dy/bety;
+        o.phi_y2 *= o.phi_y2;
+        o.beta_phi_x2 = betx*betx*o.phi_x2;
+        o.beta_phi_y2 = bety*bety*o.phi_y2;
+        o.hx = (dx*dx + o.beta_phi_x2)/betx;
+        o.hy = (dy*dy + o.beta_phi_y2)/bety;
+        o.dx_2_over_beta_x = dx*dx/betx;
+        o.dy_2_over_beta_y = dy*dy/bety;
+        o.beta_x_over_hx = betx/o.hx;
+        o.hy_beta_x_over_hx = o.hy*o.beta_x_over_hx;
+        o.hy_over_beta_y = o.hy/bety;
+        optical.at(i) = o;
+    }
+}
+
+double IBSSolver_BMZ::calc_abc(const Lattice &lattice, const Beam& beam, int i, double& a, double& b, double& c,
+                               double& ax, double& bx, double& ay, double& by,double& al, double& bl) {
+    double emit_x = beam.emit_x();
+    double emit_y = beam.emit_y();
+    double gamma = beam.gamma();
+    double gamma_2 = gamma*gamma;
+    double gamma_2_inv = 1/gamma_2;
+    double emit_x_inv = 1/emit_x;
+    double emit_y_inv = 1/emit_y;
+    double emit_x2_inv = emit_x_inv*emit_x_inv;
+    double emit_y2_inv = emit_y_inv*emit_y_inv;
+    double dp_2_inv = 1/(beam.dp_p()*beam.dp_p());
+
+    double u = 0;
+
+    optcl& o = optical.at(i);
+    double beta_x_over_emit_x = lattice.betx(i)*emit_x_inv;
+    double beta_y_over_emit_y = lattice.bety(i)*emit_y_inv;
+
+    if(u<fabs(beta_x_over_emit_x)) u = fabs(beta_x_over_emit_x);
+    if(u<fabs(beta_y_over_emit_y)) u = fabs(beta_y_over_emit_y);
+
+    double v1 = (o.hx*emit_x_inv + o.hy*emit_y_inv + dp_2_inv)*gamma_2;
+    double v2 = beta_x_over_emit_x + beta_y_over_emit_y;
+    a = v1 + v2;
+    double v3 = (o.dx_2_over_beta_x*emit_x_inv + o.dy_2_over_beta_y*emit_y_inv + dp_2_inv) * gamma_2;
+
+    if(u<fabs(v1)) u = fabs(v1);
+
+    double v4 = beta_x_over_emit_x*beta_y_over_emit_y;
+    c = v3*v4;
+    b = v2*v3 + v4 + v4*(o.phi_x2+o.phi_y2)*gamma_2;
+    double v5 = o.hy_beta_x_over_hx*emit_y_inv;
+
+    ax = 2*v1 - v5 + o.beta_x_over_hx*gamma_2_inv*(2*beta_x_over_emit_x - beta_y_over_emit_y - gamma_2*dp_2_inv
+                                                   +6*beta_x_over_emit_x*gamma_2*o.phi_x2)-v2-beta_x_over_emit_x;
+    double v6 = (o.beta_phi_x2*emit_x2_inv + o.beta_phi_y2*emit_y2_inv)*gamma_2;
+
+    if(u<sqrt(v6)) u = sqrt(v6);
+
+    double v7 = beta_x_over_emit_x - 2*beta_y_over_emit_y;
+    double v8 = (2*o.beta_phi_y2*emit_y2_inv - o.beta_phi_x2*emit_x2_inv)*gamma_2;
+    double v9 = v1*v2 - v6;
+    bx = v9 + (beta_x_over_emit_x - 4*beta_y_over_emit_y)*beta_x_over_emit_x +
+        o.beta_x_over_hx*(v7*dp_2_inv + v4*gamma_2_inv + v8*gamma_2_inv) +v7*o.hy_beta_x_over_hx*emit_y_inv
+        +6*beta_x_over_emit_x*beta_y_over_emit_y*gamma_2*o.phi_x2;
+
+    al = 2*v1 - v2;
+    bl = v9-2*v4;
+
+    double hy_over_emit_y = o.hy*emit_y_inv;
+    double hy_over_beta_y = o.hy/lattice.bety(i);
+
+    ay = -v1-(hy_over_emit_y+beta_x_over_emit_x*hy_over_beta_y)*gamma_2 + 2*gamma_2*hy_over_beta_y*v1 - beta_x_over_emit_x
+        + 2*beta_y_over_emit_y;
+    by = (beta_y_over_emit_y - 2*beta_x_over_emit_x)*v1-2*beta_x_over_emit_x*hy_over_emit_y*gamma_2 + v4
+        + (2*o.beta_phi_x2*emit_x2_inv-o.beta_phi_y2*emit_y2_inv)*gamma_2 + v9*hy_over_beta_y*gamma_2;
+
+    return u;
+}
+
+void IBSSolver_BMZ::calc_integral(double a, double b, double c, double ax, double bx, double ay, double by, double al,
+                                  double bl, double& ix, double& iy, double& is, int nt, double u) {
+
+    double dl = u*factor/nt;
+    double lambda = dl/2;
+    ix = 0;
+    iy = 0;
+    is = 0;
+    for(int i=0; i<nt; ++i) {
+        double ls = sqrt(lambda);
+        double tx = ls*(ax*lambda+bx);
+        double ty = ls*(ay*lambda+by);
+        double ts = ls*(al*lambda+bl);
+        double d = lambda*(lambda*(lambda+a)+b)+c;
+        d *= sqrt(d);
+        ix += tx/d;
+        iy += ty/d;
+        is += ts/d;
+        lambda += dl;
+
+    }
+    ix *= dl;
+    iy *= dl;
+    is *= dl;
+}
+
+double IBSSolver_BMZ::coef(const Lattice &lattice, const Beam &beam) const {
+    double lambda = 2*sqrt(k_pi)*beam.particle_number()/lattice.circ();
+    if(beam.bunched()) lambda = beam.particle_number()/beam.sigma_s();
+     double beta3 = beam.beta();
+    beta3 = beta3*beta3*beta3;
+    double gamma4 = beam.gamma();
+    gamma4 *= gamma4;
+    gamma4 *= gamma4;
+    return k_c*beam.r()*beam.r()*lambda/(8*k_pi*beam.dp_p()*beta3*gamma4*beam.emit_x()*beam.emit_y());
+}
+
+void IBSSolver_BMZ::rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs) {
+    int n_element = lattice.n_element();
+
+    if (cache_invalid) {
+        init_optical(lattice);
+        cache_invalid = false;
+    }
+
+    double c_bmz = coef(lattice, beam)*log_c()/lattice.circ();
+
+    rx = 0;
+    ry = 0;
+    rs = 0;
+    int n=2;
+    if (beam.bunched()) n=1;
+    double gamma_2 = beam.gamma()*beam.gamma();
+    if(ibs_by_element) {
+        std::ofstream out;
+        out.open("ibs_by_element.txt");
+        ibs_by_element_sddshead(out, n_element);
+        out.precision(10);
+        out<<std::showpos;
+        out<<std::scientific;
+        double s = 0;
+        for(int i=0; i<n_element-1; ++i){
+            double l_element = lattice.l_element(i);
+            double a, b, c, ax, bx, ay, by, as, bs;
+            double u = calc_abc(lattice, beam, i, a, b, c, ax, bx, ay, by, as, bs);
+            double ix, iy, is;
+            calc_integral(a, b, c, ax, bx, ay, by, as, bs, ix, iy, is, nt_, u);
+
+            double rxi = optical.at(i).hx*ix*l_element*c_bmz*gamma_2/beam.emit_x();
+            double ryi =  lattice.bety(i)*iy*l_element*c_bmz/beam.emit_y();
+            double rsi = is*l_element*n*c_bmz*gamma_2/(beam.dp_p()*beam.dp_p());
+
+            rx += rxi;
+            ry += ryi;
+            rs += rsi;
+            out<<s<<' '<<lattice.betx(i)<<' '<<lattice.bety(i)<<' '<<lattice.alfx(i)<<' '
+                <<lattice.alfy(i)<<' '<<lattice.dx(i)<<' '<<lattice.dy(i)<<' '
+                <<rxi<<' '<<ryi<<' '<<rsi<<' '<<rx<<' '<<ry<<' '<<rs<<std::endl;
+            s += l_element;
+        }
+        out.close();
+    }
+    else {
+        #ifdef _OPENMP
+            #pragma omp parallel for reduction(+:rx,rs,ry)
+        #endif // _OPENMP
+        for(int i=0; i<n_element-1; ++i){
+            double l_element = lattice.l_element(i);
+            double a, b, c, ax, bx, ay, by, as, bs;
+            double u = calc_abc(lattice, beam, i, a, b, c, ax, bx, ay, by, as, bs);
+            double ix, iy, is;
+            calc_integral(a, b, c, ax, bx, ay, by, as, bs, ix, iy, is, nt_, u);
+            rx += optical.at(i).hx*ix*l_element;
+            rs += is*l_element;
+            ry += lattice.bety(i)*iy*l_element;
+        }
+        rs *= n*c_bmz*gamma_2;
+        rx *= c_bmz*gamma_2;
+        ry *= c_bmz;
+//
+        rs /= beam.dp_p()*beam.dp_p();
+        rx /= beam.emit_x();
+        ry /= beam.emit_y();
+    }
+
+    if(k_>0)
+        ibs_coupling(rx, ry, k_, beam.emit_nx(), beam.emit_ny());
+}
+
+
+
+void IBSSolver_BM_Complete::init_optc(const Lattice &lattice) {
+    int n = lattice.n_element();
+    optc.resize(n);
+    for(int i=0; i<n; ++i) {
+        Optc o;
+        double alfx = lattice.alfx(i);
+        double betx = lattice.betx(i);
+        double dx = lattice.dx(i);
+        double dpx = lattice.dpx(i);
+        double alfy = lattice.alfy(i);
+        double bety = lattice.bety(i);
+        double dy = lattice.dy(i);
+        double dpy = lattice.dpy(i);
+        o.phix = dpx+alfx*dx/betx;
+        o.phiy = dpy+alfy*dy/bety;
+        o.hx = (dx*dx + betx*betx*o.phix*o.phix)/betx;
+        o.hy = (dy*dy + bety*bety*o.phiy*o.phiy)/bety;
+
+        optc.at(i) = o;
+    }
+}
+
+double IBSSolver_BM_Complete::det(std::array<std::array<double, 3>,3>& l) {
+    double d = (l[0][0]*l[1][1]*l[2][2]) + (l[0][1]*l[1][2]*l[2][0]) + (l[0][2]*l[1][0]*l[2][1]) -
+      (l[0][2]*l[1][1]*l[2][0]) - (l[0][0]*l[1][2]*l[2][1]) - (l[0][1]*l[1][0]*l[2][2]);
+    return d;
+}
+
+double IBSSolver_BM_Complete::inv(std::array<std::array<double, 3>,3>& l, std::array<std::array<double, 3>,3>& v) {
+    double l_det = det(l);
+
+    v[0][0] = l[1][1]*l[2][2]-l[1][2]*l[2][1];
+    v[0][1] = l[2][0]*l[1][2]-l[1][0]*l[2][2];
+    v[0][2] = 0;
+    v[1][0] = v[0][1];
+    v[1][1] = l[0][0]*l[2][2]-l[0][2]*l[2][0];
+    v[1][2] = l[2][0]*l[0][1]-l[0][0]*l[2][1];
+    v[2][0] = 0;
+    v[2][1] = v[1][2];
+    v[2][2] = l[0][0]*l[1][1]-l[0][1]*l[1][0];
+
+    for(auto& aa: v)
+        for(auto& a: aa)
+            a /= l_det;
+
+    return l_det;
+}
+
+void IBSSolver_BM_Complete::calc_beam_const(const Beam& beam) {
+    gamma = beam.gamma();
+    gamma2 = gamma*gamma;
+    inv_ex = 1/beam.emit_x();
+    inv_ey = 1/beam.emit_y();
+    inv_dp2 = 1/(beam.dp_p()*beam.dp_p());
+}
+
+void IBSSolver_BM_Complete::calc_l(const Lattice& lattice, int i, std::array<std::array<double, 3>,3>& lh,
+                                   std::array<std::array<double, 3>,3>& lv, std::array<std::array<double, 3>,3>& ls) {
+    double betx = lattice.betx(i);
+    double bety = lattice.bety(i);
+    double phix = optc.at(i).phix;
+    double phiy = optc.at(i).phiy;
+    double hx = optc.at(i).hx;
+    double hy = optc.at(i).hy;
+
+    lh[0][0] = betx*inv_ex;
+    lh[0][1] = -gamma*betx*phix*inv_ex;
+    lh[1][0] = lh[0][1];
+    lh[1][1] = gamma2*hx*inv_ex;
+
+    lv[1][1] = gamma2*hy*inv_ey;
+    lv[1][2] = -gamma*bety*phiy/inv_ey;
+    lv[2][1] = lv[1][2];
+    lv[2][2] = bety*inv_ey;
+
+    ls[1][1] = gamma2*inv_dp2;
+}
+
+double IBSSolver_BM_Complete::coef(const Lattice &lattice, const Beam &beam) const {
+    double lambda;
+    if(beam.bunched()) lambda = beam.particle_number()/beam.sigma_s();
+    else lambda = 2*sqrt(k_pi)*beam.particle_number()/lattice.circ();
+     double beta3 = beam.beta();
+    beta3 = beta3*beta3*beta3;
+    double gamma4 = beam.gamma();
+    gamma4 *= gamma4;
+    gamma4 *= gamma4;
+    return k_c*beam.r()*beam.r()*lambda/(8*k_pi*beam.dp_p()*beta3*gamma4*beam.emit_x()*beam.emit_y());
+}
+
+void IBSSolver_BM_Complete::calc_itgl(int i, std::array<std::array<double, 3>,3>& ii, std::array<std::array<double, 3>,3>& l,
+                                      std::array<std::array<double, 3>,3>& ll, std::array<std::array<double, 3>,3>& lh,
+                                      std::array<std::array<double, 3>,3>& lv, std::array<std::array<double, 3>,3>& ls) {
+    ii = {};
+    double u = 0;
+    for(int j=0; j<3; ++j) {
+        for(int k=0; k<3; ++k) {
+            l[j][k] = lh[j][k] + lv[j][k] + ls[j][k];
+            if(u<fabs(l[j][k])) u = fabs(l[j][k]);
+        }
+    }
+
+    u *= factor;
+    double d = u/nt_;
+
+    for(int j=0; j<3; ++j)
+            l[j][j] -= d/2;
+
+    for(int i=0; i<nt_; ++i) {
+        double lambda = (i+0.5)*d;
+        for(int j=0; j<3; ++j)
+            l[j][j] += d;
+
+        double det = inv(l, ll);
+        double tr= trace(ll);
+        double c = sqrt(lambda)/sqrt(det);
+
+        for(int j=0; j<3; ++j)
+            for(int k=0; k<3; ++k)
+                ii[j][k] += c*((j==k?1:0)*tr - 3*ll[j][k]);
+    }
+    for(int j=0; j<3; ++j)
+        for(int k=0; k<3; ++k)
+            ii[j][k] *= d;
+}
+
+void IBSSolver_BM_Complete::rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs) {
+    int n_element = lattice.n_element();
+
+    if (cache_invalid) {
+        init_optc(lattice);
+        cache_invalid = false;
+    }
+
+    double c_bmc = coef(lattice, beam)*log_c()/lattice.circ();
+
+    rx = 0;
+    ry = 0;
+    rs = 0;
+    int n=2;
+    if (beam.bunched()) n=1;
+    calc_beam_const(beam);
+
+    if(ibs_by_element) {
+        std::ofstream out;
+        out.open("ibs_by_element.txt");
+        ibs_by_element_sddshead(out, n_element);
+        out.precision(10);
+        out<<std::showpos;
+        out<<std::scientific;
+        double s = 0;
+
+
+        for(int i=0; i<n_element-1; ++i){
+            double l_element = lattice.l_element(i);
+            //ll - inverse of l; ii - diffusion coefficients.
+            std::array<std::array<double, 3>,3> lh{}, lv{}, ls{}, l{}, ll{}, ii{};
+            calc_l(lattice, i,  lh, lv, ls);
+            calc_itgl(i, ii, l, ll, lh, lv, ls);
+            double rxi{}, ryi{}, rsi{};
+
+            for(int i=0; i<3; ++i) {
+                for(int j=0; j<3; ++j) {
+                    rxi += lh[i][j]*ii[i][j]*c_bmc;
+                    ryi += lv[i][j]*ii[i][j]*c_bmc;
+                    rsi += ls[i][j]*ii[i][j]*c_bmc*n;
+                }
+            }
+
+            rx += rxi;
+            ry += ryi;
+            rs += rsi;
+            out<<s<<' '<<lattice.betx(i)<<' '<<lattice.bety(i)<<' '<<lattice.alfx(i)<<' '
+                <<lattice.alfy(i)<<' '<<lattice.dx(i)<<' '<<lattice.dy(i)<<' '
+                <<rxi<<' '<<ryi<<' '<<rsi<<' '<<rx<<' '<<ry<<' '<<rs<<std::endl;
+            s += l_element;
+        }
+        out.close();
+    }
+    else {
+        #ifdef _OPENMP
+            #pragma omp parallel for reduction(+:rx,ry,rs)
+        #endif // _OPENMP
+        for(int i=0; i<n_element-1; ++i){
+            double l_element = lattice.l_element(i);
+            //ll - inverse of l; ii - diffusion coefficients.
+            std::array<std::array<double, 3>,3> lh{}, lv{}, ls{}, l{}, ll{}, ii{};
+            calc_l(lattice, i, lh, lv, ls);
+            calc_itgl(i, ii, l, ll, lh, lv, ls);
+
+            for(int i=0; i<3; ++i) {
+                for(int j=0; j<3; ++j) {
+                    rx += lh[i][j]*ii[i][j];
+                    ry += lv[i][j]*ii[i][j];
+                    rs += ls[i][j]*ii[i][j];
+                }
+            }
+        }
+
+        rs *= n*c_bmc;
+        rx *= c_bmc;
+        ry *= c_bmc;
+    }
+
+    if(k_>0)
+        ibs_coupling(rx, ry, k_, beam.emit_nx(), beam.emit_ny());
+}
+
+IBSSolver_BM_Complete::IBSSolver_BM_Complete(int nt, double log_c, double k) : IBSSolver(log_c, k), nt_(nt) {
+}

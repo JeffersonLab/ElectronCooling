@@ -1,6 +1,7 @@
 #ifndef IBS_HPP
 #define IBS_HPP
 
+#include <array>
 #include <assert.h>
 #include <memory>
 #include <tuple>
@@ -8,12 +9,15 @@
 #include "beam.h"
 #include "ring.h"
 
-#include <iostream>
+#include <gsl/gsl_integration.h>
+#include <gsl/gsl_errno.h>
+#include <force.h>
 
-//class Lattice;
-//class Beam;
+class Lattice;
+class Beam;
 
-enum class IBSModel {MARTINI, BM};
+
+enum class IBSModel {MARTINI, BM, BMC, BMZ};
 
 class IBSSolver {
 protected:
@@ -23,6 +27,7 @@ protected:
     bool ibs_by_element = false; //Calculate and output the ibs rate contribution element by element.
 
     void ibs_coupling(double &rx, double &ry, double k, double emit_x, double emit_y);
+    void ibs_by_element_sddshead(std::ofstream& outfile, int n_element);
 public:
     double log_c() const { return log_c_; }
     double k() const { return k_; }
@@ -137,4 +142,141 @@ class IBSSolver_BM : public IBSSolver {
      }
 };
 
+class IBSSolver_BMZ : public IBSSolver {
+private:
+    int nt_;     //Number of steps for integration.
+    struct optcl{
+        double phi_x2;
+        double phi_y2;
+        double hx;
+        double hy;
+        double dx_2_over_beta_x;
+        double dy_2_over_beta_y;
+        double beta_x_over_hx;
+        double hy_beta_x_over_hx;
+        double beta_phi_x2;
+        double beta_phi_y2;
+        double hy_over_beta_y;
+    };
+    std::vector<optcl> optical;
+    double factor = 3;
+    void init_optical(const Lattice &lattice);
+    double calc_abc(const Lattice &lattice, const Beam& beam, int i, double& a, double& b, double& c,
+                               double& ax, double& bx, double& ay, double& by,double& al, double& bl);
+    double coef(const Lattice &lattice, const Beam &beam) const;
+    void calc_integral(double a, double b, double c, double ax, double bx, double ay, double by, double al,
+                                  double bl, double& ix, double& iy, double& is, int nt, double u);
+public:
+    IBSSolver_BMZ(int nt, double log_c, double k);
+    void set_nt(int n){assert(n>0&&"Wrong value of nt in IBS parameters!"); nt_ = n; invalidate_cache();}
+    virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
+    void set_factor(double x){factor = x;}
+};
+
+
+class IBSSolver_BM_Complete : public IBSSolver {
+private:
+    int nt_;
+    double inv_ex;
+    double inv_ey;
+    double inv_dp2;
+    double gamma;
+    double gamma2;
+    double factor = 3;
+    struct Itgrl{
+        double lambda;
+        double lambda_sqrt;
+        double ct;   // ct = 1/(1-t)^2
+    };
+    struct Optc {
+        double phix;
+        double phiy;
+        double hx;
+        double hy;
+    };
+
+    std::vector<Optc> optc;
+    std::vector<Itgrl> itgrl;
+    void init_optc(const Lattice &lattice);
+    double det(std::array<std::array<double, 3>,3>& l);
+    double inv(std::array<std::array<double, 3>,3>& l, std::array<std::array<double, 3>,3>& v);
+    double trace(std::array<std::array<double, 3>,3>& l){return l[0][0]+l[1][1]+l[2][2];}
+    void calc_l(const Lattice& lattice, int i, std::array<std::array<double, 3>,3>& lh,
+                std::array<std::array<double, 3>,3>& lv, std::array<std::array<double, 3>,3>& ls);
+    void calc_itgl(int i, std::array<std::array<double, 3>,3>& ii, std::array<std::array<double, 3>,3>& l,
+                  std::array<std::array<double, 3>,3>& ll, std::array<std::array<double, 3>,3>& lh,
+                  std::array<std::array<double, 3>,3>& lv, std::array<std::array<double, 3>,3>& ls);
+    void calc_beam_const(const Beam& beam);
+    double coef(const Lattice &lattice, const Beam &beam) const;
+public:
+     IBSSolver_BM_Complete(int nt, double log_c, double k);
+     void set_factor(double x){factor = x;}
+     virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
+
+};
+//
+//class IBSSolver_BMZ2 : public IBSSolver {
+//private:
+//    int nt_;     //Number of steps for integration.
+//    struct itgrl{
+//        double lambda;
+////        double lambda_2;
+////        double lambda_3;
+//        double lambda_sqrt;
+//        double ct;   // ct = 1/(1-t)^2
+//    };
+//    double gamma_2;
+//    double gamma_2_inv;
+//    double gamma_4;
+//    double emit_x_inv;
+//    double emit_y_inv;
+//    double emit_x2_inv;
+//    double emit_y2_inv;
+//
+//    struct optcl{
+//        double phi_x;
+//        double phi_y;
+//        double dx_2_over_beta_x;
+//        double dy_2_over_beta_y;
+//    };
+//    std::vector<itgrl> integral;
+//    std::vector<optcl> optical;
+//    struct debug {
+//        double  a, b, c, ax, bx, ay, by, al, bl, ix, iy, is;
+//    };
+//    std::vector<debug> my_debug;
+//
+//    gsl_integration_workspace *gw;
+//
+//    size_t limit = 100;
+//    double espabs = 1e-12;
+//    double esprel = 1e-3;
+//    struct P{
+//        double a;
+//        double b;
+//        double c;
+//        double ai;
+//        double bi;
+//    }p;
+////    double core(double q, void* params);
+//
+////    void init_integral(int n);
+//    void init_optical(const Lattice &lattice);
+//    double calc_abc(const Lattice &lattice, const Beam& beam, int i, double& a, double& b, double& c,
+//                               double& ax, double& bx, double& ay, double& by,double& al, double& bl, double& scale);
+//    double coef(const Lattice &lattice, const Beam &beam) const;
+//    void calc_integral(double a, double b, double c, double ax, double bx, double ay, double by, double al,
+//                                  double bl, double& ix, double& iy, double& is, int nt, std::vector<itgrl>& g);
+//public:
+//    IBSSolver_BMZ(int nt, double log_c, double k);
+//    set_nt(int n){assert(n>0&&"Wrong value of nt in IBS parameters!"); nt_ = n; invalidate_cache();}
+//    virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
+//
+//    ~IBSSolver_BMZ(){gsl_integration_workspace_free(gw);};
+//
+//};
+//
+//
+//
+//};
 #endif

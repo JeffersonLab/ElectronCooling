@@ -2,6 +2,8 @@
 #include "functions.h"
 #include "luminosity.h"
 //#include "ui.h"
+#include <cmath>
+
 
 //extern Record uircd;
 
@@ -9,7 +11,7 @@ void Simulator::output_sddshead() {
     using std::endl;
     outfile<<"SDDS1"<<endl;
     outfile<<"! Define colums:"<<endl
-        <<"&column name=t, type=double, units=s, description=time, &end"<<endl
+        <<"&column name=t, type=double, units=s, description=\"time\", &end"<<endl
         <<"&column name=emit_x, type=double, units=m*rad, description=\"normalized horizontal emittance\", &end"<<endl
         <<"&column name=emit_y, type=double, units=m*rad, description=\"normalized vertical emittance\", &end"<<endl
         <<"&column name=dp/p, type=double, units=NULL, description=\"momentum spread\", &end"<<endl

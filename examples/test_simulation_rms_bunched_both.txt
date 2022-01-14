@@ -15,7 +15,7 @@ section_ibs #define the arguments for IBS calculation
 	nv = 200
 	nz = 40
 	log_c = 39.9/2
-	k = 0
+	coupling = 0
 section_cooler
 	length = 30
 	section_number = 2

@@ -2,8 +2,14 @@
 #include <cassert>
 #include <chrono>
 #include <cmath>
+<<<<<<< HEAD:removed/src/main.cc
 #include <fstream>
 #include <map>
+=======
+#include <fstream>
+#include <iostream>
+#include <map>
+>>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:src/main.cc
 #include <regex>
 
 
@@ -33,14 +39,27 @@ enum class Test {IBS, ECOOL, BOTH,DYNAMICBOTHBUNCHED, MATH_PARSER};
 
 int main(int argc, char** argv) {
     srand(time(NULL));
+    int line_count = 0;
 
     if(argc>1) {
+<<<<<<< HEAD:removed/src/main.cc
         std::ifstream input_file(argv[1]);
         input_script_name = argv[1];
         size_t sep = input_script_name.find_last_of("\\/");
         input_script_name = input_script_name.substr(sep+1);
         std::cout<<"START: "<<time_to_string()<<std::endl;
         std::cout<<"INPUT: "<<input_script_name<<std::endl;
+=======
+//        std::ifstream input_file(argv[1]);
+        std::fstream input_file;
+        input_file.open(argv[1], std::ios::in | std::ios::out | std::ios::app);
+        input_script_name = argv[1];
+        size_t sep = input_script_name.find_last_of("\\/");
+        input_script_name = input_script_name.substr(sep+1);
+        std::cout<<"START: "<<time_to_string()<<std::endl;
+        std::cout<<"INPUT: "<<input_script_name<<std::endl
+            <<"============================================="<<std::endl<<std::endl;
+>>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:src/main.cc
         string line;
         Section sec_flag = Section::NONE;
         Set_ptrs ptrs;
@@ -48,8 +67,10 @@ int main(int argc, char** argv) {
             initialize_parser(math_parser);
         }
         while (std::getline(input_file,line)) {
+            ++line_count;
             if(!line.empty() && line[line.size()-1] == '\r') line.erase(line.size()-1);
             if (!line.empty()) {
+<<<<<<< HEAD:removed/src/main.cc
                 line = remove_comments(line);
                 line = trim_whitespace(line);
                 std::regex e("===\\s*END\\s*===");
@@ -61,6 +82,21 @@ int main(int argc, char** argv) {
                     line_cont = trim_whitespace(line_cont);
                     line = line.substr(0,line.size()-2) + line_cont;
                 }
+=======
+                line = remove_comments(line);
+                line = trim_whitespace(line);
+                std::regex e("===\\s*END\\s*===");
+                std::regex ee("^\\s*(\\=)(\\=)(\\=)(\\=)(\\=)(\\=)(\\=)(\\=)\\1+\\s*$");
+                if(std::regex_match(upper_str(line),e)) break;
+                if(std::regex_match(upper_str(line),ee)) break;
+                while(line.size()>2 && line.substr(line.size()-2)=="&&"){
+                    string line_cont;
+                    std::getline(input_file,line_cont);
+                    line_cont = remove_comments(line_cont);
+                    line_cont = trim_whitespace(line_cont);
+                    line = line.substr(0,line.size()-2) + line_cont;
+                }
+>>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:src/main.cc
                 string line_orgn = line;
                 str_toupper(line);
                 if (!line.empty()) {
@@ -155,7 +191,7 @@ int main(int argc, char** argv) {
                                 break;
                             }
                             case Section::SECTION_SCRATCH: {
-                                parse(line, math_parser);
+                                parse(input_file, line_count, line, math_parser);
                                 break;
                             }
                             case Section::SECTION_COMMENT: {
@@ -166,10 +202,19 @@ int main(int argc, char** argv) {
                     }
                 }
             }
+<<<<<<< HEAD:removed/src/main.cc
         }
         ui_quit();
         std::cout<<"END: "<<time_to_string()<<std::endl;
         std::cout<<"INPUT: "<<input_script_name<<std::endl;
+=======
+        }
+        ui_quit();
+        std::cout<<std::endl<<"============================================="<<std::endl;
+        std::cout<<"END: "<<time_to_string()<<std::endl;
+        std::cout<<"INPUT: "<<input_script_name<<std::endl;
+        input_file.close();
+>>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:src/main.cc
     }
     else {
         Test test = Test::MATH_PARSER;

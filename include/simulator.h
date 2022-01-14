@@ -29,6 +29,7 @@ class Simulator{
     double t0 = 0;
     bool ibs = true;
     bool ecool = true;
+    bool edge_effect = false;
     bool fixed_bunch_length = false;
     bool reset_time = true;
     bool overwrite = false;
@@ -53,6 +54,7 @@ class Simulator{
     Simulator(double time, int n):t(time),n_step(n){dt = time/n;}
     void set_ibs(bool b){ibs=b;}
     void set_ecool(bool b){ecool=b;}
+    void set_edge_effect(bool b){edge_effect = b;}
     void set_ion_save(int x){ion_save_itvl = x; }
     void set_output_file(string filename){outfilename = filename; }
     void set_output_intvl(int x){output_itvl = x; }

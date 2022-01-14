@@ -23,6 +23,7 @@ section_scratch
 	#Electron beam parameters:
 	q_e = 3.2E-9*0.37	# electron number
 	l_e = 0.05	# electron bunch length	
+#	k_c = 299792458.0	# speed of light
 	I_e = q_e*beta*k_c/l_e	# peak current of the electron beam
 	print I_e
 	save I_e
@@ -73,18 +74,19 @@ section_run
 	calculate_ecool
 
 section_scratch
-	save vl_rate_ecool_x
-	save vl_rate_ecool_y
-	save vl_rate_ecool_s
+	savestr test savestr command
+	appendstr test appendstr command
+	append vl_rate_ecool_x
+	append vl_rate_ecool_y
+	append vl_rate_ecool_s
 
-===END===
+=========
 Anything from this line should be ignored.
-You shouldn't see any error. 
+You shouldn't see any error.
 
-####################################################################
-#       RESULTS          
-# RADIUS_X = 0.000777325
-# RADIUS_Y = 0.00034763
-# I_E = 7.09878
-# Electron cooling rate (1/s):   -7.730e-003  -7.871e-003  -5.424e-003
-####################################################################
+=========
+2020-09-06 03:34:31
+TEST APPENDSTR COMMAND
+VL_RATE_ECOOL_X = -0.00750338
+VL_RATE_ECOOL_Y = -0.00800856
+VL_RATE_ECOOL_S = -0.00266499

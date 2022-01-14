@@ -23,7 +23,6 @@ section_scratch
 	#Electron beam parameters:
 	q_e = 3.2E-9*0.37	# electron number
 	l_e = 0.05	# electron bunch length	
-	k_c = 299792458.0	# speed of light
 	I_e = q_e*beta*k_c/l_e	# peak current of the electron beam
 	print I_e
 

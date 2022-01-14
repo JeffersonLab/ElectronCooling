@@ -65,6 +65,7 @@ struct Set_ibs{
      double coupling = -1;
      bool ibs_by_element = false;
      IBSModel model = IBSModel::MARTINI;
+     double factor = 3;
 };
 
 struct Set_ecool{
@@ -84,10 +85,21 @@ struct Set_ecool{
      int n_step = 0;
      double smooth_factor = 2;
      bool magnetic_only = false;
+<<<<<<< HEAD:removed/include/ui.h
      IonSampleType model = IonSampleType::MONTE_CARLO;
     int n_sample_tr = 0;
     int n_sample_l = 0;
     bool dual_force_solver = false;
+=======
+     IonSampleType model = IonSampleType::MONTE_CARLO;
+    int n_sample_tr = 0;
+    int n_sample_l = 0;
+    bool dual_force_solver = false;
+    bool force_output = false;
+    double limit_dp = 0;
+    double limit_angle = 0;
+    double density_e = 0;
+>>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:include/ui.h
     ForceFormula force_l = ForceFormula::PARKHOMCHUK;
 };
 
@@ -103,6 +115,7 @@ struct Set_cooler{
      double disp_dy = 0;
      double alpha_x = 0;
      double alpha_y = 0;
+     double pipe_radius = 0;
 };
 
 struct Set_e_beam{
@@ -140,6 +153,11 @@ struct Set_e_beam{
      bool corr = false;
      bool binary = false;
      int buffer = 1000;
+<<<<<<< HEAD:removed/include/ui.h
+=======
+     double t_rising = 0;
+     double t_falling = 0;
+>>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:include/ui.h
      double cv_l = 0;
 };
 
@@ -149,6 +167,7 @@ struct Set_dynamic{
     int n_sample = 0;
     bool ibs = true;
     bool ecool = true;
+    bool edge_effect = false;
     bool fixed_bunch_length = false;
     bool reset_time = true;
     bool overwrite = true;
@@ -208,11 +227,12 @@ enum class Section{NONE, SECTION_ION, SECTION_RING, SECTION_COOLER, SECTION_RUN,
 std::string remove_comments(std::string input_line);
 std::string trim_whitespace(std::string input_line);
 void str_toupper(std::string &str);
+std::string upper_str(std::string str);
 void define_ion_beam(std::string &str, Set_ion *ion_args);
 void run(std::string &str, Set_ptrs &ptrs);
 void define_ring(std::string &str, Set_ring *ring_args);
 void set_ibs(std::string &str, Set_ibs *ibs_args);
-void parse(std::string &str, muParserHandle_t &math_parser);
+void parse(std::fstream &input_file, int line_count, std::string &str, muParserHandle_t &math_parser);
 void define_cooler(std::string &str, Set_cooler *cooler_args);
 void create_cooler(Set_ptrs &ptrs);
 void define_e_beam(std::string &str, Set_e_beam *e_beam_args);
