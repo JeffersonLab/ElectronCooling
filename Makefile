@@ -9,7 +9,7 @@ CFLAGS = -O3 -Wall -std=c++11 -fPIC -I$(INCDIR)
 #LIBS = -lm -lmuparser
 #LINK = -L$(LIBDIR) -s -Wl,-rpath=$(LIBDIR) $(LIBS) 
 
-LINK =  -L$(LIBDIR) -s -Wl,-rpath=$(LIBDIR) -lm -l:libmuparser.so.2 -lgsl -lgslcblas
+LINK =  -L$(LIBDIR) -s -Wl,-rpath=$(LIBDIR) -lm -lmuparser -lgsl -lgslcblas
 
 SRC = $(wildcard src/*.cc)
 OBJ = $(SRC:.cc=.o)

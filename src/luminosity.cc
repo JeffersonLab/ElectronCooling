@@ -21,5 +21,14 @@ void LuminositySolver::set_beam_size(double sigma_x, double sigma_y, int i) {
     beam.at(i).sigma_y=sigma_y;
     beam.at(i).geo_emit_x = sigma_x*sigma_x/beam.at(i).bet_x_star;
     beam.at(i).geo_emit_y = sigma_y*sigma_y/beam.at(i).bet_y_star;
-};
+}
+
+void LuminositySolver::calc_bet_max(int i) {
+}
+
+void LuminositySolver::adjust_bet(int i) {
+}
+
+void LuminositySolver::match(int i) {
+}
 

@@ -1,9 +1,9 @@
 #include "simulator.h"
 #include "functions.h"
 #include "luminosity.h"
-#include "ui.h"
+//#include "ui.h"
 
-extern Record uircd;
+//extern Record uircd;
 
 void Simulator::output_sddshead() {
     using std::endl;
@@ -66,7 +66,7 @@ void Simulator::run(Beam& ion, Ions& ion_sample, Cooler& cooler, EBeam& ebeam,
     precondition(ion_sample);
     //Set time for new simulation or continued simulation.
     if(reset_time) t = t0;
-    else t = uircd.t;
+//    else t = uircd.t;
     output_to_file();
 
     adjust_rf_voltage(ring);
@@ -106,21 +106,21 @@ for(int i=0; i<n_step+1; ++i) {
     }
     save_ions(n_step, ion_sample);
 
-    uircd.emit_nx = emit.at(0);
-    uircd.emit_ny = emit.at(1);
-    uircd.dp_p = emit.at(2);
-    if(ion.bunched()) uircd.sigma_s = ion.sigma_s();
-    else uircd.sigma_s = 0;
-    uircd.rx_ecool = r_ecool.at(0);
-    uircd.ry_ecool = r_ecool.at(1);
-    uircd.rs_ecool = r_ecool.at(2);
-    uircd.rx_ibs = r_ibs.at(0);
-    uircd.ry_ibs = r_ibs.at(1);
-    uircd.rs_ibs = r_ibs.at(2);
-    uircd.rx_total = r.at(0);
-    uircd.ry_total = r.at(1);
-    uircd.rs_total = r.at(2);
-    uircd.t = t;
+//    uircd.emit_nx = emit.at(0);
+//    uircd.emit_ny = emit.at(1);
+//    uircd.dp_p = emit.at(2);
+//    if(ion.bunched()) uircd.sigma_s = ion.sigma_s();
+//    else uircd.sigma_s = 0;
+//    uircd.rx_ecool = r_ecool.at(0);
+//    uircd.ry_ecool = r_ecool.at(1);
+//    uircd.rs_ecool = r_ecool.at(2);
+//    uircd.rx_ibs = r_ibs.at(0);
+//    uircd.ry_ibs = r_ibs.at(1);
+//    uircd.rs_ibs = r_ibs.at(2);
+//    uircd.rx_total = r.at(0);
+//    uircd.ry_total = r.at(1);
+//    uircd.rs_total = r.at(2);
+//    uircd.t = t;
 
     //Need to add: save the results before quiting the simulation.
     outfile.close();

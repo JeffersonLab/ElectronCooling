@@ -3,10 +3,15 @@
 
 #include <assert.h>
 #include <memory>
+#include <tuple>
 #include <vector>
+#include "beam.h"
+#include "ring.h"
 
-class Lattice;
-class Beam;
+#include <iostream>
+
+//class Lattice;
+//class Beam;
 
 enum class IBSModel {MARTINI, BM};
 
@@ -29,6 +34,12 @@ public:
     IBSSolver(double log_c, double k);
 
     virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs) = 0;
+    virtual std::tuple<double, double, double> rate(const Lattice &lattice, const Beam &beam) = 0;
+//    virtual std::tuple<double, double, double> rate(const Lattice &lattice, const Beam &beam) {
+//        double rx, ry, rs;
+//        rate(lattice, beam, rx, ry, rs);
+//        return std::make_tuple(rx, ry, rs);
+//    }
 };
 
 class IBSSolver_Martini : public IBSSolver {
@@ -86,6 +97,11 @@ public:
     void set_nz(int nz) { assert(nz>0&&"Wrong value of nz in IBS parameters!"); nz_ = nz; invalidate_cache(); }
     IBSSolver_Martini(int nu, int nv, int nz, double log_c, double k);
     virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
+    virtual std::tuple<double, double, double> rate(const Lattice &lattice, const Beam &beam) {
+        double rx, ry, rs;
+        rate(lattice, beam, rx, ry, rs);
+        return std::make_tuple(rx, ry, rs);
+    }
 };
 
 class IBSSolver_BM : public IBSSolver {
@@ -114,7 +130,11 @@ class IBSSolver_BM : public IBSSolver {
  public:
      IBSSolver_BM(double log_c, double k);
      virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
-
+     virtual std::tuple<double, double, double> rate(const Lattice &lattice, const Beam &beam) {
+        double rx, ry, rs;
+        rate(lattice, beam, rx, ry, rs);
+        return std::make_tuple(rx, ry, rs);
+     }
 };
 
 #endif
