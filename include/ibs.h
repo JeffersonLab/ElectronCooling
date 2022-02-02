@@ -171,6 +171,11 @@ public:
     void set_nt(int n){assert(n>0&&"Wrong value of nt in IBS parameters!"); nt_ = n; invalidate_cache();}
     virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
     void set_factor(double x){factor = x;}
+    virtual std::tuple<double, double, double> rate(const Lattice &lattice, const Beam &beam) {
+        double rx, ry, rs;
+        rate(lattice, beam, rx, ry, rs);
+        return std::make_tuple(rx, ry, rs);
+    }
 };
 
 
@@ -212,6 +217,11 @@ public:
      IBSSolver_BM_Complete(int nt, double log_c, double k);
      void set_factor(double x){factor = x;}
      virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
+     virtual std::tuple<double, double, double> rate(const Lattice &lattice, const Beam &beam) {
+        double rx, ry, rs;
+        rate(lattice, beam, rx, ry, rs);
+        return std::make_tuple(rx, ry, rs);
+     }
 
 };
 //
