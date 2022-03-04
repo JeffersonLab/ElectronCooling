@@ -36,7 +36,7 @@ void Simulator::output_to_file() {
         string filename = outfilename;
         int i = 1;
         do {
-            filename = std::to_string(i)+'_'+filename;
+            filename = std::to_string(i)+'_'+outfilename;
             ++i;
         } while(file_exists(filename));
         outfile.open(filename);

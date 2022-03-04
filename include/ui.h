@@ -160,7 +160,7 @@ struct Set_dynamic{
     bool edge_effect = false;
     bool fixed_bunch_length = false;
     bool reset_time = true;
-    bool overwrite = true;
+    bool overwrite = false;
     bool calc_luminosity = false;
     int output_intvl = 1;
     int save_ptcl_intvl = -1;

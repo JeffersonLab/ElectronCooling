@@ -12,7 +12,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_73_x64_compiler" />
-				<Option parameters="..\debug\test_bunched_cooling_mag_Meshkov_openmp.txt" />
+				<Option parameters="../debug/test_element_by_element_tracking.txt" />
 				<Compiler>
 					<Add option="-std=c++11" />
 					<Add option="-pg" />
@@ -23,7 +23,7 @@
 				</Compiler>
 				<Linker>
 					<Add option="-pg -lgmon" />
-					<Add option="-lmuparser -lgsl -fopenmp -pg" />
+					<Add option="-lmuparser -lgsl -fopenmp -pg  -lMapBasedTracking" />
 					<Add directory="lib" />
 					<Add directory="include" />
 				</Linker>
@@ -34,7 +34,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_73_x64_compiler" />
-				<Option parameters="..\debug\test_bunched_cooling_01_save_force.txt" />
+				<Option parameters="../debug/test_element_by_element_tracking.txt" />
 				<Compiler>
 					<Add option="-std=c++11" />
 					<Add option="-fopenmp" />
@@ -43,7 +43,7 @@
 				</Compiler>
 				<Linker>
 					<Add option="-O3" />
-					<Add option="-lmuparser -lgsl -fopenmp" />
+					<Add option="-lmuparser -lgsl -fopenmp -lMapBasedTracking" />
 					<Add directory="lib" />
 					<Add directory="include" />
 				</Linker>
@@ -57,17 +57,20 @@
 		<Unit filename="include/constants.h" />
 		<Unit filename="include/cooler.h" />
 		<Unit filename="include/ecooling.h" />
+		<Unit filename="include/element_by_element.h" />
 		<Unit filename="include/force.h" />
 		<Unit filename="include/functions.h" />
 		<Unit filename="include/ibs.h" />
 		<Unit filename="include/ions.h" />
 		<Unit filename="include/luminosity.h" />
+		<Unit filename="include/map.hpp" />
 		<Unit filename="include/math_parser.h" />
 		<Unit filename="include/muParserDLL.h" />
 		<Unit filename="include/particle_model.h" />
 		<Unit filename="include/ring.h" />
 		<Unit filename="include/rms_dynamic.h" />
 		<Unit filename="include/simulator.h" />
+		<Unit filename="include/tracking.hpp" />
 		<Unit filename="include/turn_by_turn.h" />
 		<Unit filename="include/ui.h" />
 		<Unit filename="src/arbitrary_electron_beam.cc" />
@@ -87,9 +90,6 @@
 		<Unit filename="src/turn_by_turn.cc" />
 		<Unit filename="src/ui.cc" />
 		<Extensions>
-			<code_completion />
-			<envvars />
-			<debugger />
 			<lib_finder disable_auto="1" />
 		</Extensions>
 	</Project>
