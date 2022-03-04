@@ -17,7 +17,7 @@
 					<Add option="-std=c++11" />
 					<Add option="-pg" />
 					<Add option="-g" />
-					<Add option="-fopenmp -Dcpp_OPENMP" />
+					<Add option="-fopenmp" />
 					<Add directory="src" />
 					<Add directory="include" />
 				</Compiler>
@@ -34,24 +34,25 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_73_x64_compiler" />
-				<Option parameters="../debug/test_element_by_element_tracking.txt" />
+				<Option parameters="../examples/test_simulation_rms_bunched_both.txt" />
 				<Compiler>
 					<Add option="-std=c++11" />
+					<Add option="-O3" />
+					<Add option="-static-libgcc -static-libstdc++" />
 					<Add option="-fopenmp" />
 					<Add directory="src" />
 					<Add directory="include" />
 				</Compiler>
 				<Linker>
 					<Add option="-O3" />
-					<Add option="-lmuparser -lgsl -fopenmp -lMapBasedTracking" />
+					<Add option="-lmuparser -lgsl" />
+					<Add option="-static-libgcc -static-libstdc++" />
+					<Add option="-fopenmp" />
 					<Add directory="lib" />
 					<Add directory="include" />
 				</Linker>
 			</Target>
 		</Build>
-		<Compiler>
-			<Add option="-g" />
-		</Compiler>
 		<Unit filename="include/arbitrary_electron_beam.h" />
 		<Unit filename="include/beam.h" />
 		<Unit filename="include/constants.h" />
