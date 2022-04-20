@@ -118,6 +118,10 @@ void Ions::save_ions_sdds(string filename) const {
         <<"&column name=yp, type=double, units=NULL, description=NULL, &end"<<endl
         <<"&column name=ds, type=double, units=m, description=NULL, &end"<<endl
         <<"&column name=dp/p, type=double, units=NULL, description=NULL, &end"<<endl
+        <<"&column name=x_bet, type=double, units=m, description=NULL, &end"<<endl
+        <<"&column name=xp_bet, type=double, units=NULL, description=NULL, &end"<<endl
+        <<"&column name=y_bet, type=double, units=m, description=NULL, &end"<<endl
+        <<"&column name=yp_bet, type=double, units=NULL, description=NULL, &end"<<endl
         <<"!Declare ASCII data and end the header"<<endl
         <<"&data mode=ascii, &end"<<endl
         <<n_<<endl;
@@ -125,7 +129,8 @@ void Ions::save_ions_sdds(string filename) const {
     output_particles<<std::showpos;
     output_particles<<std::scientific;
     for(int i=0; i<n_; ++i) {
-        output_particles<<x[i]<<' '<<xp[i]<<' '<<y[i]<<' '<<yp[i]<<' '<<ds[i]<<' '<<dp_p[i]<<std::endl;
+        output_particles<<x[i]<<' '<<xp[i]<<' '<<y[i]<<' '<<yp[i]<<' '<<ds[i]<<' '<<dp_p[i]
+            <<' '<<x_bet[i]<<' '<<xp_bet[i]<<' '<<y_bet[i]<<' '<<yp_bet[i]<<std::endl;
     }
     output_particles.close();
 }
