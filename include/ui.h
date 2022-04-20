@@ -79,6 +79,7 @@ struct Set_ecool{
      bool smooth_rho_max = false; //Parameter for non-magnetized friction force cooling.
      bool use_gsl = false;
      bool use_mean_rho_min = false;
+     bool cooling_count = false;
      int n_tr = 0;
      int n_l = 0;
      int n_phi = 0;

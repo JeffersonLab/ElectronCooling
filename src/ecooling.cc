@@ -228,6 +228,19 @@ void ECoolRate::ecool_rate(FrictionForceSolver &force_solver, Beam &ion,
     electron_density(ion_sample,ebeam);
     space_to_dynamic(n_sample, ion, ion_sample);
 
+    if (cooling_count) {
+        double ne_max = 0;
+        for(double d:ne) {
+            if (d>ne_max) ne_max = d;
+        }
+        double ne_tol = ne_max/100;
+        for(int i=0; i<n_sample; ++i) {
+            ion_sample.density_count(i, ne[i]);
+            if (ne[i]>ne_tol) ion_sample.cooling_count(i);
+        }
+    }
+
+
     //Time through the cooler
     t_cooler_ = cooler.length()/(ion.beta()*k_c);
     //Transfer into e- beam frame

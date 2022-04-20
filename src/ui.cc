@@ -49,7 +49,7 @@ std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS"
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF", "SMOOTH_RHO_MAX", "USE_GSL",
     "N_TR", "N_L", "N_PHI", "USE_MEAN_RHO_MIN",  "MODEL", "SAMPLE_NUMBER_TR", "SAMPLE_NUMBER_L","N_STEP", "SMOOTH_FACTOR",
     "MAGNETIC_ONLY", "DUAL_FORCE", "FORCE_FORMULA_L", "FORCE_OUTPUT", "LIMIT_ANGLE", "LIMIT_MOMENTUM_SPREAD",
-    "ELECTRON_DENSITY"};
+    "ELECTRON_DENSITY", "COUNT"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK", "NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D",
     "NONMAG_NUM3D", "MESHKOV", "DSM"};
 std::vector<string> SIMULATION_ARGS = {"TIME", "STEP_NUMBER", "SAMPLE_NUMBER", "IBS", "E_COOL", "OUTPUT_INTERVAL",
@@ -852,6 +852,7 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
     }
     ecool_solver->set_dual_force_solver(ptrs.ecool_ptr->dual_force_solver);
     ecool_solver->set_save_force(ptrs.ecool_ptr->force_output);
+    ecool_solver->set_cooling_count(ptrs.ecool_ptr->cooling_count);
 
     switch(ptrs.ecool_ptr->model) {
     case IonSampleType::MONTE_CARLO : {
@@ -1735,6 +1736,11 @@ void set_ecool(string &str, Set_ecool *ecool_args){
         if (val == "ON" || val == "TRUE") ecool_args->smooth_rho_max = true;
         else if (val == "OFF" || val == "FALSE") ecool_args->smooth_rho_max = false;
         else assert(false&&"WRONG VALUE FOR THE PARAMETER SMOOTH_RHO_MAX IN SECTION_ECOOL!");
+    }
+    else if (var == "COUNT" ) {
+        if (val == "ON" || val == "TRUE") ecool_args->cooling_count = true;
+        else if (val == "OFF" || val == "FALSE") ecool_args->cooling_count = false;
+        else assert(false&&"WRONG VALUE FOR THE PARAMETER COUNT IN SECTION_ECOOL!");
     }
     else if (var == "USE_GSL" ) {
         if (val == "ON" || val == "TRUE") ecool_args->use_gsl = true;

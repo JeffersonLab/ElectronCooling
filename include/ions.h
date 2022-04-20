@@ -18,6 +18,8 @@ class Ions{
 protected:
     vector<double> x_bet, xp_bet, y_bet, yp_bet;
     vector<double> x, y, xp, yp, ds, dp_p;
+    vector<int> cnt;
+    vector<double> density_cnt;
     int n_ = 0; //Number of sample particles.
     IonSampleType sample_type_ = IonSampleType::MONTE_CARLO;
     Twiss twiss;
@@ -43,6 +45,8 @@ public:
     virtual void create_samples(Beam& ion) = 0;
     double beta_s(){return beta_s_;}
     void update_bet_s(Beam& ion){beta_s_ = ion.sigma_s()/ion.dp_p();}
+    void cooling_count(int i){++cnt.at(i);}
+    void density_count(int i, double d) {density_cnt.at(i) += d;}
 };
 
 class Ions_MonteCarlo: public Ions{

@@ -26,6 +26,7 @@ protected:
     int scratch_size = 0;
     bool dual_force_solver = false;
     bool save_force = false;
+    bool cooling_count = false;
     vector<double> ne;
     vector<double> xp_bet, yp_bet, xp, yp, dp_p, x, y, x_bet, y_bet;
     vector<double> v_tr, v_long;
@@ -45,6 +46,7 @@ protected:
 public:
     void set_save_force(bool b){save_force = b;}
     void set_dual_force_solver(bool b){dual_force_solver = b;}
+    void set_cooling_count(bool b){cooling_count = b;}
     void set_second_force_solver(FrictionForceSolver* force) {force_solver_l = force;}
     void adjust_rate(Beam &ion, EBeam &ebeam, initializer_list<double*> func);
     vector<double>& scratch(ECoolRateScratch s);
