@@ -1071,7 +1071,7 @@ void run_simulation(Set_ptrs &ptrs) {
             calculate_luminosity(ptrs, false);
     }
 
-    if(n_sample>0) {
+    if(n_sample>0 && ecool) {
         ptrs.ecool_ptr->n_sample = n_sample;
     }
 
