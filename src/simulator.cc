@@ -103,7 +103,7 @@ for(int i=0; i<n_step+1; ++i) {
         update_ibeam(ion, ion_sample, ring, ebeam, cooler, ecool_solver);
 
         t += dt;
-        std::cout<<i<<std::endl;
+        if (output_itvl==1 || i%output_itvl==0) std::cout<<i<<std::endl;
     }
     save_ions(n_step, ion_sample);
 
