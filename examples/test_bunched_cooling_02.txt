@@ -50,7 +50,7 @@ section_cooler
 
 section_e_beam
 	gamma = gamma
-	shape = bunched_uniform_elliptic
+	shape = bunch_uniform_elliptic
 	rh = radius_x
 	rv = radius_y
 	current = I_e

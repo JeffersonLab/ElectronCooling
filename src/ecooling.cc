@@ -187,6 +187,7 @@ void ECoolRate::apply_kick(int n_sample, Beam &ion, Ions& ion_sample) {
     vector<double>& ixp = ion_sample.cdnt(Phase::XP);
     vector<double>& iyp = ion_sample.cdnt(Phase::YP);
     vector<double>& idp_p = ion_sample.cdnt(Phase::DP_P);
+
     #ifdef _OPENMP
         #pragma omp parallel for
     #endif // _OPENMP
@@ -230,6 +231,7 @@ void ECoolRate::ecool_rate(FrictionForceSolver &force_solver, Beam &ion,
 
     //Time through the cooler
     t_cooler_ = cooler.length()/(ion.beta()*k_c);
+
     //Transfer into e- beam frame
     beam_frame(n_sample, ebeam.gamma());
     //Calculate friction force
@@ -276,7 +278,6 @@ void ECoolRate::ecool_rate(FrictionForceSolver &force_solver, Beam &ion,
     rate_s *= freq;
 
     adjust_rate(ion, ebeam, {&rate_x, &rate_y, &rate_s});
-
 }
 
 vector<double>& ECoolRate::scratch(ECoolRateScratch s) {

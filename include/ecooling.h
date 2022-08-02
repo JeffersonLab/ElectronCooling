@@ -52,6 +52,23 @@ public:
     void set_n_long_sample(int n){n_long_sample_ = n;}
     void ecool_rate(FrictionForceSolver &force, Beam &ion, Ions &ptcl, Cooler &cooler, EBeam &ebeam,
                   Ring &ring, double &rate_x, double &rate_y, double &rate_s);
+    std::tuple<double,double,double> rate(FrictionForceSolver &force, Beam &ion, int n_sample, Cooler &cooler, EBeam &ebeam,
+                  Ring &ring){
+        double rx, ry, rs;
+        Ions_MonteCarlo ion_sample(n_sample);
+        ion_sample.set_twiss(cooler);
+        ion_sample.create_samples(ion);
+        ecool_rate(force, ion, ion_sample, cooler, ebeam, ring, rx, ry, rs);
+        return std::make_tuple(rx, ry, rs);
+    }
+
+    std::tuple<double,double,double> rate(FrictionForceSolver &force, Beam &ion, Ions &ptcl, Cooler &cooler, EBeam &ebeam,
+                  Ring &ring){
+        double rx, ry, rs;
+        ecool_rate(force, ion, ptcl, cooler, ebeam, ring, rx, ry, rs);
+        return std::make_tuple(rx, ry, rs);
+    }
+
 };
 
 class ForceCurve: public ECoolRate {

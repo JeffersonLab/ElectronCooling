@@ -263,7 +263,6 @@ void UniformBunch::density(vector<double>& x, vector<double>& y, vector<double>&
 
 
 void EllipticUniformBunch::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n_particle) {
-
     int nq = this->charge_number();
     if (nq<0) nq *= -1;
     double density = current_/(k_pi*rh_*rv_*nq*k_e*this->beta()*k_c);

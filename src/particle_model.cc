@@ -56,10 +56,22 @@ void ParticleModel::apply_ibs_kick(Beam& ion, Ions& ion_sample) {
     auto twiss = ion_sample.get_twiss();
     assert(twiss.bet_x>0&& twiss.bet_y>0
            &&"TWISS parameters for the reference point not defined! Define twiss_ref.");
-    ibs_kick(ion_sample.n_sample(), r_ibs.at(0), twiss.bet_x, ion.emit_x(), ion_sample.cdnt(Phase::XP));
-    ibs_kick(ion_sample.n_sample(), r_ibs.at(1), twiss.bet_y, ion.emit_y(), ion_sample.cdnt(Phase::YP));
-    if (ion.bunched()) ibs_kick(ion_sample.n_sample(), r_ibs.at(2), 1, ion.dp_p()*ion.dp_p(), ion_sample.cdnt(Phase::DP_P));
-    else ibs_kick(ion_sample.n_sample(), r_ibs.at(2), 2, ion.dp_p()*ion.dp_p(), ion_sample.cdnt(Phase::DP_P));
+    if (fabs(twiss.disp_x)>0 || fabs(twiss.disp_y)>0 || fabs(twiss.disp_dx)>0 || fabs(twiss.disp_dy)>0) {
+        ion_sample.adjust_disp_inv();
+        ibs_kick(ion_sample.n_sample(), r_ibs.at(0), twiss.bet_x, ion.emit_x(), ion_sample.cdnt(Phase::XP_BET));
+        ibs_kick(ion_sample.n_sample(), r_ibs.at(1), twiss.bet_y, ion.emit_y(), ion_sample.cdnt(Phase::YP_BET));
+        if (ion.bunched()) ibs_kick(ion_sample.n_sample(), r_ibs.at(2), 1, ion.dp_p()*ion.dp_p(), ion_sample.cdnt(Phase::DP_P));
+        else ibs_kick(ion_sample.n_sample(), r_ibs.at(2), 2, ion.dp_p()*ion.dp_p(), ion_sample.cdnt(Phase::DP_P));
+        ion_sample.adjust_disp();
+    }
+    else {
+        ibs_kick(ion_sample.n_sample(), r_ibs.at(0), twiss.bet_x, ion.emit_x(), ion_sample.cdnt(Phase::XP));
+        ibs_kick(ion_sample.n_sample(), r_ibs.at(1), twiss.bet_y, ion.emit_y(), ion_sample.cdnt(Phase::YP));
+        if (ion.bunched()) ibs_kick(ion_sample.n_sample(), r_ibs.at(2), 1, ion.dp_p()*ion.dp_p(), ion_sample.cdnt(Phase::DP_P));
+        else ibs_kick(ion_sample.n_sample(), r_ibs.at(2), 2, ion.dp_p()*ion.dp_p(), ion_sample.cdnt(Phase::DP_P));
+
+    }
+
 }
 
 void ParticleModel::ibs_kick(int n_sample, double rate, double twiss, double emit, vector<double>& v) {
