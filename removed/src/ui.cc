@@ -4,14 +4,10 @@
 #include <cmath>
 #include <fstream>
 #include <iomanip>
-<<<<<<< HEAD:removed/src/ui.cc
-#include <iostream>
-=======
 #include <iostream>
 #ifdef _OPENMP
     #include <omp.h>
 #endif // _OPENMP
->>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:src/ui.cc
 #include <sstream>
 
 #include "constants.h"
@@ -29,16 +25,10 @@ std::unique_ptr<LuminositySolver> lum_solver = nullptr;
 std::unique_ptr<Ions> ion_sample = nullptr;
 //std::unique_ptr<ForceCurve> force_output = nullptr;
 
-<<<<<<< HEAD:removed/src/ui.cc
-Record uircd;
-std::ofstream save_to_file;
-std::string input_script_name;
-=======
 Record uircd;
 std::ofstream save_to_file;
 std::string input_script_name;
 
->>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:src/ui.cc
 
 muParserHandle_t math_parser = NULL;
 std::vector<string> ION_ARGS = {"CHARGE_NUMBER", "MASS", "KINETIC_ENERGY", "NORM_EMIT_X", "NORM_EMIT_Y",
@@ -55,21 +45,13 @@ std::vector<string> E_BEAM_SHAPE_TYPES = {"DC_UNIFORM", "BUNCHED_GAUSSIAN", "BUN
 std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS", "CURRENT", "SIGMA_X", "SIGMA_Y",
     "SIGMA_Z", "LENGTH", "E_NUMBER", "RH", "RV", "R_INNER", "R_OUTTER", "PARTICLE_FILE", "TOTAL_PARTICLE_NUMBER",
     "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
-<<<<<<< HEAD:removed/src/ui.cc
-    "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT", "CV_L", "SIGMA_XP", "SIGMA_YP", "SIGMA_DPP"};
-std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF", "SMOOTH_RHO_MAX", "USE_GSL",
-    "N_TR", "N_L", "N_PHI", "USE_MEAN_RHO_MIN",  "MODEL", "SAMPLE_NUMBER_TR", "SAMPLE_NUMBER_L","N_STEP", "SMOOTH_FACTOR",
-    "MAGNETIC_ONLY", "DUAL_FORCE", "FORCE_FORMULA_L"};
-std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK", "NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D", "NONMAG_NUM3D", "MESHKOV"};
-=======
     "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT", "RISE_TIME", "FALL_TIME", "CV_L", "SIGMA_XP", "SIGMA_YP", "SIGMA_DPP"};
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF", "SMOOTH_RHO_MAX", "USE_GSL",
     "N_TR", "N_L", "N_PHI", "USE_MEAN_RHO_MIN",  "MODEL", "SAMPLE_NUMBER_TR", "SAMPLE_NUMBER_L","N_STEP", "SMOOTH_FACTOR",
     "MAGNETIC_ONLY", "DUAL_FORCE", "FORCE_FORMULA_L", "FORCE_OUTPUT", "LIMIT_ANGLE", "LIMIT_MOMENTUM_SPREAD",
-    "ELECTRON_DENSITY"};
+    "ELECTRON_DENSITY", "COUNT"};
 std::vector<string> FRICTION_FORCE_FORMULA = {"PARKHOMCHUK", "NONMAG_DERBENEV", "NONMAG_MESHKOV", "NONMAG_NUM1D",
     "NONMAG_NUM3D", "MESHKOV", "DSM"};
->>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:src/ui.cc
 std::vector<string> SIMULATION_ARGS = {"TIME", "STEP_NUMBER", "SAMPLE_NUMBER", "IBS", "E_COOL", "OUTPUT_INTERVAL",
     "SAVE_PARTICLE_INTERVAL", "OUTPUT_FILE", "MODEL", "REF_BET_X", "REF_BET_Y", "REF_ALF_X", "REF_ALF_Y",
     "REF_DISP_X", "REF_DISP_Y", "REF_DISP_DX", "REF_DISP_DY", "FIXED_BUNCH_LENGTH", "RESET_TIME", "OVERWRITE",
@@ -118,25 +100,6 @@ std::string trim_whitespace(std::string input_line) {
 
 void str_toupper(std::string &str) {
     for (auto & c: str) c = toupper(c);
-<<<<<<< HEAD:removed/src/ui.cc
-=======
-}
-
-std::string upper_str(std::string str) {
-    str_toupper(str);
-    return str;
-}
-
-double str_to_number(string val) {
-    val = trim_whitespace(val);
-    if (math_parser == NULL) {
-        return std::stod(val);
-    }
-    else {
-        mupSetExpr(math_parser, val.c_str());
-        return mupEval(math_parser);
-    }
->>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:src/ui.cc
 }
 
 std::string upper_str(std::string str) {
@@ -320,15 +283,12 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             else if (var == "BUFFER_SIZE") {
                 e_beam_args->buffer = std::stoi(val);
             }
-<<<<<<< HEAD:removed/src/ui.cc
-=======
             else if (var == "RISE_TIME") {
                 e_beam_args->t_rising = std::stod(val);
             }
             else if (var == "FALL_TIME") {
                 e_beam_args->t_falling = std::stod(val);
             }
->>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:src/ui.cc
             else if (var == "CV_L") {
                 e_beam_args->cv_l = std::stod(val);
             }
@@ -401,15 +361,12 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             else if (var == "BUFFER_SIZE") {
                 e_beam_args->buffer = mupEval(math_parser);
             }
-<<<<<<< HEAD:removed/src/ui.cc
-=======
             else if (var == "RISE_TIME") {
                 e_beam_args->t_rising = mupEval(math_parser);
             }
             else if (var == "FALL_TIME") {
                 e_beam_args->t_falling = mupEval(math_parser);
             }
->>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:src/ui.cc
             else if (var == "CV_L") {
                 e_beam_args->cv_l = mupEval(math_parser);
             }
@@ -883,22 +840,6 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
 
     ecool_solver.reset(new ECoolRate());
 
-<<<<<<< HEAD:removed/src/ui.cc
-    create_force_solver(ptrs, ptrs.ecool_ptr->force, force_solver);
-    if(ptrs.ecool_ptr->dual_force_solver) {
-        if(ptrs.ecool_ptr->force!=ptrs.ecool_ptr->force_l){
-            create_force_solver(ptrs, ptrs.ecool_ptr->force_l, force_solver_l);
-            ecool_solver->set_second_force_solver(force_solver_l.get());
-        }
-        else {
-            ptrs.ecool_ptr->dual_force_solver = false;
-        }
-    }
-    ecool_solver->set_dual_force_solver(ptrs.ecool_ptr->dual_force_solver);
-
-    switch(ptrs.ecool_ptr->model) {
-    case IonSampleType::MONTE_CARLO : {
-=======
     create_force_solver(ptrs, ptrs.ecool_ptr->force, force_solver);
     if(ptrs.ecool_ptr->dual_force_solver) {
         if(ptrs.ecool_ptr->force!=ptrs.ecool_ptr->force_l){
@@ -911,10 +852,10 @@ void calculate_ecool(Set_ptrs &ptrs, bool calc = true) {
     }
     ecool_solver->set_dual_force_solver(ptrs.ecool_ptr->dual_force_solver);
     ecool_solver->set_save_force(ptrs.ecool_ptr->force_output);
+    ecool_solver->set_cooling_count(ptrs.ecool_ptr->cooling_count);
 
     switch(ptrs.ecool_ptr->model) {
     case IonSampleType::MONTE_CARLO : {
->>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:src/ui.cc
         ion_sample.reset(new Ions_MonteCarlo(n_sample));
         ion_sample->set_twiss(*ptrs.cooler);
         ion_sample->create_samples(*ptrs.ion_beam);
@@ -1130,7 +1071,7 @@ void run_simulation(Set_ptrs &ptrs) {
             calculate_luminosity(ptrs, false);
     }
 
-    if(n_sample>0) {
+    if(n_sample>0 && ecool) {
         ptrs.ecool_ptr->n_sample = n_sample;
     }
 
@@ -1796,6 +1737,11 @@ void set_ecool(string &str, Set_ecool *ecool_args){
         else if (val == "OFF" || val == "FALSE") ecool_args->smooth_rho_max = false;
         else assert(false&&"WRONG VALUE FOR THE PARAMETER SMOOTH_RHO_MAX IN SECTION_ECOOL!");
     }
+    else if (var == "COUNT" ) {
+        if (val == "ON" || val == "TRUE") ecool_args->cooling_count = true;
+        else if (val == "OFF" || val == "FALSE") ecool_args->cooling_count = false;
+        else assert(false&&"WRONG VALUE FOR THE PARAMETER COUNT IN SECTION_ECOOL!");
+    }
     else if (var == "USE_GSL" ) {
         if (val == "ON" || val == "TRUE") ecool_args->use_gsl = true;
         else if (val == "OFF" || val == "FALSE") ecool_args->use_gsl = false;
@@ -1837,21 +1783,6 @@ void set_ecool(string &str, Set_ecool *ecool_args){
             }
             else if (var=="SAMPLE_NUMBER_L") {
                 ecool_args->n_sample_l = std::stoi(val);
-<<<<<<< HEAD:removed/src/ui.cc
-            }
-            else if(var == "TMP_EFF") {
-                ecool_args->tmpr_eff = std::stod(val);
-                ecool_args->v_eff = 0;
-            }
-            else if(var == "V_EFF") {
-                ecool_args->tmpr_eff = 0;
-                ecool_args->v_eff = std::stod(val);
-            }
-            else if (var == "LIMIT") {
-                std::stringstream sstream(val);
-                sstream >> ecool_args->limit;
-            }
-=======
             }
             else if(var == "TMP_EFF") {
                 ecool_args->tmpr_eff = std::stod(val);
@@ -1874,7 +1805,6 @@ void set_ecool(string &str, Set_ecool *ecool_args){
             else if(var == "ELECTRON_DENSITY") {
                 ecool_args->density_e = std::stod(val);
             }
->>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:src/ui.cc
             else if (var == "ESPABS") {
                 ecool_args->espabs = std::stod(val);
             }
@@ -1910,42 +1840,6 @@ void set_ecool(string &str, Set_ecool *ecool_args){
             }
             else if (var=="SAMPLE_NUMBER_L") {
                 ecool_args->n_sample_l = static_cast<int>(mupEval(math_parser));
-<<<<<<< HEAD:removed/src/ui.cc
-            }
-            else if(var == "TMP_EFF") {
-                ecool_args->tmpr_eff = static_cast<double>(mupEval(math_parser));
-                ecool_args->v_eff = 0;
-            }
-            else if(var == "V_EFF") {
-                ecool_args->tmpr_eff = 0;
-                ecool_args->v_eff = static_cast<double>(mupEval(math_parser));
-            }
-            else if (var == "LIMIT") {
-                int l = static_cast<int>(mupEval(math_parser));
-                assert(l>0&&"Wrong value for  the parameter LIMIT in section_ecool!");
-                ecool_args->limit = static_cast<size_t>(l);
-            }
-            else if(var == "ESPABS") {
-                ecool_args->espabs = static_cast<double>(mupEval(math_parser));
-            }
-            else if(var == "ESPREL") {
-                ecool_args->esprel = static_cast<double>(mupEval(math_parser));
-            }
-            else if(var == "N_TR") {
-                ecool_args->n_tr = static_cast<int>(mupEval(math_parser));
-            }
-            else if(var == "N_L") {
-                ecool_args->n_l = static_cast<int>(mupEval(math_parser));
-            }
-            else if(var == "N_PHI") {
-                ecool_args->n_phi = static_cast<int>(mupEval(math_parser));
-            }
-            else if(var == "N_STEP") {
-                ecool_args->n_step = static_cast<int>(mupEval(math_parser));
-            }
-            else if(var == "SMOOTH_FACTOR") {
-                ecool_args->smooth_factor = static_cast<double>(mupEval(math_parser));
-=======
             }
             else if(var == "TMP_EFF") {
                 ecool_args->tmpr_eff = static_cast<double>(mupEval(math_parser));
@@ -1989,7 +1883,6 @@ void set_ecool(string &str, Set_ecool *ecool_args){
             }
             else if(var == "SMOOTH_FACTOR") {
                 ecool_args->smooth_factor = static_cast<double>(mupEval(math_parser));
->>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:src/ui.cc
             }
             else {
                 assert(false&&"Wrong arguments in section_ecool!");
@@ -2029,27 +1922,6 @@ void parse(std::fstream &input_file, int line_count, std::string &str, muParserH
             mupSetExpr(math_parser, subvar.c_str());
             std::cout<<subvar<<" = "<<mupEval(math_parser)<<std::endl;
         }
-<<<<<<< HEAD:removed/src/ui.cc
-    }
-    else if (str.substr(0,4) == "SAVE") {
-        string var = str.substr(5);
-        var = trim_whitespace(var);
-        mupSetExpr(math_parser, var.c_str());
-        if(!save_to_file.is_open()) {
-            string filename = time_to_filename();
-            filename = "JSPEC_SAVE_" + filename + ".txt";
-            save_to_file.open (filename,std::ofstream::out | std::ofstream::app);
-            if(save_to_file.is_open()){
-                std::cout<<"File opened: "<<filename<<" !"<<std::endl;
-                save_to_file<<"INPUT: "<<input_script_name<<std::endl;
-            }
-            else {
-                std::cout<<"Failed to open file: "<<filename<<" !"<<std::endl;
-            }
-
-        }
-        save_to_file<<var<<" = "<<mupEval(math_parser)<<std::endl;
-=======
     }
     else if (str.substr(0,7) == "SAVESTR") {
         string var = str.substr(8);
@@ -2110,7 +1982,6 @@ void parse(std::fstream &input_file, int line_count, std::string &str, muParserH
         }
         input_file<<var<<" = "<<mupEval(math_parser)<<std::endl;
         go_to_line(input_file, line_count+1);
->>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:src/ui.cc
     }
     else {
         mupSetExpr(math_parser, str.c_str());

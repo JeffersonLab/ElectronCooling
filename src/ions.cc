@@ -118,6 +118,12 @@ void Ions::save_ions_sdds(string filename) const {
         <<"&column name=yp, type=double, units=NULL, description=NULL, &end"<<endl
         <<"&column name=ds, type=double, units=m, description=NULL, &end"<<endl
         <<"&column name=dp/p, type=double, units=NULL, description=NULL, &end"<<endl
+        <<"&column name=x_bet, type=double, units=m, description=NULL, &end"<<endl
+        <<"&column name=xp_bet, type=double, units=NULL, description=NULL, &end"<<endl
+        <<"&column name=y_bet, type=double, units=m, description=NULL, &end"<<endl
+        <<"&column name=yp_bet, type=double, units=NULL, description=NULL, &end"<<endl
+        <<"&column name=cooling count, type=int, units=NULL, description=NULL, &end"<<endl
+        <<"&column name=density count, type=double, units=1/m^3, description=NULL, &end"<<endl
         <<"!Declare ASCII data and end the header"<<endl
         <<"&data mode=ascii, &end"<<endl
         <<n_<<endl;
@@ -125,7 +131,8 @@ void Ions::save_ions_sdds(string filename) const {
     output_particles<<std::showpos;
     output_particles<<std::scientific;
     for(int i=0; i<n_; ++i) {
-        output_particles<<x[i]<<' '<<xp[i]<<' '<<y[i]<<' '<<yp[i]<<' '<<ds[i]<<' '<<dp_p[i]<<std::endl;
+        output_particles<<x[i]<<' '<<xp[i]<<' '<<y[i]<<' '<<yp[i]<<' '<<ds[i]<<' '<<dp_p[i]
+            <<' '<<x_bet[i]<<' '<<xp_bet[i]<<' '<<y_bet[i]<<' '<<yp_bet[i]<<' '<<cnt[i]<<' '<<density_cnt[i]<<std::endl;
     }
     output_particles.close();
 }
@@ -352,6 +359,9 @@ void Ions_MonteCarlo::create_samples(Beam& ion) {
 
     bunched_ = ion.bunched();
     if(bunched_) beta_s_ = ion.sigma_s()/ion.dp_p();
+
+    cnt.assign(n_sample, 0);
+    density_cnt.assign(n_sample, 0);
 }
 
 Ions_SingleParticle::Ions_SingleParticle(int n_tr, int n_l):n_tr_(n_tr),n_l_(n_l) {

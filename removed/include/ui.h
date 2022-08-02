@@ -79,18 +79,13 @@ struct Set_ecool{
      bool smooth_rho_max = false; //Parameter for non-magnetized friction force cooling.
      bool use_gsl = false;
      bool use_mean_rho_min = false;
+     bool cooling_count = false;
      int n_tr = 0;
      int n_l = 0;
      int n_phi = 0;
      int n_step = 0;
      double smooth_factor = 2;
      bool magnetic_only = false;
-<<<<<<< HEAD:removed/include/ui.h
-     IonSampleType model = IonSampleType::MONTE_CARLO;
-    int n_sample_tr = 0;
-    int n_sample_l = 0;
-    bool dual_force_solver = false;
-=======
      IonSampleType model = IonSampleType::MONTE_CARLO;
     int n_sample_tr = 0;
     int n_sample_l = 0;
@@ -99,7 +94,6 @@ struct Set_ecool{
     double limit_dp = 0;
     double limit_angle = 0;
     double density_e = 0;
->>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:include/ui.h
     ForceFormula force_l = ForceFormula::PARKHOMCHUK;
 };
 
@@ -153,11 +147,8 @@ struct Set_e_beam{
      bool corr = false;
      bool binary = false;
      int buffer = 1000;
-<<<<<<< HEAD:removed/include/ui.h
-=======
      double t_rising = 0;
      double t_falling = 0;
->>>>>>> 0073e0515b87610b7f88ad2b07fc7d23618c159a:include/ui.h
      double cv_l = 0;
 };
 
@@ -170,7 +161,7 @@ struct Set_dynamic{
     bool edge_effect = false;
     bool fixed_bunch_length = false;
     bool reset_time = true;
-    bool overwrite = true;
+    bool overwrite = false;
     bool calc_luminosity = false;
     int output_intvl = 1;
     int save_ptcl_intvl = -1;
