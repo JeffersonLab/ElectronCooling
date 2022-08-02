@@ -10,6 +10,7 @@
 
 #ifndef PYJSPEC
 extern Record uircd;
+extern std::vector<string> output_files;
 #endif // PYJSPEC
 
 void Simulator::output_sddshead() {
@@ -46,10 +47,17 @@ void Simulator::output_to_file() {
             ++i;
         } while(file_exists(filename));
         outfile.open(filename);
+        #ifndef PYJSPEC
+        output_files.push_back(filename);
+        #endif // PYJSPEC
     }
     else {
         outfile.open(outfilename);
+        #ifndef PYJSPEC
+        output_files.push_back(outfilename);
+        #endif // PYJSPEC
     }
+
     output_sddshead();
     outfile.precision(10);
     outfile<<std::showpos;

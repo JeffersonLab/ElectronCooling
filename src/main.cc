@@ -6,6 +6,7 @@
 #include <iostream>
 #include <map>
 #include <regex>
+#include <vector>
 
 
 #include "beam.h"
@@ -29,6 +30,7 @@ using std::string;
 extern std::map<std::string, Section> sections;
 extern muParserHandle_t math_parser;
 extern string input_script_name;
+std::vector<string> output_files;
 
 enum class Test {IBS, ECOOL, BOTH,DYNAMICBOTHBUNCHED, MATH_PARSER};
 
@@ -179,6 +181,9 @@ int main(int argc, char** argv) {
         std::cout<<std::endl<<"============================================="<<std::endl;
         std::cout<<"END: "<<time_to_string()<<std::endl;
         std::cout<<"INPUT: "<<input_script_name<<std::endl;
+        for (auto& f: output_files) {
+            if(!f.empty()) std::cout<<"OUTPUT: "<<f<<std::endl;
+        }
         input_file.close();
     }
     else {
