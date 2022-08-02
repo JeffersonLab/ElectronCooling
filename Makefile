@@ -10,16 +10,16 @@ OMPFLAGS =
 #LIBS = -lm -lmuparser
 #LINK = -L$(LIBDIR) -s -Wl,-rpath=$(LIBDIR) $(LIBS) 
 
-LINK =  -L$(LIBDIR) -s -Wl,-rpath=$(LIBDIR) -lm -lmuparser -lgsl -lgslcblas
+LINK =  -L$(LIBDIR) -s -Wl,-rpath=$(LIBDIR) -lm -l:libmuparser.so.2 -lgsl -lgslcblas
 
 SRC = $(wildcard src/*.cc)
 OBJ = $(SRC:.cc=.o)
 DEPS = $(wildcard $(INCDIR)/*.h)
 
-$(info $$SRC is [${SRC}])
-$(info $$OBJ is [${OBJ}])
-$(info $$CFLAGS is [${CFLAGS}])
-$(info $$OMPFLAGS is [${OMPFLAGS}])
+#$(info $$SRC is [${SRC}])
+#$(info $$OBJ is [${OBJ}])
+#$(info $$CFLAGS is [${CFLAGS}])
+#$(info $$OMPFLAGS is [${OMPFLAGS}])
 
 .PHONE: all
 all = $(TARGET)

@@ -963,7 +963,7 @@ void calculate_luminosity(Set_ptrs &ptrs, bool calc=true) {
         double bet_y = ptrs.luminosity_ptr->bet_y1;
         double geo_emit_x = ptrs.luminosity_ptr->geo_emit_x1;
         double geo_emit_y = ptrs.luminosity_ptr->geo_emit_y1;
-        assert((sigma_x>0 && sigma_y>0) || (geo_emit_x>0 && geo_emit_y>0 && bet_x>0 && bet_y>0)  &&
+        assert(((sigma_x>0 && sigma_y>0) || (geo_emit_x>0 && geo_emit_y>0 && bet_x>0 && bet_y>0))  &&
                "WRONG VALUE FOR LUMINOSITY: SIZE OR EMITTANCE (w. BETA FUNCTIONS) OF BEAM 1 SHOULD BE POSITIVE.");
         if(sigma_x>0 && sigma_y>0) {
             lum_solver->set_beam_size(sigma_x, sigma_y, 0);
@@ -980,7 +980,7 @@ void calculate_luminosity(Set_ptrs &ptrs, bool calc=true) {
     double sigma_y = ptrs.luminosity_ptr->sigma_y2;
     double geo_emit_x = ptrs.luminosity_ptr->geo_emit_x2;
     double geo_emit_y = ptrs.luminosity_ptr->geo_emit_y2;
-    assert((sigma_x>0 && sigma_y>0) || (geo_emit_x>0 && geo_emit_y>0 && bet_x>0 && bet_y>0) &&
+    assert(((sigma_x>0 && sigma_y>0) || (geo_emit_x>0 && geo_emit_y>0 && bet_x>0 && bet_y>0)) &&
            "WRONG VALUE FOR LUMINOSITY: SIZE OR EMITTANCE (w. BETA FUNCTIONS) OF BEAM 2 SHOULD BE POSITIVE.");
     if(sigma_x>0 && sigma_y>0) {
         lum_solver->set_beam_size(sigma_x, sigma_y, 1);

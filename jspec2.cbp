@@ -23,7 +23,7 @@
 				</Compiler>
 				<Linker>
 					<Add option="-pg -lgmon" />
-					<Add option="-lmuparser -lgsl -fopenmp -pg  -lMapBasedTracking" />
+					<Add option="-lmuparser -lgsl -fopenmp -pg" />
 					<Add directory="lib" />
 					<Add directory="include" />
 				</Linker>
@@ -34,7 +34,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_73_x64_compiler" />
-				<Option parameters="../examples/test_simulation_rms_bunched_both.txt" />
+				<Option parameters="../examples/test_bunched_cooling_01.txt" />
 				<Compiler>
 					<Add option="-std=c++11" />
 					<Add option="-O3" />
