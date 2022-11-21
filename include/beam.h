@@ -101,6 +101,11 @@ protected:
     bool p_shift_ = false;             //Position shift. false: ion center and e- center overlap, true: there's a shift between the beam
     bool v_shift_ = false;             //Vecocity shift.
     double cv_l_ = 0;
+    std::unique_ptr<EBeam> samples = nullptr;
+    virtual double n_electron() = 0;
+    virtual void create_particle_location() = 0;
+    void create_particle_velocity();
+    void adjust_particle_location();
 public:
     virtual ~EBeam(){};
     Velocity velocity() const {return velocity_;}
@@ -136,6 +141,9 @@ public:
     void set_neutral(double x){neutralisation_ = x;}
     void set_multi_bunches(bool b){multi_bunches_ = b;}
     bool multi_bunches(){return multi_bunches_;}
+    bool disp_ = false;
+    double dx_ = 0;
+    double dy_ = 0;
     vector<double>& get_v(EBeamV v);
     vector<double>& cx(){return cx_;}
     vector<double>& cy(){return cy_;}
@@ -155,11 +163,19 @@ public:
                              vector<double>& field, int n);
     void multi_edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
                              vector<double>& field, int n, double cx, double cy, double cz);
+    void create_samples(int n_sample, double length);
+    void remove_disp(){disp_ = false; dx_ = 0; dy_ = 0;}
+    void set_disp(double dx, double dy){dx_ = dx; dy_ = dy; disp_ = true;}
+    bool disp(){return disp_;}
+    double dx(){return dx_;}
+    double dy(){return dy_;}
 };
 
 class UniformCylinder: public EBeam{
     double current_;                   //Current of the beam in A
     double radius_;              //Radius of the beam in meter
+    void create_particle_location(){};
+    double n_electron(){};
  public:
     void density (vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
     void density (vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
@@ -176,6 +192,8 @@ class UniformHollow: public EBeam {
     double current_;    //Peak current, the current as if the beam is coasting.
     double in_radius_;
     double out_radius_;
+    void create_particle_location(){};
+    double n_electron(){};
  public:
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
@@ -195,6 +213,8 @@ class UniformHollowBunch: public EBeam {
     double in_radius_;
     double out_radius_;
     double length_;
+    void create_particle_location();
+    double n_electron();
  public:
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
@@ -215,6 +235,8 @@ class UniformBunch: public EBeam{
     double length_;
     double t_rising_ = 0;
     double t_falling_ = 0;
+    void create_particle_location();
+    double n_electron();
 public:
     //Calculate the charge density for a given position (x,y,z) in Lab frame.
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
@@ -241,6 +263,8 @@ class EllipticUniformBunch: public EBeam{
     double rh_;         //half horizontal axis
     double rv_;         //half vertical axis
     double length_;     //bunch length
+    void create_particle_location(){};
+    double n_electron(){};
 public:
     //Calculate the charge density for a given position (x,y,z) in Lab frame.
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
@@ -261,6 +285,8 @@ class GaussianBunch: public EBeam{
     double sigma_xp_;
     double sigma_yp_;
     double sigma_dpp_;
+    void create_particle_location();
+    double n_electron(){return n_electron_;}
  public:
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
@@ -270,8 +296,6 @@ class GaussianBunch: public EBeam{
     void set_angles(double sigma_xp, double sigma_yp, double sigma_dpp);
     GaussianBunch(double n_electron, double sigma_x, double sigma_y, double sigma_s):n_electron_(n_electron),
                 sigma_x_(sigma_x),sigma_y_(sigma_y),sigma_s_(sigma_s){};
-
-
 };
 
 class ParticleBunch: public EBeam {
@@ -286,6 +310,9 @@ class ParticleBunch: public EBeam {
     int s_ = 100;
     bool binary_ = false;
     int buffer_ = 1000;
+    void create_particle_location(){};
+    void create_particle_velocity(){};
+    double n_electron(){return n_electron_;};
 public:
     std::vector<double> x, y, z, vx, vy, vz;  //Electron phase space coordinates
     //Calculate the charge density for a given position (x,y,z) in Lab frame.
@@ -301,6 +328,9 @@ public:
     void set_s(int s) {s_ = s;}
     void set_binary(bool b) {binary_ = b;}
     void set_skip(int n) {line_skip_ = n;}
+    //Used only when the particles are NOT loaded from files.
+    void set_n_sample(int n){n_ = n; x.resize(n); y.resize(n); z.resize(n); vx.resize(n); vy.resize(n); vz.resize(n);}
+    int n_sample(){return n_;}
 
     ParticleBunch(double n_electron, std::string filename, double length):n_electron_(n_electron),
         filename_(filename),length_(length){temperature_ = Temperature::VARY;};

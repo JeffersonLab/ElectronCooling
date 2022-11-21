@@ -447,36 +447,45 @@ void density(vector<Box> &tree, std::vector<long int>& list_e, std::vector<doubl
     //Loop through the tree for ions inside the electron bunch.
     for (auto& box: tree) {
         if(box.n_ion>0) {
-            double box_size = box.box_size;
-            int n_e = box.n_ptcl;
-            double d = n_e/(box_size*box_size*box_size); //density
-            long int idx = box.first_ptcl;
-//            double vx_avg, vy_avg, vz_avg;
-            double vz_avg;
-            vz_avg = 0;
-            while(list_e.at(idx)!=ne) {
-                vz_avg += vz.at(idx);
-                idx = list_e.at(idx);
-            }
-            vz_avg /= n_e;
-
-            idx = box.first_ptcl;
+            double d = 0;
             double vx_rms = 0, vy_rms = 0, vz_rms = 0;
-            while(list_e.at(idx)!=ne) {
-                double dvz = vz.at(idx) - vz_avg;
-                vx_rms += vx.at(idx)*vx.at(idx);
-                vy_rms += vy.at(idx)*vy.at(idx);
-                vz_rms += dvz*dvz;
-                idx = list_e.at(idx);
+            double vtr_rms = 0;
+            double vz_avg = 0;
+            if (box.density>0) {
+                d = box.density;
+                vtr_rms = box.vtr_rms;
+                vz_rms = box.vz_rms;
+                vz_avg = box.vz_avg;
             }
+            else {
+                double box_size = box.box_size;
+                int n_e = box.n_ptcl;
+                d = n_e/(box_size*box_size*box_size); //density
+                long int idx = box.first_ptcl;
 
-            vx_rms /= n_e;
-            vy_rms /= n_e;
-            vz_rms /= n_e;
-            double vtr_rms = sqrt(vx_rms+vy_rms);
-            vz_rms = sqrt(vz_rms);
+                vz_avg = 0;
+                while(list_e.at(idx)!=ne) {
+                    vz_avg += vz.at(idx);
+                    idx = list_e.at(idx);
+                }
+                vz_avg /= n_e;
 
-            idx = box.first_ion;
+                idx = box.first_ptcl;
+                while(list_e.at(idx)!=ne) {
+                    double dvz = vz.at(idx) - vz_avg;
+                    vx_rms += vx.at(idx)*vx.at(idx);
+                    vy_rms += vy.at(idx)*vy.at(idx);
+                    vz_rms += dvz*dvz;
+                    idx = list_e.at(idx);
+                }
+
+                vx_rms /= n_e;
+                vy_rms /= n_e;
+                vz_rms /= n_e;
+                vtr_rms = sqrt(vx_rms+vy_rms);
+                vz_rms = sqrt(vz_rms);
+            }
+            long int idx = box.first_ion;
             while(idx!=ni) {
                 density_e[idx] = d;
                 v_avg_z.at(idx) = vz_avg;
@@ -511,32 +520,41 @@ void density(vector<Box> &tree, std::vector<long int>& list_e, std::vector<doubl
     //Loop through the tree for ions inside the electron bunch.
     for (auto& box: tree) {
         if(box.n_ion>0) {
-            double box_size = box.box_size;
-            int n_e = box.n_ptcl;
-            double d = n_e/(box_size*box_size*box_size); //density
-            long int idx = box.first_ptcl;
-            double vx_rms, vy_rms, vz_rms;
-            vx_rms = 0;
-            vy_rms = 0;
-            vz_rms = 0;
-//            std::cout<<"======================="<<std::endl;
-//            std::cout<<n_e<<std::endl;
+            double d = 0;
+            double vx_rms = 0, vy_rms = 0, vz_rms = 0;
+            double vtr_rms = 0;
+            if (box.density>0) {
+                d = box.density;
+                vtr_rms = box.vtr_rms;
+                vz_rms = box.vz_rms;
+            }
+            else {
+                double box_size = box.box_size;
+                int n_e = box.n_ptcl;
+                d = n_e/(box_size*box_size*box_size); //density
+                long int idx = box.first_ptcl;
+                vx_rms = 0;
+                vy_rms = 0;
+                vz_rms = 0;
+    //            std::cout<<"======================="<<std::endl;
+    //            std::cout<<n_e<<std::endl;
 
-            while(list_e.at(idx)!=ne) {
-//                std::cout<<idx<<' '<<vx.at(idx)<<' '<<vy.at(idx)<<' '<<vz.at(idx)<<std::endl;
-                vx_rms += vx.at(idx)*vx.at(idx);
-                vy_rms += vy.at(idx)*vy.at(idx);
-                vz_rms += vz.at(idx)*vz.at(idx);
-                idx = list_e.at(idx);
+                while(list_e.at(idx)!=ne) {
+    //                std::cout<<idx<<' '<<vx.at(idx)<<' '<<vy.at(idx)<<' '<<vz.at(idx)<<std::endl;
+                    vx_rms += vx.at(idx)*vx.at(idx);
+                    vy_rms += vy.at(idx)*vy.at(idx);
+                    vz_rms += vz.at(idx)*vz.at(idx);
+                    idx = list_e.at(idx);
+                }
+
+                vx_rms /= n_e;
+                vy_rms /= n_e;
+                vz_rms /= n_e;
+                vtr_rms = sqrt(vx_rms+vy_rms);
+                vz_rms = sqrt(vz_rms);
             }
 
-            vx_rms /= n_e;
-            vy_rms /= n_e;
-            vz_rms /= n_e;
-            double vtr_rms = sqrt(vx_rms+vy_rms);
-            vz_rms = sqrt(vz_rms);
-
-            idx = box.first_ion;
+            long int idx = box.first_ion;
             while(idx!=ni) {
                 density_e[idx] = d;
                 v_rms_t.at(idx) = vtr_rms;

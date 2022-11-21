@@ -5,6 +5,8 @@
 #include <cstring>
 #include <fstream>
 #include "arbitrary_electron_beam.h"
+#include "functions.h"
+#include "ions.h"
 
 Beam::Beam(int charge_number, double mass_number, double kinetic_energy, double emit_nx, double emit_ny, double dp_p,
            double sigma_s, double n_particle): charge_number_(charge_number), mass_number_(mass_number),
@@ -225,6 +227,63 @@ void UniformHollowBunch::density(vector<double>& x, vector<double>& y, vector<do
     }
 }
 
+double UniformHollowBunch::n_electron(){
+    int nq = this->charge_number();
+    double out_r2 = out_radius_*out_radius_;
+    double in_r2 = in_radius_*in_radius_;
+    double area = k_pi*(out_r2-in_r2);
+    double density;
+    if (area!=0)
+        density = current_/(area*nq*k_e*this->beta()*k_c);
+    else
+        density = 0;
+    if (density<0) density *= -1;
+
+    return density*area;
+}
+
+void UniformHollowBunch::create_particle_location(){
+    ParticleBunch* ptr = dynamic_cast<ParticleBunch*>(samples.get());
+    int n_sample = ptr->n_sample();
+
+    uniform_random(n_sample, ptr->z, -length_/2, length_/2);
+    uniform_random(n_sample, ptr->x, 0, 1);
+    uniform_random(n_sample, ptr->y, 0, 2*k_pi);
+    double out_r2 = out_radius_*out_radius_;
+    double in_r2 = in_radius_*in_radius_;
+    out_r2 -= in_r2;
+    for(int i=0; i<n_sample; ++i) {
+        double r = sqrt(ptr->x.at(i)*out_r2+in_r2);
+        double x = r * cos(ptr->y.at(i));
+        ptr->x.at(i) = x;
+        ptr->y.at(i) = sqrt(r*r - x*x);
+    }
+}
+
+double UniformBunch::n_electron() {
+    int nq = this->charge_number();
+    if (nq<0) nq *= -1;
+    double r2 = radius_*radius_;
+    double density = current_/(k_pi*r2*nq*k_e*this->beta()*k_c);
+    double volume = k_pi*r2*length_;
+    return density*volume;
+}
+
+void UniformBunch::create_particle_location() {
+    ParticleBunch* ptr = dynamic_cast<ParticleBunch*>(samples.get());
+    int n_sample = ptr->n_sample();
+
+    uniform_random(n_sample, ptr->z, -length_/2, length_/2);
+    uniform_random(n_sample, ptr->x, 0, 1);
+    uniform_random(n_sample, ptr->y, 0, 2*k_pi);
+    for(int i=0; i<n_sample; ++i) {
+        double r = radius_*sqrt(ptr->x.at(i));
+        double x = r * cos(ptr->y.at(i));
+        ptr->x.at(i) = x;
+        ptr->y.at(i) = sqrt(r*r - x*x);
+    }
+}
+
 
 void UniformBunch::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n_particle) {
 
@@ -299,6 +358,16 @@ void EllipticUniformBunch::density(vector<double>& x, vector<double>& y, vector<
     }
 }
 
+void GaussianBunch::create_particle_location() {
+    ParticleBunch* ptr = dynamic_cast<ParticleBunch*>(samples.get());
+    int n_sample = ptr->n_sample();
+    gaussian_random(n_sample, ptr->x, sigma_x_);
+    gaussian_random(n_sample, ptr->y, sigma_y_);
+    gaussian_random(n_sample, ptr->z, sigma_s_);
+    gaussian_random_adjust(n_sample, ptr->x, sigma_x_);
+    gaussian_random_adjust(n_sample, ptr->y, sigma_y_);
+    gaussian_random_adjust(n_sample, ptr->z, sigma_s_);
+}
 
 void GaussianBunch::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n_particle) {
     double amp = n_electron_/(sqrt(8*k_pi*k_pi*k_pi)*sigma_x_*sigma_y_*sigma_s_);
@@ -326,7 +395,7 @@ void GaussianBunch::density(vector<double>& x, vector<double>& y, vector<double>
 }
 
 void ParticleBunch::load_particle(long int n) {
-    n_ = load_electrons(x, y, z, vx, vy, vz, filename_, n, line_skip_, binary_, buffer_);
+    if(n>=0) n_ = load_electrons(x, y, z, vx, vy, vz, filename_, n, line_skip_, binary_, buffer_);
     create_e_tree(x, y, z, n_, s_, tree_, list_e_);
     if(length_==0) {
         auto itr = z.begin();
@@ -471,3 +540,54 @@ void EBeam::multi_edge_field(Cooler& cooler, vector<double>&x, vector<double>& y
         for(int j=0; j<n; ++j) field.at(j) += d.at(j);
     }
 }
+
+void EBeam::create_samples(int n_sample, double length) {
+    std::string filename = "no_such_file";
+    samples.reset(new ParticleBunch(n_electron(), filename, length));
+
+    ParticleBunch* ptr = dynamic_cast<ParticleBunch*>(samples.get());
+    ptr->set_n_sample(n_sample);
+    create_particle_location();
+    create_particle_velocity();
+    adjust_particle_location();
+    ptr->load_particle(-1);
+}
+
+void EBeam::create_particle_velocity(){
+    ParticleBunch* ptr = dynamic_cast<ParticleBunch*>(samples.get());
+    int n_sample = ptr->n_sample();
+    gaussian_random(n_sample, ptr->vx, v_rms_t.at(0));
+    gaussian_random(n_sample, ptr->vz, v_rms_l.at(0));
+    gaussian_random_adjust(n_sample, ptr->vx, v_rms_t.at(0));
+    gaussian_random_adjust(n_sample, ptr->vz, v_rms_l.at(0));
+    uniform_random(n_sample, ptr->vy, 0, 2*k_pi);
+    for(int i=0; i<n_sample; ++i) {
+        double vy = ptr->vx.at(i)*sin(ptr->vy.at(i));
+        ptr->vy.at(i) = vy;
+        ptr->vx.at(i) = sqrt(ptr->vx.at(i)*ptr->vx.at(i) - vy*vy);
+    }
+}
+
+void EBeam::adjust_particle_location() {
+    ParticleBunch* ptr = dynamic_cast<ParticleBunch*>(samples.get());
+    int n_sample = ptr->n_sample();
+    if (!iszero(center_[0])) {
+        for(auto& x: ptr->x) x += center_[0];
+    }
+    if (!iszero(center_[1])) {
+        for(auto& y: ptr->y) y += center_[1];
+    }
+    if (!iszero(center_[2])) {
+        for(auto& z: ptr->z) z += center_[2];
+    }
+    if (disp_) {
+        std::vector<double> dp_p(n_sample);
+        double k = 1/(beta_*k_c);
+        for(int i=0; i<n_sample; ++i) {
+            dp_p.at(i) = k*ptr->vz.at(i);
+        }
+        if (!iszero(dx_)) adjust_disp(dx_, ptr->x, dp_p, ptr->x, n_sample);
+        if (!iszero(dy_)) adjust_disp(dy_, ptr->y, dp_p, ptr->y, n_sample);
+    }
+}
+

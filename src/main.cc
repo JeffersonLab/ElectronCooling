@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
         input_file.close();
     }
     else {
-        Test test = Test::MATH_PARSER;
+        Test test = Test::ECOOL;
         switch (test) {
             case Test::MATH_PARSER: {
                 break;

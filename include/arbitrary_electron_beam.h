@@ -21,6 +21,10 @@ typedef struct Box{
 	double box_size = 0;
 	long int first_ion = 0;
 	int n_ion = 0;
+	double vz_avg = 0;
+	double vz_rms = 0;
+	double vtr_rms = 0;
+	double density = 0;
 } Box;
 
 typedef struct Colleague{
