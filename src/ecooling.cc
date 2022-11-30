@@ -226,7 +226,15 @@ void ECoolRate::ecool_rate(FrictionForceSolver &force_solver, Beam &ion,
     int n_sample = ion_sample.n_sample();
     if(n_sample>scratch_size) init_scratch(n_sample);
 
-    electron_density(ion_sample,ebeam);
+//    electron_density(ion_sample,ebeam);
+    if(ebeam.disp()) {
+        auto p = ebeam.samples.get();
+
+        electron_density(ion_sample,*ebeam.samples);
+    }
+    else {
+        electron_density(ion_sample,ebeam);
+    }
     space_to_dynamic(n_sample, ion, ion_sample);
 
     if (cooling_count) {
@@ -248,7 +256,16 @@ void ECoolRate::ecool_rate(FrictionForceSolver &force_solver, Beam &ion,
     //Transfer into e- beam frame
     beam_frame(n_sample, ebeam.gamma());
     //Calculate friction force
-    force(n_sample, ion, ebeam, cooler, force_solver);
+    if(ebeam.disp()) {
+//        ParticleBunch* ptr = dynamic_cast<ParticleBunch*>(ebeam.samples.get());
+//        force(n_sample, ion, *ptr, cooler, force_solver);
+//        auto p = ebeam.samples.get();
+
+        force(n_sample, ion, *ebeam.samples, cooler, force_solver);
+    }
+    else {
+        force(n_sample, ion, ebeam, cooler, force_solver);
+    }
 //    //Restore the longitudinal velocity if it has been changed due to electron velocity gradient
 //    restore_velocity(n_sample, ebeam);
 

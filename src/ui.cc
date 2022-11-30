@@ -45,7 +45,8 @@ std::vector<string> E_BEAM_SHAPE_TYPES = {"DC_UNIFORM", "BUNCHED_GAUSSIAN", "BUN
 std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS", "CURRENT", "SIGMA_X", "SIGMA_Y",
     "SIGMA_Z", "LENGTH", "E_NUMBER", "RH", "RV", "R_INNER", "R_OUTTER", "PARTICLE_FILE", "TOTAL_PARTICLE_NUMBER",
     "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
-    "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT", "RISE_TIME", "FALL_TIME", "CV_L", "SIGMA_XP", "SIGMA_YP", "SIGMA_DPP"};
+    "LIST_CY", "LIST_CZ", "P_SHIFT", "V_SHIFT", "RISE_TIME", "FALL_TIME", "CV_L", "SIGMA_XP", "SIGMA_YP", "SIGMA_DPP",
+    "DX", "DY"};
 std::vector<string> ECOOL_ARGS = {"SAMPLE_NUMBER", "FORCE_FORMULA", "TMP_EFF", "V_EFF", "SMOOTH_RHO_MAX", "USE_GSL",
     "N_TR", "N_L", "N_PHI", "USE_MEAN_RHO_MIN",  "MODEL", "SAMPLE_NUMBER_TR", "SAMPLE_NUMBER_L","N_STEP", "SMOOTH_FACTOR",
     "MAGNETIC_ONLY", "DUAL_FORCE", "FORCE_FORMULA_L", "FORCE_OUTPUT", "LIMIT_ANGLE", "LIMIT_MOMENTUM_SPREAD",
@@ -292,6 +293,12 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             else if (var == "CV_L") {
                 e_beam_args->cv_l = std::stod(val);
             }
+            else if (var == "DX") {
+                e_beam_args->dx = std::stod(val);
+            }
+            else if (var == "DY") {
+                e_beam_args->dy = std::stod(val);
+            }
             else {
                 assert(false&&"Wrong arguments in section_e_beam!");
             }
@@ -370,6 +377,12 @@ void define_e_beam(string &str, Set_e_beam *e_beam_args) {
             else if (var == "CV_L") {
                 e_beam_args->cv_l = mupEval(math_parser);
             }
+            else if (var == "DX") {
+                e_beam_args->dx = mupEval(math_parser);
+            }
+            else if (var == "DY") {
+                e_beam_args->dy = mupEval(math_parser);
+            }
             else {
                 assert(false&&"Wrong arguments in section_e_beam!");
             }
@@ -385,6 +398,8 @@ void create_e_beam(Set_ptrs &ptrs) {
     double gamma = ptrs.e_beam_ptr->gamma;
     double tmp_tr = ptrs.e_beam_ptr->tmp_tr;
     double tmp_l = ptrs.e_beam_ptr->tmp_l;
+    double dx = ptrs.e_beam_ptr->dx;
+    double dy = ptrs.e_beam_ptr->dy;
     assert(gamma>0 && tmp_tr >= 0 && tmp_l >= 0 && "WRONG PARAMETER VALUE FOR ELECTRON BEAM!");
 
     if (shape == "DC_UNIFORM") {
@@ -499,6 +514,15 @@ void create_e_beam(Set_ptrs &ptrs) {
     if(ptrs.e_beam_ptr->p_shift) ptrs.e_beam->set_p_shift(true);
     if(ptrs.e_beam_ptr->v_shift) ptrs.e_beam->set_v_shift(true);
     if(!iszero(ptrs.e_beam_ptr->cv_l)) ptrs.e_beam->set_cv_l(ptrs.e_beam_ptr->cv_l);
+    if(!iszero(dx) || !iszero(dy)) {
+        ptrs.e_beam->set_disp(dx,dy);
+        int n_sample = ptrs.e_beam_ptr->n_particle;
+        assert(n_sample>=0 && "WRONG VALUE FOR PARAMETER N_PARTICLE IN E_BEAM");
+        if(n_sample>0) ptrs.e_beam->create_samples(n_sample);
+        else ptrs.e_beam->create_samples();
+        int s = ptrs.e_beam_ptr->particle_perbox;
+        ptrs.e_beam->samples->set_s(s);
+    }
     std::cout<<"Electron beam created!"<<std::endl;
 }
 

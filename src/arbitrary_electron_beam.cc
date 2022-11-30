@@ -419,7 +419,7 @@ void create_ion_tree(std::vector<double>& x, std::vector<double>& y, std::vector
 			}
         }
 	}
-	list.at(ptr_out) = n;
+	if(ptr_out<n) list.at(ptr_out) = n;
 }
 
 void density(vector<Box> &tree, std::vector<long int>& list_e, std::vector<double>& vx, std::vector<double>& vy,
@@ -510,7 +510,7 @@ void density(vector<Box> &tree, std::vector<long int>& list_e, std::vector<doubl
     v_rms_t.resize(ni, 0);
 
     //Ions outside the electron bunch.
-    while(list_i[idx_out]!=ni) {
+    while(idx_out!=ni && list_i[idx_out]!=ni) {
         density_e[idx_out] = 0;
         v_rms_t[idx_out] = 0;
         v_rms_l[idx_out] = 0;
@@ -564,6 +564,65 @@ void density(vector<Box> &tree, std::vector<long int>& list_e, std::vector<doubl
         }
     }
 }
+
+
+//void density(vector<Box> &tree, std::vector<long int>& list_e, std::vector<double>& vx, std::vector<double>& vy,
+//             std::vector<double>& vz, const long int ne,  std::vector<int>& list_i,
+//             int idx_out, const int ni, std::vector<double>& density_e,
+//             std::vector<double>& v_rms_t, std::vector<double>& v_rms_l) {
+//
+//    v_rms_l.clear();
+//    v_rms_l.resize(ni, 0);
+//    v_rms_t.clear();
+//    v_rms_t.resize(ni, 0);
+//
+//    //Ions outside the electron bunch.
+//    while(idx_out!=ni && list_i[idx_out]!=ni) {
+//        density_e[idx_out] = 0;
+//        v_rms_t[idx_out] = 0;
+//        v_rms_l[idx_out] = 0;
+//        idx_out = list_i[idx_out];
+//    }
+//
+//    //Loop through the tree for ions inside the electron bunch.
+//    for (auto& box: tree) {
+//        if(box.n_ion>0) {
+//            double box_size = box.box_size;
+//            int n_e = box.n_ptcl;
+//            double d = n_e/(box_size*box_size*box_size); //density
+//            long int idx = box.first_ptcl;
+//            double vx_rms, vy_rms, vz_rms;
+//            vx_rms = 0;
+//            vy_rms = 0;
+//            vz_rms = 0;
+////            std::cout<<"======================="<<std::endl;
+////            std::cout<<n_e<<std::endl;
+//
+//            while(list_e.at(idx)!=ne) {
+////                std::cout<<idx<<' '<<vx.at(idx)<<' '<<vy.at(idx)<<' '<<vz.at(idx)<<std::endl;
+//                vx_rms += vx.at(idx)*vx.at(idx);
+//                vy_rms += vy.at(idx)*vy.at(idx);
+//                vz_rms += vz.at(idx)*vz.at(idx);
+//                idx = list_e.at(idx);
+//            }
+//
+//            vx_rms /= n_e;
+//            vy_rms /= n_e;
+//            vz_rms /= n_e;
+//            double vtr_rms = sqrt(vx_rms+vy_rms);
+//            vz_rms = sqrt(vz_rms);
+//
+//            idx = box.first_ion;
+//            while(idx!=ni) {
+//                density_e[idx] = d;
+//                v_rms_t.at(idx) = vtr_rms;
+//                v_rms_l.at(idx) = vz_rms;
+//                idx = list_i.at(idx);
+//            }
+//        }
+//    }
+//}
+
 
 
 //output a box for debug

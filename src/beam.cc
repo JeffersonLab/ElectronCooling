@@ -103,8 +103,6 @@ void GaussianBunch::set_angles(double sigma_xp, double sigma_yp, double sigma_dp
     double tpr_t = (sigma_xp*sigma_xp + sigma_yp*sigma_yp)*beta_*beta_*gamma_*gamma_*k_me*1e6/2;
     double tpr_l = sigma_dpp*sigma_dpp*beta_*beta_*k_me*1e6;
     set_tpr(tpr_t, tpr_l);
-//    std::cout<<"Transverse temperature [eV]: "<<tpr_t<<std::endl;
-//    std::cout<<"Longitudinal temperature [eV]: "<<tpr_l<<std::endl;
 }
 
 void UniformCylinder::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n_particle) {
@@ -243,22 +241,22 @@ double UniformHollowBunch::n_electron(){
 }
 
 void UniformHollowBunch::create_particle_location(){
-    ParticleBunch* ptr = dynamic_cast<ParticleBunch*>(samples.get());
-    int n_sample = ptr->n_sample();
+    int n_sample = samples->n_sample();
 
-    uniform_random(n_sample, ptr->z, -length_/2, length_/2);
-    uniform_random(n_sample, ptr->x, 0, 1);
-    uniform_random(n_sample, ptr->y, 0, 2*k_pi);
+    uniform_random(n_sample, samples->z, -length_/2, length_/2);
+    uniform_random(n_sample, samples->x, 0, 1);
+    uniform_random(n_sample, samples->y, 0, 2*k_pi);
     double out_r2 = out_radius_*out_radius_;
     double in_r2 = in_radius_*in_radius_;
     out_r2 -= in_r2;
     for(int i=0; i<n_sample; ++i) {
-        double r = sqrt(ptr->x.at(i)*out_r2+in_r2);
-        double x = r * cos(ptr->y.at(i));
-        ptr->x.at(i) = x;
-        ptr->y.at(i) = sqrt(r*r - x*x);
+        double r = sqrt(samples->x.at(i)*out_r2+in_r2);
+        double x = r * cos(samples->y.at(i));
+        samples->x.at(i) = x;
+        samples->y.at(i) = sqrt(r*r - x*x);
     }
 }
+
 
 double UniformBunch::n_electron() {
     int nq = this->charge_number();
@@ -270,17 +268,16 @@ double UniformBunch::n_electron() {
 }
 
 void UniformBunch::create_particle_location() {
-    ParticleBunch* ptr = dynamic_cast<ParticleBunch*>(samples.get());
-    int n_sample = ptr->n_sample();
+    int n_sample = samples->n_sample();
 
-    uniform_random(n_sample, ptr->z, -length_/2, length_/2);
-    uniform_random(n_sample, ptr->x, 0, 1);
-    uniform_random(n_sample, ptr->y, 0, 2*k_pi);
+    uniform_random(n_sample, samples->z, -length_/2, length_/2);
+    uniform_random(n_sample, samples->x, 0, 1);
+    uniform_random(n_sample, samples->y, 0, 2*k_pi);
     for(int i=0; i<n_sample; ++i) {
-        double r = radius_*sqrt(ptr->x.at(i));
-        double x = r * cos(ptr->y.at(i));
-        ptr->x.at(i) = x;
-        ptr->y.at(i) = sqrt(r*r - x*x);
+        double r = radius_*sqrt(samples->x.at(i));
+        double x = r * cos(samples->y.at(i));
+        samples->x.at(i) = x;
+        samples->y.at(i) = sqrt(r*r - x*x);
     }
 }
 
@@ -359,14 +356,13 @@ void EllipticUniformBunch::density(vector<double>& x, vector<double>& y, vector<
 }
 
 void GaussianBunch::create_particle_location() {
-    ParticleBunch* ptr = dynamic_cast<ParticleBunch*>(samples.get());
-    int n_sample = ptr->n_sample();
-    gaussian_random(n_sample, ptr->x, sigma_x_);
-    gaussian_random(n_sample, ptr->y, sigma_y_);
-    gaussian_random(n_sample, ptr->z, sigma_s_);
-    gaussian_random_adjust(n_sample, ptr->x, sigma_x_);
-    gaussian_random_adjust(n_sample, ptr->y, sigma_y_);
-    gaussian_random_adjust(n_sample, ptr->z, sigma_s_);
+    int n_sample = samples->n_sample();
+    gaussian_random(n_sample, samples->x, sigma_x_);
+    gaussian_random(n_sample, samples->y, sigma_y_);
+    gaussian_random(n_sample, samples->z, sigma_s_);
+    gaussian_random_adjust(n_sample, samples->x, sigma_x_);
+    gaussian_random_adjust(n_sample, samples->y, sigma_y_);
+    gaussian_random_adjust(n_sample, samples->z, sigma_s_);
 }
 
 void GaussianBunch::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n_particle) {
@@ -425,6 +421,7 @@ void ParticleBunch::density(vector<double>& x, vector<double>& y, vector<double>
     else
         {::density(tree_, list_e_, vx, vy, vz, n_, list_i, idx_out, n, ne, v_rms_t, v_rms_l);}
     for(int i=0; i<n; ++i) ne[i] *= rate;
+    return ;
 }
 
 void ParticleBunch::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n, double cx, double cy,
@@ -451,6 +448,12 @@ void ParticleBunch::density(vector<double>& x, vector<double>& y, vector<double>
         z[i] -= cz;
     }
     for(int i=0; i<n; ++i) ne[i] *= rate;
+}
+
+void ParticleBunch::create_particle_location() {
+    std::copy(samples->x.begin(), samples->x.end(), x.begin());
+    std::copy(samples->y.begin(), samples->y.end(), y.begin());
+    std::copy(samples->z.begin(), samples->z.end(), z.begin());
 }
 
 void EBeam::multi_density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n) {
@@ -541,53 +544,66 @@ void EBeam::multi_edge_field(Cooler& cooler, vector<double>&x, vector<double>& y
     }
 }
 
-void EBeam::create_samples(int n_sample, double length) {
+void EBeam::create_samples(int n_sample) {
     std::string filename = "no_such_file";
+    double length = this->length();
     samples.reset(new ParticleBunch(n_electron(), filename, length));
-
-    ParticleBunch* ptr = dynamic_cast<ParticleBunch*>(samples.get());
-    ptr->set_n_sample(n_sample);
+    samples->set_gamma(gamma_);
+    samples->set_n_sample(n_sample);
     create_particle_location();
-    create_particle_velocity();
+    if(shape()==Shape::PARTICLE_BUNCH) {
+        ParticleBunch* this_ptr = dynamic_cast<ParticleBunch*>(this);
+        std::copy(samples->vx.begin(), samples->vx.end(), this_ptr->vx.begin());
+        std::copy(samples->vy.begin(), samples->vy.end(), this_ptr->vy.begin());
+        std::copy(samples->vz.begin(), samples->vz.end(), this_ptr->vz.begin());
+    }
+    else {
+        create_particle_velocity();
+    }
     adjust_particle_location();
-    ptr->load_particle(-1);
+    samples->load_particle(-1);
 }
 
 void EBeam::create_particle_velocity(){
-    ParticleBunch* ptr = dynamic_cast<ParticleBunch*>(samples.get());
-    int n_sample = ptr->n_sample();
-    gaussian_random(n_sample, ptr->vx, v_rms_t.at(0));
-    gaussian_random(n_sample, ptr->vz, v_rms_l.at(0));
-    gaussian_random_adjust(n_sample, ptr->vx, v_rms_t.at(0));
-    gaussian_random_adjust(n_sample, ptr->vz, v_rms_l.at(0));
-    uniform_random(n_sample, ptr->vy, 0, 2*k_pi);
+    int n_sample = samples->n_sample();
+    gaussian_random(n_sample, samples->vx, v_rms_t.at(0));
+    gaussian_random(n_sample, samples->vz, v_rms_l.at(0));
+    gaussian_random_adjust(n_sample, samples->vx, v_rms_t.at(0));
+    gaussian_random_adjust(n_sample, samples->vz, v_rms_l.at(0));
+    uniform_random(n_sample, samples->vy, 0, 2*k_pi);
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(int i=0; i<n_sample; ++i) {
-        double vy = ptr->vx.at(i)*sin(ptr->vy.at(i));
-        ptr->vy.at(i) = vy;
-        ptr->vx.at(i) = sqrt(ptr->vx.at(i)*ptr->vx.at(i) - vy*vy);
+        double vy = samples->vx.at(i)*sin(samples->vy.at(i));
+        samples->vy.at(i) = vy;
+        samples->vx.at(i) = sqrt(samples->vx.at(i)*samples->vx.at(i) - vy*vy);
     }
 }
 
 void EBeam::adjust_particle_location() {
-    ParticleBunch* ptr = dynamic_cast<ParticleBunch*>(samples.get());
-    int n_sample = ptr->n_sample();
+    int n_sample = samples->n_sample();
     if (!iszero(center_[0])) {
-        for(auto& x: ptr->x) x += center_[0];
+        for(auto& x: samples->x) x += center_[0];
     }
     if (!iszero(center_[1])) {
-        for(auto& y: ptr->y) y += center_[1];
+        for(auto& y: samples->y) y += center_[1];
     }
     if (!iszero(center_[2])) {
-        for(auto& z: ptr->z) z += center_[2];
+        for(auto& z: samples->z) z += center_[2];
     }
     if (disp_) {
         std::vector<double> dp_p(n_sample);
         double k = 1/(beta_*k_c);
+        #ifdef _OPENMP
+            #pragma omp parallel for
+        #endif // _OPENMP
         for(int i=0; i<n_sample; ++i) {
-            dp_p.at(i) = k*ptr->vz.at(i);
+            dp_p.at(i) = k*samples->vz.at(i);
         }
-        if (!iszero(dx_)) adjust_disp(dx_, ptr->x, dp_p, ptr->x, n_sample);
-        if (!iszero(dy_)) adjust_disp(dy_, ptr->y, dp_p, ptr->y, n_sample);
+        if (!iszero(dx_)) adjust_disp(dx_, samples->x, dp_p, samples->x, n_sample);
+        if (!iszero(dy_)) adjust_disp(dy_, samples->y, dp_p, samples->y, n_sample);
     }
 }
+
 

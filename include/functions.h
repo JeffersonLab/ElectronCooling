@@ -27,6 +27,9 @@ int gaussian_random_adjust(int n, T& random_num, double sigma, double avg=0) {
     mean /= n;
 
     double sigma_calc = 0;
+    #ifdef _OPENMP
+        #pragma omp parallel for reduction(+ : sigma_calc)
+    #endif // _OPENMP
     for(int i=0; i<n; ++i) {
         random_num[i] -= mean;
         sigma_calc += random_num[i]*random_num[i];
@@ -34,6 +37,9 @@ int gaussian_random_adjust(int n, T& random_num, double sigma, double avg=0) {
     sigma_calc = sqrt(sigma_calc/n);
 
     double adjust_width = sigma/sigma_calc;
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(int i=0; i<n; ++i) {
         random_num[i] *= adjust_width;
         random_num[i] += avg;
@@ -53,9 +59,15 @@ int uniform_random(int n, T& random_num, double r_min, double r_max){
 template <typename T>
 int uniform_random_adjust(int n, T& random_num, double avg) {
     double mean = 0;
+    #ifdef _OPENMP
+        #pragma omp parallel for reduction(+ : mean)
+    #endif // _OPENMP
     for(unsigned int i=0; i<n; ++i) mean += random_num[i];
     mean /= n;
     double adjust = avg - mean;
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
     for(unsigned int i=0; i<n; ++i) random_num[i] += adjust;
     return 0;
 }
@@ -63,11 +75,17 @@ int uniform_random_adjust(int n, T& random_num, double avg) {
 template <typename T>
 double rms(int n, T& v) {
     double sum = 0;
+    #ifdef _OPENMP
+        #pragma omp parallel for reduction(+ : sum)
+    #endif // _OPENMP
     for(int i=0; i<n; ++i) {
         sum += v[i];
     }
     double avg = sum/n;
     sum = 0;
+    #ifdef _OPENMP
+        #pragma omp parallel for reduction(+ : sum)
+    #endif // _OPENMP
     for(int i=0; i<n; ++i) {
        double adj = v[i] - avg;
        sum += adj*adj;

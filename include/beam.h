@@ -76,6 +76,8 @@ enum class Temperature {CONST, USER_DEFINE, SPACE_CHARGE, VARY, VARY_X, VARY_Y, 
 enum class EBeamV {TPR_TR, TPR_L, V_RMS_TR, V_RMS_L, V_AVG_X, V_AVG_Y, V_AVG_L};
 enum class EdgeEffect {Rising, Falling};
 
+class ParticleBunch;
+
 class EBeam {
 protected:
     double kinetic_energy_ = 0;
@@ -94,14 +96,13 @@ protected:
     vector<double> v_avg_y;
     vector<double> v_avg_l;
     bool multi_bunches_ = false;
-    int n_; //Number of bunches
+    int n_ = 1; //Number of bunches
     vector<double> cx_;     //List of cxs.
     vector<double> cy_;     //List of cys.
     vector<double> cz_;     //List of czs.
     bool p_shift_ = false;             //Position shift. false: ion center and e- center overlap, true: there's a shift between the beam
     bool v_shift_ = false;             //Vecocity shift.
     double cv_l_ = 0;
-    std::unique_ptr<EBeam> samples = nullptr;
     virtual double n_electron() = 0;
     virtual void create_particle_location() = 0;
     void create_particle_velocity();
@@ -141,6 +142,8 @@ public:
     void set_neutral(double x){neutralisation_ = x;}
     void set_multi_bunches(bool b){multi_bunches_ = b;}
     bool multi_bunches(){return multi_bunches_;}
+//    std::unique_ptr<EBeam> samples = nullptr;
+    std::unique_ptr<ParticleBunch> samples = nullptr;
     bool disp_ = false;
     double dx_ = 0;
     double dy_ = 0;
@@ -163,12 +166,13 @@ public:
                              vector<double>& field, int n);
     void multi_edge_field(Cooler& cooler, vector<double>&x, vector<double>& y, vector<double>&z,
                              vector<double>& field, int n, double cx, double cy, double cz);
-    void create_samples(int n_sample, double length);
+    void create_samples(int n_sample = 2000000);
     void remove_disp(){disp_ = false; dx_ = 0; dy_ = 0;}
     void set_disp(double dx, double dy){dx_ = dx; dy_ = dy; disp_ = true;}
     bool disp(){return disp_;}
     double dx(){return dx_;}
     double dy(){return dy_;}
+//    EBeam& get_samples(){return *samples;}
 };
 
 class UniformCylinder: public EBeam{
@@ -286,7 +290,7 @@ class GaussianBunch: public EBeam{
     double sigma_yp_;
     double sigma_dpp_;
     void create_particle_location();
-    double n_electron(){return n_electron_;}
+    double n_electron(){return n_electron_*0.9973;}
  public:
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
@@ -307,11 +311,10 @@ class ParticleBunch: public EBeam {
     int line_skip_ = 0;
     vector<Box> tree_;
     vector<long int> list_e_;
-    int s_ = 100;
+    int s_ = 200;
     bool binary_ = false;
     int buffer_ = 1000;
-    void create_particle_location(){};
-    void create_particle_velocity(){};
+    void create_particle_location();
     double n_electron(){return n_electron_;};
 public:
     std::vector<double> x, y, z, vx, vy, vz;  //Electron phase space coordinates

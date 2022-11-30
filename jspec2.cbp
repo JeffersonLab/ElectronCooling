@@ -12,12 +12,11 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_73_x64_compiler" />
-				<Option parameters="../debug/test_element_by_element_tracking.txt" />
+				<Option parameters="../debug/test_bunched_cooling_non_mag_01_ebeam_disp.txt" />
 				<Compiler>
 					<Add option="-std=c++11" />
 					<Add option="-pg" />
 					<Add option="-g" />
-					<Add option="-fopenmp" />
 					<Add directory="src" />
 					<Add directory="include" />
 				</Compiler>
@@ -34,7 +33,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gnu_gcc_73_x64_compiler" />
-				<Option parameters="../examples/test_bunched_cooling_01.txt" />
+				<Option parameters="../debug/test_bunched_cooling_non_mag_01_ebeam_disp.txt" />
 				<Compiler>
 					<Add option="-std=c++11" />
 					<Add option="-O3" />

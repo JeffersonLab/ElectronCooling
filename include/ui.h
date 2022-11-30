@@ -150,6 +150,8 @@ struct Set_e_beam{
      double t_rising = 0;
      double t_falling = 0;
      double cv_l = 0;
+     double dx = 0;
+     double dy = 0;
 };
 
 struct Set_dynamic{
