@@ -1,8 +1,10 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
+#include <math.h>
 #include <random>
 #include <string>
+#include "constants.h"
 
 bool iszero(double x);
 bool iszero(double x, double err);
@@ -70,6 +72,74 @@ int uniform_random_adjust(int n, T& random_num, double avg) {
     #endif // _OPENMP
     for(unsigned int i=0; i<n; ++i) random_num[i] += adjust;
     return 0;
+}
+
+template <typename T>
+int uniform_random_in_circle(int n, double radius, T& x, T& y){
+    uniform_random(n, x, 0, 1);
+    uniform_random(n, y, 0, 2*k_pi);
+
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
+    for(int i=0; i<n; ++i) {
+        double r = radius*sqrt(x.at(i));
+        double u = r * cos(y.at(i));
+        x.at(i) = u;
+        y.at(i) = sqrt(r*r - u*u);
+    }
+    return 0;
+}
+
+template <typename T>
+int uniform_random_in_hollow_circle(int n, double radius_out, double radius_in, T& x, T& y){
+    uniform_random(n, x, 0, 1);
+    uniform_random(n, y, 0, 2*k_pi);
+
+    double out_r2 = radius_out * radius_out;
+    double in_r2 = radius_in * radius_in;
+    out_r2 -= in_r2;
+
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
+    for(int i=0; i<n; ++i) {
+        double r = sqrt(x.at(i)*out_r2+in_r2);
+        double u = r * cos(y.at(i));
+        x.at(i) = u;
+        y.at(i) = sqrt(r*r - u*u);
+    }
+    return 0;
+}
+
+template <typename T>
+int uniform_random_in_ellipse(int n, double a, double b, T& x, T& y){
+    uniform_random(n, x, 0, 1);
+    std::vector<double> u(n);
+    uniform_random(n, u, 0, 1);
+    uniform_random(n, y, 0, 1);
+
+    double c = b/a;
+    double ab = a*b;
+    double bb = b*b;
+    double aa = a*a;
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif // _OPENMP
+    for(int i=0; i<n; ++i) {
+        double theta = atan(c*tan(k_pi*x.at(i)/2));
+        if (u.at(i)<0.25) x.at(i) = theta;
+        else if (u.at(i)<0.5) x.at(i) = k_pi - theta;
+        else if (u.at(i)<0.75) x.at(i) = k_pi + theta;
+        else x.at(i) = -theta;
+        double cs = cos(x.at(i));
+        double cc = cs*cs;
+        double ss = 1-cc;
+        double r = ab*sqrt(y.at(i)/(bb*cc+aa*ss));
+        cs *= r;
+        x.at(i) = cs;
+        y.at(i) = sqrt(r*r-cs*cs);
+    }
 }
 
 template <typename T>

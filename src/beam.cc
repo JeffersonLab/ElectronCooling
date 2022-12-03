@@ -239,22 +239,29 @@ double UniformHollowBunch::n_electron(){
 
     return density*area;
 }
+//
+//void UniformHollowBunch::create_particle_location(){
+//    int n_sample = samples->n_sample();
+//
+//    uniform_random(n_sample, samples->z, -length_/2, length_/2);
+//    uniform_random(n_sample, samples->x, 0, 1);
+//    uniform_random(n_sample, samples->y, 0, 2*k_pi);
+//    double out_r2 = out_radius_*out_radius_;
+//    double in_r2 = in_radius_*in_radius_;
+//    out_r2 -= in_r2;
+//    for(int i=0; i<n_sample; ++i) {
+//        double r = sqrt(samples->x.at(i)*out_r2+in_r2);
+//        double x = r * cos(samples->y.at(i));
+//        samples->x.at(i) = x;
+//        samples->y.at(i) = sqrt(r*r - x*x);
+//    }
+//}
+
 
 void UniformHollowBunch::create_particle_location(){
     int n_sample = samples->n_sample();
-
     uniform_random(n_sample, samples->z, -length_/2, length_/2);
-    uniform_random(n_sample, samples->x, 0, 1);
-    uniform_random(n_sample, samples->y, 0, 2*k_pi);
-    double out_r2 = out_radius_*out_radius_;
-    double in_r2 = in_radius_*in_radius_;
-    out_r2 -= in_r2;
-    for(int i=0; i<n_sample; ++i) {
-        double r = sqrt(samples->x.at(i)*out_r2+in_r2);
-        double x = r * cos(samples->y.at(i));
-        samples->x.at(i) = x;
-        samples->y.at(i) = sqrt(r*r - x*x);
-    }
+    uniform_random_in_hollow_circle(n_sample, out_radius_, in_radius_, samples->x, samples->y);
 }
 
 
@@ -267,18 +274,24 @@ double UniformBunch::n_electron() {
     return density*volume;
 }
 
+//void UniformBunch::create_particle_location() {
+//    int n_sample = samples->n_sample();
+//
+//    uniform_random(n_sample, samples->z, -length_/2, length_/2);
+//    uniform_random(n_sample, samples->x, 0, 1);
+//    uniform_random(n_sample, samples->y, 0, 2*k_pi);
+//    for(int i=0; i<n_sample; ++i) {
+//        double r = radius_*sqrt(samples->x.at(i));
+//        double x = r * cos(samples->y.at(i));
+//        samples->x.at(i) = x;
+//        samples->y.at(i) = sqrt(r*r - x*x);
+//    }
+//}
+
 void UniformBunch::create_particle_location() {
     int n_sample = samples->n_sample();
-
     uniform_random(n_sample, samples->z, -length_/2, length_/2);
-    uniform_random(n_sample, samples->x, 0, 1);
-    uniform_random(n_sample, samples->y, 0, 2*k_pi);
-    for(int i=0; i<n_sample; ++i) {
-        double r = radius_*sqrt(samples->x.at(i));
-        double x = r * cos(samples->y.at(i));
-        samples->x.at(i) = x;
-        samples->y.at(i) = sqrt(r*r - x*x);
-    }
+    uniform_random_in_circle(n_sample, radius_, samples->x, samples->y);
 }
 
 
@@ -315,6 +328,21 @@ void UniformBunch::density(vector<double>& x, vector<double>& y, vector<double>&
         if((z[i]+cz)<=right_end && (z[i]+cz)>=left_end && (x[i]+cx)*(x[i]+cx)+(y[i]+cy)*(y[i]+cy)<=r2)
             ne[i] = density;
     }
+}
+
+double EllipticUniformBunch::n_electron() {
+    int nq = this->charge_number();
+    if (nq<0) nq *= -1;
+    double area = k_pi*rh_*rv_;
+    double density = current_/(area*nq*k_e*this->beta()*k_c);
+    double volume = area*length_;
+    return density*volume;
+}
+
+void EllipticUniformBunch::create_particle_location() {
+    int n_sample = samples->n_sample();
+    uniform_random(n_sample, samples->z, -length_/2, length_/2);
+    uniform_random_in_ellipse(n_sample, rh_, rv_, samples->x, samples->y);
 }
 
 

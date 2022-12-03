@@ -267,8 +267,8 @@ class EllipticUniformBunch: public EBeam{
     double rh_;         //half horizontal axis
     double rv_;         //half vertical axis
     double length_;     //bunch length
-    void create_particle_location(){};
-    double n_electron(){};
+    void create_particle_location();
+    double n_electron();
 public:
     //Calculate the charge density for a given position (x,y,z) in Lab frame.
     void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
