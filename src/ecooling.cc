@@ -93,6 +93,12 @@ void ECoolRate::force(int n_sample, Beam &ion, EBeam &ebeam, Cooler &cooler, Fri
             v -= cv_l;
         }
     }
+    if(ebeam.velocity() == Velocity::VARY_Z) {
+        vector<double>& v_avg_l = ebeam.get_v(EBeamV::V_AVG_L);
+        for(int i=0; i<n_sample; ++i){
+            v_long.at(i) -= v_avg_l.at(i);
+        }
+    }
     force_solver.friction_force(ion.charge_number(), n_sample, v_tr, v_long, ne, ebeam, force_x, force_z);
 
     if(dual_force_solver){
@@ -228,8 +234,6 @@ void ECoolRate::ecool_rate(FrictionForceSolver &force_solver, Beam &ion,
 
 //    electron_density(ion_sample,ebeam);
     if(ebeam.disp()) {
-        auto p = ebeam.samples.get();
-
         electron_density(ion_sample,*ebeam.samples);
     }
     else {

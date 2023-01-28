@@ -140,6 +140,7 @@ int uniform_random_in_ellipse(int n, double a, double b, T& x, T& y){
         x.at(i) = cs;
         y.at(i) = sqrt(r*r-cs*cs);
     }
+    return 0;
 }
 
 template <typename T>

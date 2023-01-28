@@ -466,10 +466,14 @@ void ParticleBunch::density(vector<double>& x, vector<double>& y, vector<double>
     std::vector<int> list_i;
     int idx_out;
     create_ion_tree(x, y, z, n, tree_, list_i, idx_out);
-    if (v_x_corr_)
-        {::density(tree_, list_e_, vx, vy, vz, n_, list_i, idx_out, n, ne, v_avg_l, v_rms_t, v_rms_l);}
-    else
-        {::density(tree_, list_e_, vx, vy, vz, n_, list_i, idx_out, n, ne, v_rms_t, v_rms_l);}
+    if (v_x_corr_){
+        velocity_ = Velocity::VARY_Z;
+        ::density(tree_, list_e_, vx, vy, vz, n_, list_i, idx_out, n, ne, v_avg_l, v_rms_t, v_rms_l);
+    }
+    else{
+        velocity_ = Velocity::CONST;
+        ::density(tree_, list_e_, vx, vy, vz, n_, list_i, idx_out, n, ne, v_rms_t, v_rms_l);
+    }
     for(int i=0; i<n; ++i) {
         x[i] -= cx;
         y[i] -= cy;
@@ -578,6 +582,7 @@ void EBeam::create_samples(int n_sample) {
     samples.reset(new ParticleBunch(n_electron(), filename, length));
     samples->set_gamma(gamma_);
     samples->set_n_sample(n_sample);
+    samples->set_corr();
     create_particle_location();
     if(shape()==Shape::PARTICLE_BUNCH) {
         ParticleBunch* this_ptr = dynamic_cast<ParticleBunch*>(this);
