@@ -107,6 +107,9 @@ protected:
     virtual void create_particle_location() = 0;
     void create_particle_velocity();
     void adjust_particle_location();
+    bool disp_ = false;
+    double dx_ = 0;
+    double dy_ = 0;
 public:
     virtual ~EBeam(){};
     Velocity velocity() const {return velocity_;}
@@ -144,9 +147,6 @@ public:
     bool multi_bunches(){return multi_bunches_;}
 //    std::unique_ptr<EBeam> samples = nullptr;
     std::unique_ptr<ParticleBunch> samples = nullptr;
-    bool disp_ = false;
-    double dx_ = 0;
-    double dy_ = 0;
     vector<double>& get_v(EBeamV v);
     vector<double>& cx(){return cx_;}
     vector<double>& cy(){return cy_;}
