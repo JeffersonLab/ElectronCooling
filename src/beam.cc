@@ -418,6 +418,50 @@ void GaussianBunch::density(vector<double>& x, vector<double>& y, vector<double>
     }
 }
 
+void GaussianBunchDisp::initialize(double dx) {
+    dx_ = dx;
+    Velocity velocity_ = Velocity::VARY_Z;
+    double dp_p = v_rms_l.at(0)/(beta_*k_c);
+    double sigma_x2_new = sigma_x_*sigma_x_+dp_p*dp_p*dx*dx;
+
+    k = beta_*k_c*dx*dp_p*dp_p/sigma_x2_new;
+    tpr_l_org = tpr_l.at(0);
+    v_rms_l_org = v_rms_l.at(0);
+    double tpr_l_new = tpr_l_org*sigma_x_*sigma_x_/sigma_x2_new;
+    set_tpr(tpr_t.at(0), tpr_l_new);
+    sigma_x_ = sqrt(sigma_x2_new);
+}
+
+void GaussianBunchDisp::velocity_shift(vector<double>& x, vector<double>& y, vector<double>& z, int n) {
+    if(v_avg_l.size()<n) v_avg_l.resize(n);
+    for(int i=0; i<n; ++i){
+        v_avg_l.at(i) = k*x.at(i);
+    }
+}
+
+void GaussianBunchDisp::velocity_shift(vector<double>& x, vector<double>& y, vector<double>& z, int n,
+                                       double cx, double cy, double cz) {
+    if(v_avg_l.size()<n) v_avg_l.resize(n);
+    cx -= this->center(0);
+    for(int i=0; i<n; ++i){
+        v_avg_l.at(i) = k*(x.at(i)+cx);
+    }
+}
+
+
+
+void GaussianBunchDisp::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n_particle) {
+    GaussianBunch::density(x, y, z, ne, n_particle);
+    velocity_shift(x, y, z, n_particle);
+
+}
+
+void GaussianBunchDisp::density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n_particle,
+                double cx, double cy, double cz) {
+    GaussianBunch::density(x, y, z, ne, n_particle, cx, cy, cz);
+    velocity_shift(x, y, z, n_particle, cx, cy, cz);
+}
+
 void ParticleBunch::load_particle(long int n) {
     if(n>=0) n_ = load_electrons(x, y, z, vx, vy, vz, filename_, n, line_skip_, binary_, buffer_);
     create_e_tree(x, y, z, n_, s_, tree_, list_e_);

@@ -41,7 +41,7 @@ std::vector<string> IBS_ARGS = {"NU","NV","NZ","LOG_C","COUPLING","MODEL","IBS_B
 std::vector<string> COOLER_ARGS = {"LENGTH", "SECTION_NUMBER", "MAGNETIC_FIELD", "BET_X", "BET_Y", "DISP_X", "DISP_Y",
     "ALPHA_X", "ALPHA_Y", "DISP_DX", "DISP_DY","PIPE_RADIUS"};
 std::vector<string> E_BEAM_SHAPE_TYPES = {"DC_UNIFORM", "BUNCHED_GAUSSIAN", "BUNCHED_UNIFORM", "BUNCHED_UNIFORM_ELLIPTIC",
-    "DC_UNIFORM_HOLLOW", "BUNCHED_UNIFORM_HOLLOW", "BUNCHED_USER_DEFINED"};
+    "DC_UNIFORM_HOLLOW", "BUNCHED_UNIFORM_HOLLOW", "BUNCHED_USER_DEFINED", "BUNCHED_GAUSSIAN_DISP"};
 std::vector<string> E_BEAM_ARGS = {"GAMMA", "TMP_TR", "TMP_L", "SHAPE", "RADIUS", "CURRENT", "SIGMA_X", "SIGMA_Y",
     "SIGMA_Z", "LENGTH", "E_NUMBER", "RH", "RV", "R_INNER", "R_OUTTER", "PARTICLE_FILE", "TOTAL_PARTICLE_NUMBER",
     "BOX_PARTICLE_NUMBER", "LINE_SKIP", "VEL_POS_CORR","BINARY_FILE","BUFFER_SIZE","MULTI_BUNCHES", "LIST_CX",
@@ -416,6 +416,14 @@ void create_e_beam(Set_ptrs &ptrs) {
         assert(sigma_x > 0 && sigma_y > 0 && sigma_z > 0 && n > 0 && "WRONG PARAMETER VALUE FOR BUNCHED_GAUSSIAN SHAPE");
         ptrs.e_beam.reset(new GaussianBunch(n, sigma_x, sigma_y, sigma_z));
     }
+    else if(shape == "BUNCHED_GAUSSIAN_DISP") {
+        double n = ptrs.e_beam_ptr->n;
+        double sigma_x = ptrs.e_beam_ptr->sigma_x;
+        double sigma_y = ptrs.e_beam_ptr->sigma_y;
+        double sigma_z = ptrs.e_beam_ptr->sigma_z;
+        assert(sigma_x > 0 && sigma_y > 0 && sigma_z > 0 && n > 0 && "WRONG PARAMETER VALUE FOR BUNCHED_GAUSSIAN SHAPE");
+        ptrs.e_beam.reset(new GaussianBunchDisp(n, sigma_x, sigma_y, sigma_z));
+    }
     else if(shape == "BUNCHED_UNIFORM") {
         double current = ptrs.e_beam_ptr->current;
         double radius = ptrs.e_beam_ptr->radius;
@@ -516,12 +524,19 @@ void create_e_beam(Set_ptrs &ptrs) {
     if(!iszero(ptrs.e_beam_ptr->cv_l)) ptrs.e_beam->set_cv_l(ptrs.e_beam_ptr->cv_l);
     if(!iszero(dx) || !iszero(dy)) {
         ptrs.e_beam->set_disp(dx,dy);
-        int n_sample = ptrs.e_beam_ptr->n_particle;
-        assert(n_sample>=0 && "WRONG VALUE FOR PARAMETER N_PARTICLE IN E_BEAM");
-        if(n_sample>0) ptrs.e_beam->create_samples(n_sample);
-        else ptrs.e_beam->create_samples();
-        int s = ptrs.e_beam_ptr->particle_perbox;
-        ptrs.e_beam->samples->set_s(s);
+        if (shape == "BUNCHED_GAUSSIAN_DISP") {
+             GaussianBunchDisp* ptr = dynamic_cast<GaussianBunchDisp*>(ptrs.e_beam.get());
+             ptr->initialize(dx);
+        }
+        else {
+            int n_sample = ptrs.e_beam_ptr->n_particle;
+            assert(n_sample>=0 && "WRONG VALUE FOR PARAMETER N_PARTICLE IN E_BEAM");
+            if(n_sample>0) ptrs.e_beam->create_samples(n_sample);
+            else ptrs.e_beam->create_samples();
+            int s = ptrs.e_beam_ptr->particle_perbox;
+            ptrs.e_beam->samples->set_s(s);
+        }
+
     }
     std::cout<<"Electron beam created!"<<std::endl;
 }

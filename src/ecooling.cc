@@ -233,7 +233,7 @@ void ECoolRate::ecool_rate(FrictionForceSolver &force_solver, Beam &ion,
     if(n_sample>scratch_size) init_scratch(n_sample);
 
 //    electron_density(ion_sample,ebeam);
-    if(ebeam.disp()) {
+    if(ebeam.disp() && ebeam.shape()!=Shape::BLASKIEWICZ) {
         electron_density(ion_sample,*ebeam.samples);
     }
     else {
@@ -260,7 +260,7 @@ void ECoolRate::ecool_rate(FrictionForceSolver &force_solver, Beam &ion,
     //Transfer into e- beam frame
     beam_frame(n_sample, ebeam.gamma());
     //Calculate friction force
-    if(ebeam.disp()) {
+    if(ebeam.disp() && ebeam.shape()!=Shape::BLASKIEWICZ) {
 //        ParticleBunch* ptr = dynamic_cast<ParticleBunch*>(ebeam.samples.get());
 //        force(n_sample, ion, *ptr, cooler, force_solver);
 //        auto p = ebeam.samples.get();

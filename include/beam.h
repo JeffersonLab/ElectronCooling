@@ -69,7 +69,7 @@ public:
 };
 
 enum class Shape {UNIFORM_CYLINDER, GAUSSIAN_BUNCH, UNIFORM_BUNCH, GAUSSIAN_CYLINDER, ELLIPTIC_UNIFORM_BUNCH,
-    UNIFORM_HOLLOW, UNIFORM_HOLLOW_BUNCH, PARTICLE_BUNCH};
+    UNIFORM_HOLLOW, UNIFORM_HOLLOW_BUNCH, PARTICLE_BUNCH, BLASKIEWICZ};
 
 enum class Velocity {CONST, USER_DEFINE, SPACE_CHARGE, VARY, VARY_X, VARY_Y, VARY_Z}  ;
 enum class Temperature {CONST, USER_DEFINE, SPACE_CHARGE, VARY, VARY_X, VARY_Y, VARY_Z}  ;
@@ -282,6 +282,7 @@ public:
 
 
 class GaussianBunch: public EBeam{
+ protected:
     double n_electron_;
     double sigma_x_;
     double sigma_y_;
@@ -300,6 +301,22 @@ class GaussianBunch: public EBeam{
     void set_angles(double sigma_xp, double sigma_yp, double sigma_dpp);
     GaussianBunch(double n_electron, double sigma_x, double sigma_y, double sigma_s):n_electron_(n_electron),
                 sigma_x_(sigma_x),sigma_y_(sigma_y),sigma_s_(sigma_s){};
+};
+
+class GaussianBunchDisp : public GaussianBunch {
+    double v_rms_l_org = 0;  //Original longitudinal rml velocity without dispersion, used for Shape::BLASKIEWICZ.
+    double tpr_l_org = 0; //Original longitudinal temperature without dispersion, used for Shape::BLASKIEWICZ.
+    void velocity_shift(vector<double>& x, vector<double>& y, vector<double>& z, int n);
+    void velocity_shift(vector<double>& x, vector<double>& y, vector<double>& z, int n, double cx, double cy, double cz);
+    double k = 0; //Coefficient to calculate velocity shift
+ public:
+    Shape shape() const {return Shape::BLASKIEWICZ;}
+    void initialize(double dx);
+    void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n);
+    void density(vector<double>& x, vector<double>& y, vector<double>& z, vector<double>& ne, int n,
+                double cx, double cy, double cz);
+    GaussianBunchDisp(double n_electron, double sigma_x, double sigma_y, double sigma_s):GaussianBunch(n_electron,
+                    sigma_x, sigma_y, sigma_s){};
 };
 
 class ParticleBunch: public EBeam {
