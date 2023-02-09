@@ -228,10 +228,13 @@ void ForceNonMag::friction_force(int charge_number, int ion_number, vector<doubl
             double v = sqrt(v2);
             if(v2>0) {
                 double ve_l = ve_rms_l.at(i);
-                double ve_tr = ve_rms_l.at(i);
+                double ve_tr = ve_rms_tr.at(i);
                 double ve2 = ve_l*ve_l + ve_tr*ve_tr;
                 force(v, v_tr[i], v_long[i], v2, ve_tr, ve_l, ve2, f_const, rho_min_const, charge_number,
                       density_e.at(i), force_tr[i], force_long[i]);
+                if(std::isnan(force_tr[i])) {
+                    std::cout<<i<<' '<<ve_l<<' '<<ve_tr<<' '<<ve2<<' '<<density_e.at(i)<<std::endl;
+                }
             }
             else {
                 force_tr[i] = 0;

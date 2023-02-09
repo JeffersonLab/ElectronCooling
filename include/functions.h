@@ -113,6 +113,14 @@ int uniform_random_in_hollow_circle(int n, double radius_out, double radius_in, 
 }
 
 template <typename T>
+int first_nan(int n, T& x) {
+    for (int i=0; i<n; ++i) {
+        if(std::isnan(x[i])) return i;
+    }
+    return n;
+}
+
+template <typename T>
 int uniform_random_in_ellipse(int n, double a, double b, T& x, T& y){
     uniform_random(n, x, 0, 1);
     std::vector<double> u(n);
