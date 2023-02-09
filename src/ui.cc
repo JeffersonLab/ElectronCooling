@@ -492,13 +492,20 @@ void create_e_beam(Set_ptrs &ptrs) {
         ptrs.e_beam->set_tpr(tmp_tr, tmp_l);
     }
 
-    if(shape == "BUNCHED_GAUSSIAN") {
+    if(shape == "BUNCHED_GAUSSIAN" || shape == "BUNCHED_GAUSSIAN_DISP") {
         double sigma_xp = ptrs.e_beam_ptr->sigma_xp;
         double sigma_yp = ptrs.e_beam_ptr->sigma_yp;
         double sigma_dpp = ptrs.e_beam_ptr->sigma_dpp;
         if(!iszero(sigma_xp, 1e-8) && !iszero(sigma_yp, 1e-8) && !iszero(sigma_dpp, 1e-8)) {
-            GaussianBunch* ptr = dynamic_cast<GaussianBunch*>(ptrs.e_beam.get());
-            ptr->set_angles(sigma_xp, sigma_yp, sigma_dpp);
+            if(shape == "BUNCHED_GAUSSIAN" ) {
+                GaussianBunch* ptr = dynamic_cast<GaussianBunch*>(ptrs.e_beam.get());
+                ptr->set_angles(sigma_xp, sigma_yp, sigma_dpp);
+            }
+            else if(shape == "BUNCHED_GAUSSIAN_DISP") {
+                GaussianBunchDisp* ptr = dynamic_cast<GaussianBunchDisp*>(ptrs.e_beam.get());
+                ptr->set_angles(sigma_xp, sigma_yp, sigma_dpp);
+            }
+
         }
     }
 
