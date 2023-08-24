@@ -21,8 +21,9 @@ class ParticleModel: public Simulator {
     vector<double> rdn;
     void precondition(Ions& ion_sample){resize_rdn(ion_sample.n_sample());};
  public:
-    using Simulator::Simulator;
+//    using Simulator::Simulator;
     void resize_rdn(int n_sample){rdn.resize(n_sample);}
+    ParticleModel(double time, int n):Simulator(time, n){}
 };
 
 #endif // IBS_HPP

@@ -22,7 +22,8 @@ protected:
     int idx = -1;
 
 public:
-    using ParticleModel::ParticleModel;
+//    using ParticleModel::ParticleModel;
+    TurnByTurnModel(double time, int n):ParticleModel(time, n){}
 };
 
 #endif // TURN_BY_TURN_H_INCLUDED

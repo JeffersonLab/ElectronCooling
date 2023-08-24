@@ -14,7 +14,8 @@ class RMSModel:public Simulator {
     void adjust_rf_voltage(Ring& ring){if(ring.rf.gamma_tr>0) ring.rf.v = ring.calc_rf_voltage();};
     void save_ions(int i, Ions& ion_sample){};
  public:
-    using Simulator::Simulator;
+//    using Simulator::Simulator;
+    RMSModel(double time, int n):Simulator(time, n){}
 };
 
 
