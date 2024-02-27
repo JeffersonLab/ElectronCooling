@@ -1,3 +1,11 @@
+/**
+ * @file isb.h
+ * @brief Calculates IBS expansion rate.
+ * @details Defines the IBSSolver class to handle IBS rate calculation.
+ * @author He Zhang
+ * @email hezhang@jlab.org
+ */
+
 #ifndef IBS_HPP
 #define IBS_HPP
 
@@ -16,9 +24,16 @@
 class Lattice;
 class Beam;
 
-
+/**
+ * @enum IBSModel
+ * @brief Choose different formulas for IBS rate calculation.
+ * @see IBSSolver_Martini, IBSSolver_BM, IBSSolver_BMZ, and IBSSolver_BM_Complete.
+ */
 enum class IBSModel {MARTINI, BM, BMC, BMZ};
 
+/**
+ * @brief Base class for IBS rate calculators.
+ */
 class IBSSolver {
 protected:
     double log_c_ = 0.0;     //Coulomb logarithm.
@@ -29,22 +44,47 @@ protected:
     void ibs_coupling(double &rx, double &ry, double k, double emit_x, double emit_y);
     void ibs_by_element_sddshead(std::ofstream& outfile, int n_element);
 public:
-    double log_c() const { return log_c_; }
-    double k() const { return k_; }
-    void set_k(double x) { k_ = x; }
-    void set_log_c(double x) { log_c_ = x; }
+    double log_c() const { return log_c_; } ///< Get the value of the Coulomb logarithm.
+    double k() const { return k_; } ///< Get the value of the transverse coupling rate.
+    void set_k(double x) { k_ = x; } ///< Set the value of the transverse coupling rate.
+    void set_log_c(double x) { log_c_ = x; } ///< Set the value of the Coulomb logarithm.
+    /**
+     * @brief Choose whether to calculate the contribution to IBS from each individual element.
+     */
     void set_ibs_by_element(bool b) {ibs_by_element = b;}
+    /**
+     * @brief Call it if the lattice or the beam energy changed. Cached intermediate results will be calculated again.
+     */
     void invalidate_cache() { cache_invalid = true; }
 
+    /**
+     * @brief Constructor of IBSSolver.
+     * \param[in] log_c Coulomb logarithm
+     * \param[in] k The transverse coupling rate, from 0 to 1.
+     */
     IBSSolver(double log_c, double k);
 
+    /**
+     * @brief Calculate the IBS expansion rate.
+     * This is the virtual function in the base class to calculate the IBS expansion rate of the ion beam.
+     * Should be overloaded in the derived classes.
+     * \param[in] lattice The lattice of the ion ring.
+     * \param[in] beam The ion beam.
+     * \param[out] rx The horizontal IBS rate.
+     * \param[out] ry The vertical IBS rate.
+     * \param[out] rs The longitudinal IBS rate.
+     */
     virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs) = 0;
+
+    /**
+     * @brief Calculate the IBS expansion rate.
+     * This is the virtual function in the base class to calculate the IBS expansion rate of the ion beam.
+     * Should be overloaded in the derived classes.
+     * \param[in] lattice The lattice of the ion ring.
+     * \param[in] beam The ion beam.
+     * \return The horizontal, vertical, and longitudinal IBS rates.
+     */
     virtual std::tuple<double, double, double> rate(const Lattice &lattice, const Beam &beam) = 0;
-//    virtual std::tuple<double, double, double> rate(const Lattice &lattice, const Beam &beam) {
-//        double rx, ry, rs;
-//        rate(lattice, beam, rx, ry, rs);
-//        return std::make_tuple(rx, ry, rs);
-//    }
 };
 
 class IBSSolver_Martini : public IBSSolver {
@@ -177,7 +217,6 @@ public:
         return std::make_tuple(rx, ry, rs);
     }
 };
-
 
 class IBSSolver_BM_Complete : public IBSSolver {
 private:
