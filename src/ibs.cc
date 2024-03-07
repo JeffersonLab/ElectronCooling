@@ -848,11 +848,14 @@ void IBSSolver_BM_Complete::rate(const Lattice &lattice, const Beam &beam, doubl
 
             for(int i=0; i<3; ++i) {
                 for(int j=0; j<3; ++j) {
-                    rxi += lh[i][j]*ii[i][j]*c_bmc;
-                    ryi += lv[i][j]*ii[i][j]*c_bmc;
-                    rsi += ls[i][j]*ii[i][j]*c_bmc*n;
+                    rxi += lh[i][j]*ii[i][j];
+                    ryi += lv[i][j]*ii[i][j];
+                    rsi += ls[i][j]*ii[i][j];
                 }
             }
+            rxi *= l_element*c_bmc;
+            ryi *= l_element*c_bmc;
+            rsi *= l_element*c_bmc*n;
 
             rx += rxi;
             ry += ryi;
@@ -874,14 +877,18 @@ void IBSSolver_BM_Complete::rate(const Lattice &lattice, const Beam &beam, doubl
             std::array<std::array<double, 3>,3> lh{}, lv{}, ls{}, l{}, ll{}, ii{};
             calc_l(lattice, i, lh, lv, ls);
             calc_itgl(i, ii, l, ll, lh, lv, ls);
+            double rxe{}, rye{}, rse{};
 
             for(int i=0; i<3; ++i) {
                 for(int j=0; j<3; ++j) {
-                    rx += lh[i][j]*ii[i][j];
-                    ry += lv[i][j]*ii[i][j];
-                    rs += ls[i][j]*ii[i][j];
+                    rxe += lh[i][j]*ii[i][j];
+                    rye += lv[i][j]*ii[i][j];
+                    rse += ls[i][j]*ii[i][j];
                 }
             }
+            rx += rxe*l_element;
+            ry += rye*l_element;
+            rs += rse*l_element;
         }
 
         rs *= n*c_bmc;
