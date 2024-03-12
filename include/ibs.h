@@ -87,6 +87,10 @@ public:
     virtual std::tuple<double, double, double> rate(const Lattice &lattice, const Beam &beam) = 0;
 };
 
+/**
+ * @brief IBS rate calculation using the Martini model.
+ * Ref: M. Martini, Intrabeam scattering in the ACOL-AA machines, CERN-PS-84-9 (AA), Geneva, Switzerland, May 1984.
+ */
 class IBSSolver_Martini : public IBSSolver {
 private:
     struct TrigonometryStorageUV {
@@ -134,14 +138,53 @@ private:
     void f();
     double coef_a(const Lattice &lattice, const Beam &beam) const;
 public:
-    int nu() const { return nu_; }
-    int nv() const { return nv_; }
-    int nz() const { return nz_; }
+    int nu() const { return nu_; } ///< Grid number of 3D numerical integration.
+    int nv() const { return nv_; } ///< Grid number of 3D numerical integration.
+    int nz() const { return nz_; } ///< Grid number of 3D numerical integration.
+
+    /**
+     * @brief Set grid number of 3D numerical integration.
+     * \param[in] nu Grid number of 3D numerical integration.
+     */
     void set_nu(int nu) { assert(nu>0&&"Wrong value of nu in IBS parameters!"); nu_ = nu; invalidate_cache(); }
+    /**
+     * @brief Set grid number of 3D numerical integration.
+     * \param[in] nv Grid number of 3D numerical integration.
+     */
     void set_nv(int nv) { assert(nv>0&&"Wrong value of nv in IBS parameters!"); nv_ = nv; invalidate_cache(); }
+    /**
+     * @brief Set grid number of 3D numerical integration.
+     * \param[in] nz Grid number of 3D numerical integration.
+     */
     void set_nz(int nz) { assert(nz>0&&"Wrong value of nz in IBS parameters!"); nz_ = nz; invalidate_cache(); }
+    /**
+     * @brief Constructor of IBS Solver using Martini model.
+     * \param[in] nu Grid number of 3D numerical integration.
+     * \param[in] nv Grid number of 3D numerical integration.
+     * \param[in] nz Grid number of 3D numerical integration.
+     * \param[in] log_c Coulomb logarithm
+     * \param[in] k The transverse coupling rate, from 0 to 1.
+     */
     IBSSolver_Martini(int nu, int nv, int nz, double log_c, double k);
+    /**
+     * @brief Calculate the IBS expansion rate  using Martini model.
+     * This is the virtual function in the base class to calculate the IBS expansion rate of the ion beam.
+     * Should be overloaded in the derived classes.
+     * \param[in] lattice The lattice of the ion ring.
+     * \param[in] beam The ion beam.
+     * \param[out] rx The horizontal IBS rate.
+     * \param[out] ry The vertical IBS rate.
+     * \param[out] rs The longitudinal IBS rate.
+     */
     virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
+        /**
+     * @brief Calculate the IBS expansion rate using Martini model.
+     * This is the virtual function in the base class to calculate the IBS expansion rate of the ion beam.
+     * Should be overloaded in the derived classes.
+     * \param[in] lattice The lattice of the ion ring.
+     * \param[in] beam The ion beam.
+     * \return The horizontal, vertical, and longitudinal IBS rates.
+     */
     virtual std::tuple<double, double, double> rate(const Lattice &lattice, const Beam &beam) {
         double rx, ry, rs;
         rate(lattice, beam, rx, ry, rs);
