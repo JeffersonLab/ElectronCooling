@@ -177,10 +177,8 @@ public:
      * \param[out] rs The longitudinal IBS rate.
      */
     virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
-        /**
+    /**
      * @brief Calculate the IBS expansion rate using Martini model.
-     * This is the virtual function in the base class to calculate the IBS expansion rate of the ion beam.
-     * Should be overloaded in the derived classes.
      * \param[in] lattice The lattice of the ion ring.
      * \param[in] beam The ion beam.
      * \return The horizontal, vertical, and longitudinal IBS rates.
@@ -192,6 +190,12 @@ public:
     }
 };
 
+/**
+ * @brief IBS rate calculation using the Bjorken-Mtingwa model and Nagaitsev's fast numerical evaluation.
+ * Ref: J.D.Bjorken,S.K.Mtingwa,¡°IntrabeamScattering,¡±Part.Acc.Vol.13,pp.115¨C143(1983).
+ * Ref: S. Nagaitsev, Intrabeam scattering formulas for fast numerical evaluation, Phys. Rev. ST Accel. Beams 8, 064403,
+ * 30 June 2005.
+ */
 class IBSSolver_BM : public IBSSolver {
  private:
      struct OpticalStorage { //variables only depends on the TWISS parameters and the energy.
@@ -216,8 +220,27 @@ class IBSSolver_BM : public IBSSolver {
      void calc_kernels(const Lattice &lattice, const Beam &beam);
      double coef_bm(const Lattice &lattice, const Beam &beam) const;
  public:
+     /**
+     * @brief Constructor of IBS Solver using Bjorken-Mtingwa model and Nagaitsev's fast numerical evaluation.
+     * \param[in] log_c Coulomb logarithm
+     * \param[in] k The transverse coupling rate, from 0 to 1.
+     */
      IBSSolver_BM(double log_c, double k);
+     /**
+     * @brief Calculate the IBS expansion rate  using Bjorken-Mtingwa model and Nagaitsev's fast numerical evaluation.
+     * \param[in] lattice The lattice of the ion ring.
+     * \param[in] beam The ion beam.
+     * \param[out] rx The horizontal IBS rate.
+     * \param[out] ry The vertical IBS rate.
+     * \param[out] rs The longitudinal IBS rate.
+     */
      virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
+     /**
+     * @brief Calculate the IBS expansion rate using Bjorken-Mtingwa model and Nagaitsev's fast numerical evaluation.
+     * \param[in] lattice The lattice of the ion ring.
+     * \param[in] beam The ion beam.
+     * \return The horizontal, vertical, and longitudinal IBS rates.
+     */
      virtual std::tuple<double, double, double> rate(const Lattice &lattice, const Beam &beam) {
         double rx, ry, rs;
         rate(lattice, beam, rx, ry, rs);
