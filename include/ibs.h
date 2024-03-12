@@ -248,6 +248,11 @@ class IBSSolver_BM : public IBSSolver {
      }
 };
 
+/**
+ * @brief IBS rate calculation using the Bjorken-Mtingwa model with vertical dispersion and non-ultrarelativistic terms.
+ * Ref: F. Antoniou & F. Zimmermann, Revision of intrabeam scattering with non-ultrarelativistic corrections and
+ * vertical dispersion for MAD-X, CERN-ATS-2012-066, Geneva, Switzerland, May 8, 2012.
+ */
 class IBSSolver_BMZ : public IBSSolver {
 private:
     int nt_;     //Number of steps for integration.
@@ -273,10 +278,39 @@ private:
     void calc_integral(double a, double b, double c, double ax, double bx, double ay, double by, double al,
                                   double bl, double& ix, double& iy, double& is, int nt, double u);
 public:
+    /**
+     * @brief Constructor of IBS Solver using Bjorken-Mtingwa model with vertical dispersion and non-ultrarelativistic terms.
+     * \param[in] nt Number of steps to carry out the numerical integration.
+     * \param[in] log_c Coulomb logarithm
+     * \param[in] k The transverse coupling rate, from 0 to 1.
+     */
     IBSSolver_BMZ(int nt, double log_c, double k);
+
+    /**
+    * @brief Set the number of  steps to carry out the numerical integration.
+    * \param[in] n The number of steps
+    */
     void set_nt(int n){assert(n>0&&"Wrong value of nt in IBS parameters!"); nt_ = n; invalidate_cache();}
+    /**
+     * @brief Calculate the IBS expansion rate  using Bjorken-Mtingwa model with vertical dispersion and non-ultrarelativistic terms.
+     * \param[in] lattice The lattice of the ion ring.
+     * \param[in] beam The ion beam.
+     * \param[out] rx The horizontal IBS rate.
+     * \param[out] ry The vertical IBS rate.
+     * \param[out] rs The longitudinal IBS rate.
+     */
     virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
+    /**
+    * @brief Set the upper bound to carry out the numerical integration.
+    * \param[in] x This number is in proportion to the upper bound of the numerical integration.
+    */
     void set_factor(double x){factor = x;}
+    /**
+     * @brief Calculate the IBS expansion rate using Bjorken-Mtingwa model with vertical dispersion and non-ultrarelativistic terms.
+     * \param[in] lattice The lattice of the ion ring.
+     * \param[in] beam The ion beam.
+     * \return The horizontal, vertical, and longitudinal IBS rates.
+     */
     virtual std::tuple<double, double, double> rate(const Lattice &lattice, const Beam &beam) {
         double rx, ry, rs;
         rate(lattice, beam, rx, ry, rs);
