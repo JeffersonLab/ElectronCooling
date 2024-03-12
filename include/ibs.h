@@ -318,6 +318,12 @@ public:
     }
 };
 
+/**
+ * @brief IBS rate calculation using the Bjorken-Mtingwa model with vertical dispersion as in BETACOOL.
+ * Ref: I. Meshkov, A. Sidorin, A. Smirnov, G. Trubnikov, P. Pivin, BETACOOL Physics Guide for simulation of long term
+ * beam dynamics in ion storage rings (since 1995), Joint Institute for Nuclear Research, Joliot Curie, 6, Dubna,
+ * 141980 Russian Federation, 2007.
+ */
 class IBSSolver_BM_Complete : public IBSSolver {
 private:
     int nt_;
@@ -353,9 +359,33 @@ private:
     void calc_beam_const(const Beam& beam);
     double coef(const Lattice &lattice, const Beam &beam) const;
 public:
+    /**
+     * @brief Constructor of IBS Solver using Bjorken-Mtingwa model with vertical dispersion vertical dispersion as in BETACOOL.
+     * \param[in] nt Number of steps to carry out the numerical integration.
+     * \param[in] log_c Coulomb logarithm
+     * \param[in] k The transverse coupling rate, from 0 to 1.
+     */
      IBSSolver_BM_Complete(int nt, double log_c, double k);
+     /**
+    * @brief Set the upper bound to carry out the numerical integration.
+    * \param[in] x This number is in proportion to the upper bound of the numerical integration.
+    */
      void set_factor(double x){factor = x;}
+     /**
+     * @brief Calculate the IBS expansion rate  using Bjorken-Mtingwa model with vertical dispersion as in BETACOOL.
+     * \param[in] lattice The lattice of the ion ring.
+     * \param[in] beam The ion beam.
+     * \param[out] rx The horizontal IBS rate.
+     * \param[out] ry The vertical IBS rate.
+     * \param[out] rs The longitudinal IBS rate.
+     */
      virtual void rate(const Lattice &lattice, const Beam &beam, double &rx, double &ry, double &rs);
+      /**
+     * @brief Calculate the IBS expansion rate using Bjorken-Mtingwa model with vertical dispersion as in BETACOOL.
+     * \param[in] lattice The lattice of the ion ring.
+     * \param[in] beam The ion beam.
+     * \return The horizontal, vertical, and longitudinal IBS rates.
+     */
      virtual std::tuple<double, double, double> rate(const Lattice &lattice, const Beam &beam) {
         double rx, ry, rs;
         rate(lattice, beam, rx, ry, rs);
