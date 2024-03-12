@@ -557,8 +557,8 @@ double IBSSolver_BMZ::calc_abc(const Lattice &lattice, const Beam& beam, int i, 
     double v8 = (2*o.beta_phi_y2*emit_y2_inv - o.beta_phi_x2*emit_x2_inv)*gamma_2;
     double v9 = v1*v2 - v6;
     bx = v9 + (beta_x_over_emit_x - 4*beta_y_over_emit_y)*beta_x_over_emit_x +
-        o.beta_x_over_hx*(v7*dp_2_inv + v4*gamma_2_inv + v8*gamma_2_inv) +v7*o.hy_beta_x_over_hx*emit_y_inv
-        +6*beta_x_over_emit_x*beta_y_over_emit_y*gamma_2*o.phi_x2;
+        o.beta_x_over_hx*(v7*dp_2_inv + v4*gamma_2_inv + v8*gamma_2_inv +
+        6*v4*o.phi_x2) +v7*o.hy_beta_x_over_hx*emit_y_inv;
 
     al = 2*v1 - v2;
     bl = v9-2*v4;
