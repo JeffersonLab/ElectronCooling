@@ -10,9 +10,6 @@
 
 using std::vector;
 
-//enum class ShapeList {uniformCylinder=1, GaussianBunch=2, GaussianCylinder=3, uniformCylinderSlope=4,
-//                      uniformCylinderBunch, darkCurrent};
-
 class Lattice{
     vector<double> s_;
     vector<double> betx_;
@@ -44,7 +41,6 @@ class Lattice{
     double l_element(int i) const {return l_element_.at(i);}
     double circ() const {return circ_;}
     Lattice(std::string filename);
-
 };
 
 struct Tunes {
@@ -54,18 +50,18 @@ struct Tunes {
 };
 
 struct RF {
-    double v = 0; //Voltage in [V].
-    int h = 1; //Harmonic number
-    double phi = 0; //phase in [2*PI]
-    double gamma_tr = 0; //Transition gamma
+    double v = 0; ///< Voltage in [V].
+    int h = 1; ///< Harmonic number
+    double phi = 0; ///< Phase in [2*PI]
+    double gamma_tr = 0; ///< Transition gamma
 };
 
 class Ring{
-    double beta_s_ = 0;         //Synchrotron function, use to calculate rms bunch length from momentum spread
-    double circ_ = 0;        //Circumference of the ring;
-    double f0_ = 0;               // revolution frequency.
-    double w0_ = 0;       // angular revolution frequency.
-    double slip_factor_ = 0;     //slip factor.
+    double beta_s_ = 0;         ///< Synchrotron function, use to calculate rms bunch length from momentum spread
+    double circ_ = 0;        ///< Circumference of the ring;
+    double f0_ = 0;               ///< revolution frequency.
+    double w0_ = 0;       ///< Angular revolution frequency.
+    double slip_factor_ = 0;     ///< Slip factor.
     Beam *beam_;
     Lattice *lattice_;
  public:
